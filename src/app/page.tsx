@@ -7,6 +7,8 @@ import HabitSummaryTable from './components/HabitSummaryTable';
 import WeeklyProgress from './components/WeeklyProgress';
 import OverviewPanel from './components/OverviewPanel';
 import CalendarSettings from './components/CalendarSettings';
+import WeeklyGoals from './components/WeeklyGoals';
+import MonthlyGoals from './components/MonthlyGoals';
 import { Habit, HabitLog } from '../../lib/habitTypes';
 import { getHabitStats } from '../../lib/habitUtils';
 
@@ -15,12 +17,15 @@ const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0)
 export default function Page() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLog>({});
+  const [habitLogsArray, setHabitLogsArray] = useState<Record<string, number[]>>({});
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
 
   useEffect(() => {
     const savedHabits = localStorage.getItem('habitbloom_habits');
     const savedLogs = localStorage.getItem('habitbloom_logs');
+    const savedLogsArray = localStorage.getItem('habitbloom_logs_array');
+    
     if (savedHabits) {
       try {
         setHabits(JSON.parse(savedHabits));
@@ -41,6 +46,14 @@ export default function Page() {
         setLogs({});
       }
     }
+
+    if (savedLogsArray) {
+      try {
+        setHabitLogsArray(JSON.parse(savedLogsArray));
+      } catch {
+        setHabitLogsArray({});
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -50,6 +63,10 @@ export default function Page() {
   useEffect(() => {
     localStorage.setItem('habitbloom_logs', JSON.stringify(logs));
   }, [logs]);
+
+  useEffect(() => {
+    localStorage.setItem('habitbloom_logs_array', JSON.stringify(habitLogsArray));
+  }, [habitLogsArray]);
 
   const daysInMonth = useMemo(() => getDaysInMonth(year, month), [year, month]);
 
@@ -68,7 +85,23 @@ export default function Page() {
 
   const handleToggleCell = (habitId: string, day: number) => {
     const key = `${habitId}_${day}`;
+    const dateTimestamp = new Date(year, month - 1, day).getTime();
+    
     setLogs(prev => ({ ...prev, [key]: !prev[key] }));
+    
+    // Update habitLogsArray for goal tracking
+    setHabitLogsArray(prev => {
+      const logs = prev[habitId] || [];
+      const index = logs.indexOf(dateTimestamp);
+      
+      if (index === -1) {
+        // Add the date
+        return { ...prev, [habitId]: [...logs, dateTimestamp].sort() };
+      } else {
+        // Remove the date
+        return { ...prev, [habitId]: logs.filter((_, i) => i !== index) };
+      }
+    });
   };
 
   const handleAddHabit = () => {
@@ -112,6 +145,10 @@ export default function Page() {
           onYearChange={setYear}
           onMonthChange={setMonth}
         />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <WeeklyGoals habits={habits} habitLogs={habitLogsArray} />
+          <MonthlyGoals habits={habits} habitLogs={habitLogsArray} />
+        </div>
         <HabitGrid
           habits={habits}
           logs={logs}

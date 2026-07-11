@@ -18,6 +18,7 @@
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
     "date-fns": "^4.4.0",
+    "firebase": "^12.16.0",
     "lucide-react": "^1.24.0",
     "next": "15.5.18",
     "react": "19.0.3",

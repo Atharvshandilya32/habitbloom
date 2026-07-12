@@ -2,14 +2,16 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import TitleBanner from './components/charts/TitleBanner';
+import RequireAuth from './auth/RequireAuth';
 import HabitGrid from './components/habitGrid';
 import HabitSummaryTable from './components/HabitSummaryTable';
 import WeeklyProgress from './components/WeeklyProgress';
 import OverviewPanel from './components/OverviewPanel';
 import CalendarSettings from './components/CalendarSettings';
-import WeeklyGoals from './components/WeeklyGoals';
-import MonthlyGoals from './components/MonthlyGoals';
+import WeeklyCustomGoals from './components/WeeklyCustomGoals';
+import MonthlyCustomGoals from './components/MonthlyCustomGoals';
 import { Habit, HabitLog } from '../../lib/habitTypes';
+import { createMonthlyWritingGoal, createWeeklyWritingGoal, CustomWritingGoal } from '../../lib/customWritingGoals';
 import { getHabitStats } from '../../lib/habitUtils';
 
 const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
@@ -21,11 +23,17 @@ export default function Page() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
 
+  const [weeklyWritingGoals, setWeeklyWritingGoals] = useState<CustomWritingGoal[]>([]);
+  const [monthlyWritingGoals, setMonthlyWritingGoals] = useState<CustomWritingGoal[]>([]);
+
   useEffect(() => {
     const savedHabits = localStorage.getItem('habitbloom_habits');
     const savedLogs = localStorage.getItem('habitbloom_logs');
     const savedLogsArray = localStorage.getItem('habitbloom_logs_array');
-    
+
+    const savedWeeklyWriting = localStorage.getItem('habitbloom_weekly_writing_goals');
+    const savedMonthlyWriting = localStorage.getItem('habitbloom_monthly_writing_goals');
+
     if (savedHabits) {
       try {
         setHabits(JSON.parse(savedHabits));
@@ -54,6 +62,22 @@ export default function Page() {
         setHabitLogsArray({});
       }
     }
+
+    if (savedWeeklyWriting) {
+      try {
+        setWeeklyWritingGoals(JSON.parse(savedWeeklyWriting));
+      } catch {
+        setWeeklyWritingGoals([]);
+      }
+    }
+
+    if (savedMonthlyWriting) {
+      try {
+        setMonthlyWritingGoals(JSON.parse(savedMonthlyWriting));
+      } catch {
+        setMonthlyWritingGoals([]);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -68,6 +92,14 @@ export default function Page() {
     localStorage.setItem('habitbloom_logs_array', JSON.stringify(habitLogsArray));
   }, [habitLogsArray]);
 
+  useEffect(() => {
+    localStorage.setItem('habitbloom_weekly_writing_goals', JSON.stringify(weeklyWritingGoals));
+  }, [weeklyWritingGoals]);
+
+  useEffect(() => {
+    localStorage.setItem('habitbloom_monthly_writing_goals', JSON.stringify(monthlyWritingGoals));
+  }, [monthlyWritingGoals]);
+
   const daysInMonth = useMemo(() => getDaysInMonth(year, month), [year, month]);
 
   const monthlyOverviewData = useMemo(() => {
@@ -79,28 +111,28 @@ export default function Page() {
 
     return Array.from({ length: 12 }, (_, index) => ({
       month: index + 1,
-      pct: index + 1 === month ? averagePct : Math.max(0, averagePct - (month - (index + 1)) * 6),
+      pct:
+        index + 1 === month
+          ? averagePct
+          : Math.max(0, averagePct - (month - (index + 1)) * 6),
     }));
   }, [habits, logs, daysInMonth, month]);
 
   const handleToggleCell = (habitId: string, day: number) => {
     const key = `${habitId}_${day}`;
     const dateTimestamp = new Date(year, month - 1, day).getTime();
-    
-    setLogs(prev => ({ ...prev, [key]: !prev[key] }));
-    
-    // Update habitLogsArray for goal tracking
-    setHabitLogsArray(prev => {
+
+    setLogs((prev) => ({ ...prev, [key]: !prev[key] }));
+
+    setHabitLogsArray((prev) => {
       const logs = prev[habitId] || [];
       const index = logs.indexOf(dateTimestamp);
-      
+
       if (index === -1) {
-        // Add the date
         return { ...prev, [habitId]: [...logs, dateTimestamp].sort() };
-      } else {
-        // Remove the date
-        return { ...prev, [habitId]: logs.filter((_, i) => i !== index) };
       }
+
+      return { ...prev, [habitId]: logs.filter((_, i) => i !== index) };
     });
   };
 
@@ -111,14 +143,14 @@ export default function Page() {
       emoji: '⭐',
       goal: 5,
     };
-    setHabits(prev => [...prev, newHabit]);
+    setHabits((prev) => [...prev, newHabit]);
   };
 
   const handleDeleteHabit = (habitId: string) => {
-    setHabits(prev => prev.filter(habit => habit.id !== habitId));
-    setLogs(prev => {
+    setHabits((prev) => prev.filter((habit) => habit.id !== habitId));
+    setLogs((prev) => {
       const next = { ...prev };
-      Object.keys(next).forEach(key => {
+      Object.keys(next).forEach((key) => {
         if (key.startsWith(`${habitId}_`)) delete next[key];
       });
       return next;
@@ -126,53 +158,94 @@ export default function Page() {
   };
 
   const handleUpdateHabit = (habitId: string, updates: Partial<Habit>) => {
-    setHabits(prev => prev.map(habit => (habit.id === habitId ? { ...habit, ...updates } : habit)));
+    setHabits((prev) => prev.map((habit) => (habit.id === habitId ? { ...habit, ...updates } : habit)));
+  };
+
+  const handleAddWeeklyWritingGoal = (content: string) => {
+    const g = createWeeklyWritingGoal(content);
+    setWeeklyWritingGoals((prev) => [...prev, g]);
+  };
+
+  const handleDeleteWeeklyWritingGoal = (goalId: string) => {
+    setWeeklyWritingGoals((prev) => prev.filter((g) => g.id !== goalId));
+  };
+
+  const handleAddMonthlyWritingGoal = (content: string) => {
+    const g = createMonthlyWritingGoal(content);
+    setMonthlyWritingGoals((prev) => [...prev, g]);
+  };
+
+  const handleDeleteMonthlyWritingGoal = (goalId: string) => {
+    setMonthlyWritingGoals((prev) => prev.filter((g) => g.id !== goalId));
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6 text-slate-950">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <TitleBanner />
-        <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold">HabitBloom is working</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            This page runs with a working HabitGrid component and a working page import.
-          </p>
-        </section>
-        <CalendarSettings
-          year={year}
-          month={month}
-          onYearChange={setYear}
-          onMonthChange={setMonth}
-        />
-        <div className="grid gap-6 lg:grid-cols-2">
-          <WeeklyGoals habits={habits} habitLogs={habitLogsArray} />
-          <MonthlyGoals habits={habits} habitLogs={habitLogsArray} />
+    <RequireAuth>
+      <main className="min-h-screen bg-slate-50 p-6 text-slate-950">
+        <div className="mx-auto max-w-7xl space-y-6">
+          <TitleBanner />
+
+          <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+            <h1 className="text-3xl font-bold">HabitBloom is working</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This page runs with a working HabitGrid component and a working page import.
+            </p>
+          </section>
+
+          <CalendarSettings year={year} month={month} onYearChange={setYear} onMonthChange={setMonth} />
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-6">
+              <WeeklyCustomGoals
+                goals={weeklyWritingGoals}
+                onAdd={handleAddWeeklyWritingGoal}
+                onDelete={handleDeleteWeeklyWritingGoal}
+              />
+            </div>
+
+            <div className="space-y-6">
+              <MonthlyCustomGoals
+                goals={monthlyWritingGoals}
+                onAdd={handleAddMonthlyWritingGoal}
+                onDelete={handleDeleteMonthlyWritingGoal}
+              />
+            </div>
+          </div>
+
+          <HabitGrid
+            habits={habits}
+            logs={logs}
+            year={year}
+            month={month}
+            daysInMonth={daysInMonth}
+            onToggleCell={handleToggleCell}
+            onAddHabit={handleAddHabit}
+            onDeleteHabit={handleDeleteHabit}
+            onUpdateHabit={handleUpdateHabit}
+          />
+
+          <OverviewPanel
+            habits={habits}
+            logs={logs}
+            daysInMonth={daysInMonth}
+            year={year}
+            month={month}
+            monthlyOverviewData={monthlyOverviewData}
+          />
+
+          <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-[1.6fr_1fr]">
+            <HabitSummaryTable habits={habits} logs={logs} daysInMonth={daysInMonth} />
+            <WeeklyProgress
+              habits={habits}
+              logs={logs}
+              year={year}
+              month={month}
+              daysInMonth={daysInMonth}
+            />
+          </div>
         </div>
-        <HabitGrid
-          habits={habits}
-          logs={logs}
-          year={year}
-          month={month}
-          daysInMonth={daysInMonth}
-          onToggleCell={handleToggleCell}
-          onAddHabit={handleAddHabit}
-          onDeleteHabit={handleDeleteHabit}
-          onUpdateHabit={handleUpdateHabit}
-        />
-        <OverviewPanel
-          habits={habits}
-          logs={logs}
-          daysInMonth={daysInMonth}
-          year={year}
-          month={month}
-          monthlyOverviewData={monthlyOverviewData}
-        />
-        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-[1.6fr_1fr]">
-          <HabitSummaryTable habits={habits} logs={logs} daysInMonth={daysInMonth} />
-          <WeeklyProgress habits={habits} logs={logs} year={year} month={month} daysInMonth={daysInMonth} />
-        </div>
-      </div>
-    </main>
+      </main>
+    </RequireAuth>
   );
 }
+

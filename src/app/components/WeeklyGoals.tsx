@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Habit } from '../../../lib/habitTypes';
-import { Goal } from '../../../lib/goalUtils';
 import { useGoals } from '../../../lib/useGoals';
 import { createGoal, calculateGoalProgress, isGoalActive, daysUntilGoalEnds } from '../../../lib/goalUtils';
 import { Plus, X, CheckCircle2, Clock } from 'lucide-react';

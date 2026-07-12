@@ -18,9 +18,9 @@ const firebaseConfig = {
   databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || '',
 };
 
-let app: any;
-let database: Database;
-let auth: Auth;
+let app: ReturnType<typeof initializeApp> | undefined;
+let database: Database | undefined;
+let auth: Auth | undefined;
 
 try {
   app = initializeApp(firebaseConfig);

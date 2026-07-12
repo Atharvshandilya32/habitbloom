@@ -1,4 +1,3 @@
-// @ts-ignore: side-effect import of CSS module without type declarations
 import './globals.css';
 
 export default function RootLayout({

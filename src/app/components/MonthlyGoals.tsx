@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Habit } from '../../../lib/habitTypes';
-import { Goal } from '../../../lib/goalUtils';
 import { useGoals } from '../../../lib/useGoals';
 import { createGoal, calculateGoalProgress, isGoalActive, daysUntilGoalEnds } from '../../../lib/goalUtils';
 import { Plus, X, CheckCircle2, Calendar } from 'lucide-react';
@@ -85,6 +84,7 @@ export default function MonthlyGoals({ habits, habitLogs }: MonthlyGoalsProps) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
+
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Unit
@@ -137,6 +137,7 @@ export default function MonthlyGoals({ habits, habitLogs }: MonthlyGoalsProps) {
                       {progress.current} / {goal.target} {goal.unit}
                     </p>
                   </div>
+
                   <button
                     onClick={() => deleteGoal(goal.id)}
                     className="text-gray-400 hover:text-red-500 transition-colors"
@@ -159,12 +160,14 @@ export default function MonthlyGoals({ habits, habitLogs }: MonthlyGoalsProps) {
                     <Calendar size={16} />
                     <span>{daysLeft} days left</span>
                   </div>
+
                   {progress.completed && (
                     <div className="flex items-center gap-1 text-green-600">
                       <CheckCircle2 size={16} />
                       <span>Goal achieved!</span>
                     </div>
                   )}
+
                   <span className="text-gray-600 font-semibold">{progress.percentage}%</span>
                 </div>
               </div>

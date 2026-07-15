@@ -3,11 +3,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Goal } from './goalUtils';
 
+// Firebase imports
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { ref, onValue, set } from 'firebase/database';
+import { auth, database } from './firebase';
+
 export const useGoals = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Load goals from localStorage on mount
+  // 1. Load goals from localStorage on mount (initial fallback)
   useEffect(() => {
     try {
       const saved = localStorage.getItem('habitbloom_goals');
@@ -21,26 +27,88 @@ export const useGoals = () => {
     }
   }, []);
 
-  // Save goals to localStorage whenever they change
+  // 2. Save goals to localStorage whenever they change
   useEffect(() => {
     if (!isLoading) {
       localStorage.setItem('habitbloom_goals', JSON.stringify(goals));
     }
   }, [goals, isLoading]);
 
-  const addGoal = useCallback((goal: Goal) => {
-    setGoals((prev) => [...prev, goal]);
+  // 3. Listen to auth state
+  useEffect(() => {
+    if (!auth) return;
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsub();
   }, []);
 
-  const updateGoal = useCallback((goalId: string, updates: Partial<Goal>) => {
-    setGoals((prev) =>
-      prev.map((g) => (g.id === goalId ? { ...g, ...updates } : g))
+  // 4. Real-time Firebase goals subscription
+  useEffect(() => {
+    if (!database || !currentUser) return;
+
+    const goalsRef = ref(database, `users/${currentUser.uid}/goals`);
+    setIsLoading(true);
+
+    const unsubscribe = onValue(
+      goalsRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setGoals(snapshot.val());
+        } else {
+          // Initialize empty database with current localStorage goals
+          set(goalsRef, goals);
+        }
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error('Firebase goals sync error:', error);
+        setIsLoading(false);
+      }
     );
-  }, []);
 
-  const deleteGoal = useCallback((goalId: string) => {
-    setGoals((prev) => prev.filter((g) => g.id !== goalId));
-  }, []);
+    return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+  const addGoal = useCallback(
+    (goal: Goal) => {
+      setGoals((prev) => {
+        const next = [...prev, goal];
+        if (database && currentUser) {
+          set(ref(database, `users/${currentUser.uid}/goals`), next);
+        }
+        return next;
+      });
+    },
+    [currentUser]
+  );
+
+  const updateGoal = useCallback(
+    (goalId: string, updates: Partial<Goal>) => {
+      setGoals((prev) => {
+        const next = prev.map((g) => (g.id === goalId ? { ...g, ...updates } : g));
+        if (database && currentUser) {
+          set(ref(database, `users/${currentUser.uid}/goals`), next);
+        }
+        return next;
+      });
+    },
+    [currentUser]
+  );
+
+  const deleteGoal = useCallback(
+    (goalId: string) => {
+      setGoals((prev) => {
+        const next = prev.filter((g) => (g.id !== goalId));
+        if (database && currentUser) {
+          set(ref(database, `users/${currentUser.uid}/goals`), next);
+        }
+        return next;
+      });
+    },
+    [currentUser]
+  );
 
   const getGoalsByType = useCallback(
     (type: 'weekly' | 'monthly') => {
@@ -66,3 +134,4 @@ export const useGoals = () => {
     getGoalsByHabit,
   };
 };
+

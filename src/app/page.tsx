@@ -14,6 +14,11 @@ import { Habit, HabitLog } from '../../lib/habitTypes';
 import { createMonthlyWritingGoal, createWeeklyWritingGoal, CustomWritingGoal } from '../../lib/customWritingGoals';
 import { getHabitStats } from '../../lib/habitUtils';
 
+// Firebase imports
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { ref, onValue, set } from 'firebase/database';
+import { auth, database } from '../../lib/firebase';
+
 const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
 
 export default function Page() {
@@ -26,6 +31,18 @@ export default function Page() {
   const [weeklyWritingGoals, setWeeklyWritingGoals] = useState<CustomWritingGoal[]>([]);
   const [monthlyWritingGoals, setMonthlyWritingGoals] = useState<CustomWritingGoal[]>([]);
 
+  // Firebase auth & loading state
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoadingFirebase, setIsLoadingFirebase] = useState(true);
+
+  // Helper function to sync individual paths to Firebase
+  const syncToFirebase = (key: string, value: unknown) => {
+    if (database && currentUser) {
+      set(ref(database, `users/${currentUser.uid}/${key}`), value);
+    }
+  };
+
+  // 1. Load goals from localStorage on mount (initial fallback)
   useEffect(() => {
     const savedHabits = localStorage.getItem('habitbloom_habits');
     const savedLogs = localStorage.getItem('habitbloom_logs');
@@ -80,8 +97,11 @@ export default function Page() {
     }
   }, []);
 
+  // 2. Save goals to localStorage whenever they change locally (for offline support)
   useEffect(() => {
-    localStorage.setItem('habitbloom_habits', JSON.stringify(habits));
+    if (habits.length > 0) {
+      localStorage.setItem('habitbloom_habits', JSON.stringify(habits));
+    }
   }, [habits]);
 
   useEffect(() => {
@@ -99,6 +119,63 @@ export default function Page() {
   useEffect(() => {
     localStorage.setItem('habitbloom_monthly_writing_goals', JSON.stringify(monthlyWritingGoals));
   }, [monthlyWritingGoals]);
+
+  // 3. Listen to auth state
+  useEffect(() => {
+    if (!auth) {
+      setIsLoadingFirebase(false);
+      return;
+    }
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      if (!user) {
+        setIsLoadingFirebase(false);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // 4. Real-time Firebase Sync subscription
+  useEffect(() => {
+    if (!database || !currentUser) return;
+
+    const userRef = ref(database, `users/${currentUser.uid}`);
+    setIsLoadingFirebase(true);
+
+    const unsubscribe = onValue(
+      userRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          if (data.habits) setHabits(data.habits);
+          if (data.logs) setLogs(data.logs);
+          if (data.habitLogsArray) setHabitLogsArray(data.habitLogsArray);
+          if (data.weeklyWritingGoals) setWeeklyWritingGoals(data.weeklyWritingGoals);
+          if (data.monthlyWritingGoals) setMonthlyWritingGoals(data.monthlyWritingGoals);
+        } else {
+          // Initialize empty database with current localStorage/default states
+          set(userRef, {
+            habits: habits.length > 0 ? habits : [
+              { id: 'habit-1', name: 'Drink water', emoji: '💧', goal: 10 },
+              { id: 'habit-2', name: 'Read', emoji: '📚', goal: 5 },
+            ],
+            logs,
+            habitLogsArray,
+            weeklyWritingGoals,
+            monthlyWritingGoals,
+          });
+        }
+        setIsLoadingFirebase(false);
+      },
+      (error) => {
+        console.error('Firebase Realtime Database sync error:', error);
+        setIsLoadingFirebase(false);
+      }
+    );
+
+    return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
 
   const daysInMonth = useMemo(() => getDaysInMonth(year, month), [year, month]);
 
@@ -122,18 +199,20 @@ export default function Page() {
     const key = `${habitId}_${day}`;
     const dateTimestamp = new Date(year, month - 1, day).getTime();
 
-    setLogs((prev) => ({ ...prev, [key]: !prev[key] }));
+    const updatedLogs = { ...logs, [key]: !logs[key] };
+    setLogs(updatedLogs);
+    syncToFirebase('logs', updatedLogs);
 
-    setHabitLogsArray((prev) => {
-      const logs = prev[habitId] || [];
-      const index = logs.indexOf(dateTimestamp);
-
-      if (index === -1) {
-        return { ...prev, [habitId]: [...logs, dateTimestamp].sort() };
-      }
-
-      return { ...prev, [habitId]: logs.filter((_, i) => i !== index) };
-    });
+    const logsArray = habitLogsArray[habitId] || [];
+    const index = logsArray.indexOf(dateTimestamp);
+    const updatedLogsArray = {
+      ...habitLogsArray,
+      [habitId]: index === -1
+        ? [...logsArray, dateTimestamp].sort()
+        : logsArray.filter((_, i) => i !== index),
+    };
+    setHabitLogsArray(updatedLogsArray);
+    syncToFirebase('habitLogsArray', updatedLogsArray);
   };
 
   const handleAddHabit = () => {
@@ -143,41 +222,71 @@ export default function Page() {
       emoji: '⭐',
       goal: 5,
     };
-    setHabits((prev) => [...prev, newHabit]);
+    const updated = [...habits, newHabit];
+    setHabits(updated);
+    syncToFirebase('habits', updated);
   };
 
   const handleDeleteHabit = (habitId: string) => {
-    setHabits((prev) => prev.filter((habit) => habit.id !== habitId));
-    setLogs((prev) => {
-      const next = { ...prev };
-      Object.keys(next).forEach((key) => {
-        if (key.startsWith(`${habitId}_`)) delete next[key];
-      });
-      return next;
+    const updatedHabits = habits.filter((habit) => habit.id !== habitId);
+    setHabits(updatedHabits);
+    syncToFirebase('habits', updatedHabits);
+
+    const nextLogs = { ...logs };
+    Object.keys(nextLogs).forEach((key) => {
+      if (key.startsWith(`${habitId}_`)) delete nextLogs[key];
     });
+    setLogs(nextLogs);
+    syncToFirebase('logs', nextLogs);
+
+    const nextLogsArray = { ...habitLogsArray };
+    if (nextLogsArray[habitId]) {
+      delete nextLogsArray[habitId];
+      setHabitLogsArray(nextLogsArray);
+      syncToFirebase('habitLogsArray', nextLogsArray);
+    }
   };
 
   const handleUpdateHabit = (habitId: string, updates: Partial<Habit>) => {
-    setHabits((prev) => prev.map((habit) => (habit.id === habitId ? { ...habit, ...updates } : habit)));
+    const updated = habits.map((habit) => (habit.id === habitId ? { ...habit, ...updates } : habit));
+    setHabits(updated);
+    syncToFirebase('habits', updated);
   };
 
   const handleAddWeeklyWritingGoal = (content: string) => {
     const g = createWeeklyWritingGoal(content);
-    setWeeklyWritingGoals((prev) => [...prev, g]);
+    const updated = [...weeklyWritingGoals, g];
+    setWeeklyWritingGoals(updated);
+    syncToFirebase('weeklyWritingGoals', updated);
   };
 
   const handleDeleteWeeklyWritingGoal = (goalId: string) => {
-    setWeeklyWritingGoals((prev) => prev.filter((g) => g.id !== goalId));
+    const updated = weeklyWritingGoals.filter((g) => g.id !== goalId);
+    setWeeklyWritingGoals(updated);
+    syncToFirebase('weeklyWritingGoals', updated);
   };
 
   const handleAddMonthlyWritingGoal = (content: string) => {
     const g = createMonthlyWritingGoal(content);
-    setMonthlyWritingGoals((prev) => [...prev, g]);
+    const updated = [...monthlyWritingGoals, g];
+    setMonthlyWritingGoals(updated);
+    syncToFirebase('monthlyWritingGoals', updated);
   };
 
   const handleDeleteMonthlyWritingGoal = (goalId: string) => {
-    setMonthlyWritingGoals((prev) => prev.filter((g) => g.id !== goalId));
+    const updated = monthlyWritingGoals.filter((g) => g.id !== goalId);
+    setMonthlyWritingGoals(updated);
+    syncToFirebase('monthlyWritingGoals', updated);
   };
+
+  if (isLoadingFirebase) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-600 gap-3">
+        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-sm font-medium">Syncing with cloud...</p>
+      </div>
+    );
+  }
 
   return (
     <RequireAuth>

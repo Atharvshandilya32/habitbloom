@@ -1,6 +1,28 @@
 # Dependencies
 node_modules/
-# Enviroment files
+
+# Next.js build output and cache
+.next/
+out/
+build/
+
+# Firebase cache and logs
+.firebase/
+firebase-debug.log*
+
+# Environment files
+.env
 .env.local
 .env.*.local
-.env
+.env.development.local
+.env.test.local
+.env.production.local
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

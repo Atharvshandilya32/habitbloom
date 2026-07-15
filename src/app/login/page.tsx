@@ -65,8 +65,9 @@ export default function LoginPage() {
         await createUserWithEmailAndPassword(auth, email, password);
       }
       router.replace('/');
-    } catch (e: any) {
-      setError(e?.message || 'Authentication failed.');
+    } catch (e) {
+      const err = e as Error;
+      setError(err?.message || 'Authentication failed.');
     } finally {
       setLoading(false);
     }
@@ -79,8 +80,9 @@ export default function LoginPage() {
       if (!auth) throw new Error('Firebase auth is not configured yet.');
       await signInWithPopup(auth, provider);
       router.replace('/');
-    } catch (e: any) {
-      setError(e?.message || 'Google sign-in failed.');
+    } catch (e) {
+      const err = e as Error;
+      setError(err?.message || 'Google sign-in failed.');
     } finally {
       setLoading(false);
     }
@@ -91,8 +93,9 @@ export default function LoginPage() {
     try {
       if (!auth) return;
       await signOut(auth);
-    } catch (e: any) {
-      setError(e?.message || 'Logout failed.');
+    } catch (e) {
+      const err = e as Error;
+      setError(err?.message || 'Logout failed.');
     }
   };
 

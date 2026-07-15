@@ -92,7 +92,7 @@ export interface HabitRank {
   consistencyScore: number;
 }
 
-export function getHabitRanksByConsistency(habits: Habit[], year: number): HabitRank[] {
+export function getHabitRanksByConsistency(habits: Habit[]): HabitRank[] {
   return habits
     .map((habit, index) => ({
       habit,

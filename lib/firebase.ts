@@ -27,7 +27,7 @@ try {
   database = getDatabase(app);
   auth = getAuth(app);
 } catch (error) {
-  console.warn('Firebase not configured yet. Configure your .env.local file.');
+  console.warn('Firebase not configured yet. Configure your .env.local file.', error);
 }
 
 export { database, auth, app };

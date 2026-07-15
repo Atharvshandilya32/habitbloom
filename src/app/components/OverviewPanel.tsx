@@ -54,8 +54,8 @@ export default function OverviewPanel({ habits, logs, daysInMonth, year, month, 
   );
 
   const ranks = useMemo(() =>
-    getHabitRanksByConsistency(habits, year),
-    [habits, year]
+    getHabitRanksByConsistency(habits),
+    [habits]
   );
 
   const streaksSSR = useMemo(() => habits.map(h => ({ ...h, streak: 0 })), [habits]);

@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Check, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
+import { makeLogKey } from '../../../lib/habitUtils';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -76,7 +77,7 @@ export default function HabitGrid({
   const cancelEdit = () => setEditingId(null);
 
   const handleToggle = (habitId: string, day: number) => {
-    const cellKey = `${habitId}_${day}`;
+    const cellKey = makeLogKey(habitId, year, month, day);
     onToggleCell(habitId, day);
     setPulseCells(prev => {
       const next = new Set(prev);
@@ -206,7 +207,7 @@ export default function HabitGrid({
                     )}
                   </td>
                   {days.map(d => {
-                    const cellKey = `${habit.id}_${d}`;
+                    const cellKey = makeLogKey(habit.id, year, month, d);
                     const checked = !!logs[cellKey];
                     const isToday = d === todayDay;
                     const isPulsing = pulseCells.has(cellKey);

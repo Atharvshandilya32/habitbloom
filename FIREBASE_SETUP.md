@@ -66,3 +66,19 @@ Once you're comfortable with the basics, you can:
 1. Integrate Firebase Realtime Database for cloud storage
 2. Add user authentication for multi-device sync
 3. Deploy to Firebase Hosting (free tier available)
+
+## Deploying to Vercel
+
+If you deploy this project to Vercel, remember that `.env.local` is ignored by Git and will not be uploaded. You **must** manually configure your Firebase credentials under **Project Settings > Environment Variables** on the Vercel dashboard.
+
+Ensure you include all 7 keys:
+- `NEXT_PUBLIC_FIREBASE_API_KEY`
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `NEXT_PUBLIC_FIREBASE_APP_ID`
+- `NEXT_PUBLIC_FIREBASE_DATABASE_URL`
+
+> [!WARNING]
+> If these variables are not configured in Vercel, the Firebase SDK will fail to initialize. The app will fallback to local storage mode, and the login page will not redirect properly or display a configuration error.

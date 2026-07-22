@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import TitleBanner from './components/charts/TitleBanner';
+import { useEffect, useRef, useState } from 'react';
+import Navbar from './components/charts/TitleBanner';
 import RequireAuth from './auth/RequireAuth';
 import HabitGrid from './components/habitGrid';
 import HabitSummaryTable from './components/HabitSummaryTable';
@@ -10,9 +10,15 @@ import OverviewPanel from './components/OverviewPanel';
 import CalendarSettings from './components/CalendarSettings';
 import WeeklyCustomGoals from './components/WeeklyCustomGoals';
 import MonthlyCustomGoals from './components/MonthlyCustomGoals';
+import UserProfile from './components/UserProfile';
+import ReferralPanel from './components/ReferralPanel';
+import GuideModal, { GuideReminder, shouldShowGuide } from './components/GuideModal';
+import HabitReminderSettings from './components/HabitReminderSettings';
+
 import { Habit, HabitLog } from '../../lib/habitTypes';
 import { createMonthlyWritingGoal, createWeeklyWritingGoal, CustomWritingGoal } from '../../lib/customWritingGoals';
-import { getHabitStats } from '../../lib/habitUtils';
+import { makeLogKey, getMonthKeyPrefix } from '../../lib/habitUtils';
+import { useHabitReminders } from '../../lib/useHabitReminders';
 
 // Firebase imports
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -35,6 +41,30 @@ export default function Page() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingFirebase, setIsLoadingFirebase] = useState(true);
 
+  // Guide modal
+  const [guideOpen, setGuideOpen] = useState(false);
+
+  // Profile section ref for scrolling
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Reminders hook
+  const {
+    config: reminderConfig,
+    permission: notificationPermission,
+    updateConfig: updateReminderConfig,
+    requestPermission: requestNotificationPermission,
+    sendNotification: sendTestNotification,
+  } = useHabitReminders(habits, logs);
+
+  // Open guide on first visit
+  useEffect(() => {
+    if (shouldShowGuide()) setGuideOpen(true);
+  }, []);
+
+  const handleScrollToProfile = () => {
+    profileRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   // Helper function to sync individual paths to Firebase
   const syncToFirebase = (key: string, value: unknown) => {
     if (database && currentUser) {
@@ -42,21 +72,16 @@ export default function Page() {
     }
   };
 
-  // 1. Load goals from localStorage on mount (initial fallback)
+  // 1. Load from localStorage on mount (initial fallback)
   useEffect(() => {
     const savedHabits = localStorage.getItem('habitbloom_habits');
     const savedLogs = localStorage.getItem('habitbloom_logs');
     const savedLogsArray = localStorage.getItem('habitbloom_logs_array');
-
     const savedWeeklyWriting = localStorage.getItem('habitbloom_weekly_writing_goals');
     const savedMonthlyWriting = localStorage.getItem('habitbloom_monthly_writing_goals');
 
     if (savedHabits) {
-      try {
-        setHabits(JSON.parse(savedHabits));
-      } catch {
-        setHabits([]);
-      }
+      try { setHabits(JSON.parse(savedHabits)); } catch { setHabits([]); }
     } else {
       setHabits([
         { id: 'habit-1', name: 'Drink water', emoji: '💧', goal: 10 },
@@ -65,77 +90,43 @@ export default function Page() {
     }
 
     if (savedLogs) {
-      try {
-        setLogs(JSON.parse(savedLogs));
-      } catch {
-        setLogs({});
-      }
+      try { setLogs(JSON.parse(savedLogs)); } catch { setLogs({}); }
     }
 
     if (savedLogsArray) {
-      try {
-        setHabitLogsArray(JSON.parse(savedLogsArray));
-      } catch {
-        setHabitLogsArray({});
-      }
+      try { setHabitLogsArray(JSON.parse(savedLogsArray)); } catch { setHabitLogsArray({}); }
     }
 
     if (savedWeeklyWriting) {
-      try {
-        setWeeklyWritingGoals(JSON.parse(savedWeeklyWriting));
-      } catch {
-        setWeeklyWritingGoals([]);
-      }
+      try { setWeeklyWritingGoals(JSON.parse(savedWeeklyWriting)); } catch { setWeeklyWritingGoals([]); }
     }
 
     if (savedMonthlyWriting) {
-      try {
-        setMonthlyWritingGoals(JSON.parse(savedMonthlyWriting));
-      } catch {
-        setMonthlyWritingGoals([]);
-      }
+      try { setMonthlyWritingGoals(JSON.parse(savedMonthlyWriting)); } catch { setMonthlyWritingGoals([]); }
     }
   }, []);
 
-  // 2. Save goals to localStorage whenever they change locally (for offline support)
+  // 2. Save to localStorage on change
   useEffect(() => {
-    if (habits.length > 0) {
-      localStorage.setItem('habitbloom_habits', JSON.stringify(habits));
-    }
+    if (habits.length > 0) localStorage.setItem('habitbloom_habits', JSON.stringify(habits));
   }, [habits]);
 
-  useEffect(() => {
-    localStorage.setItem('habitbloom_logs', JSON.stringify(logs));
-  }, [logs]);
-
-  useEffect(() => {
-    localStorage.setItem('habitbloom_logs_array', JSON.stringify(habitLogsArray));
-  }, [habitLogsArray]);
-
-  useEffect(() => {
-    localStorage.setItem('habitbloom_weekly_writing_goals', JSON.stringify(weeklyWritingGoals));
-  }, [weeklyWritingGoals]);
-
-  useEffect(() => {
-    localStorage.setItem('habitbloom_monthly_writing_goals', JSON.stringify(monthlyWritingGoals));
-  }, [monthlyWritingGoals]);
+  useEffect(() => { localStorage.setItem('habitbloom_logs', JSON.stringify(logs)); }, [logs]);
+  useEffect(() => { localStorage.setItem('habitbloom_logs_array', JSON.stringify(habitLogsArray)); }, [habitLogsArray]);
+  useEffect(() => { localStorage.setItem('habitbloom_weekly_writing_goals', JSON.stringify(weeklyWritingGoals)); }, [weeklyWritingGoals]);
+  useEffect(() => { localStorage.setItem('habitbloom_monthly_writing_goals', JSON.stringify(monthlyWritingGoals)); }, [monthlyWritingGoals]);
 
   // 3. Listen to auth state
   useEffect(() => {
-    if (!auth) {
-      setIsLoadingFirebase(false);
-      return;
-    }
+    if (!auth) { setIsLoadingFirebase(false); return; }
     const unsub = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-      if (!user) {
-        setIsLoadingFirebase(false);
-      }
+      if (!user) setIsLoadingFirebase(false);
     });
     return () => unsub();
   }, []);
 
-  // 4. Real-time Firebase Sync subscription
+  // 4. Real-time Firebase Sync
   useEffect(() => {
     if (!database || !currentUser) return;
 
@@ -153,7 +144,6 @@ export default function Page() {
           if (data.weeklyWritingGoals) setWeeklyWritingGoals(data.weeklyWritingGoals);
           if (data.monthlyWritingGoals) setMonthlyWritingGoals(data.monthlyWritingGoals);
         } else {
-          // Initialize empty database with current localStorage/default states
           set(userRef, {
             habits: habits.length > 0 ? habits : [
               { id: 'habit-1', name: 'Drink water', emoji: '💧', goal: 10 },
@@ -168,7 +158,7 @@ export default function Page() {
         setIsLoadingFirebase(false);
       },
       (error) => {
-        console.error('Firebase Realtime Database sync error:', error);
+        console.error('Firebase sync error:', error);
         setIsLoadingFirebase(false);
       }
     );
@@ -177,26 +167,11 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
-  const daysInMonth = useMemo(() => getDaysInMonth(year, month), [year, month]);
+  const daysInMonth = getDaysInMonth(year, month);
 
-  const monthlyOverviewData = useMemo(() => {
-    const averagePct = habits.length
-      ? Math.round(
-          habits.reduce((sum, habit) => sum + getHabitStats(habit, logs, daysInMonth).pct, 0) / habits.length
-        )
-      : 0;
-
-    return Array.from({ length: 12 }, (_, index) => ({
-      month: index + 1,
-      pct:
-        index + 1 === month
-          ? averagePct
-          : Math.max(0, averagePct - (month - (index + 1)) * 6),
-    }));
-  }, [habits, logs, daysInMonth, month]);
-
+  // ── Toggle cell — uses new date-aware key ────────────────────────────────
   const handleToggleCell = (habitId: string, day: number) => {
-    const key = `${habitId}_${day}`;
+    const key = makeLogKey(habitId, year, month, day);
     const dateTimestamp = new Date(year, month - 1, day).getTime();
 
     const updatedLogs = { ...logs, [key]: !logs[key] };
@@ -215,25 +190,43 @@ export default function Page() {
     syncToFirebase('habitLogsArray', updatedLogsArray);
   };
 
+  // ── Reset only the selected month's ticks ───────────────────────────────
+  const handleResetMonth = () => {
+    const prefix = getMonthKeyPrefix(year, month);
+    const updatedLogs = Object.fromEntries(
+      Object.entries(logs).filter(([key]) => !key.includes(prefix))
+    );
+    setLogs(updatedLogs);
+    syncToFirebase('logs', updatedLogs);
+
+    // Also clean habitLogsArray for this month
+    const monthStart = new Date(year, month - 1, 1).getTime();
+    const monthEnd = new Date(year, month, 1).getTime();
+    const updatedLogsArray = Object.fromEntries(
+      Object.entries(habitLogsArray).map(([habitId, timestamps]) => [
+        habitId,
+        timestamps.filter(ts => ts < monthStart || ts >= monthEnd),
+      ])
+    );
+    setHabitLogsArray(updatedLogsArray);
+    syncToFirebase('habitLogsArray', updatedLogsArray);
+  };
+
+  // ── Habits CRUD ──────────────────────────────────────────────────────────
   const handleAddHabit = () => {
-    const newHabit: Habit = {
-      id: `habit-${Date.now()}`,
-      name: 'New habit',
-      emoji: '⭐',
-      goal: 5,
-    };
+    const newHabit: Habit = { id: `habit-${Date.now()}`, name: 'New habit', emoji: '⭐', goal: 5 };
     const updated = [...habits, newHabit];
     setHabits(updated);
     syncToFirebase('habits', updated);
   };
 
   const handleDeleteHabit = (habitId: string) => {
-    const updatedHabits = habits.filter((habit) => habit.id !== habitId);
+    const updatedHabits = habits.filter(h => h.id !== habitId);
     setHabits(updatedHabits);
     syncToFirebase('habits', updatedHabits);
 
     const nextLogs = { ...logs };
-    Object.keys(nextLogs).forEach((key) => {
+    Object.keys(nextLogs).forEach(key => {
       if (key.startsWith(`${habitId}_`)) delete nextLogs[key];
     });
     setLogs(nextLogs);
@@ -248,11 +241,12 @@ export default function Page() {
   };
 
   const handleUpdateHabit = (habitId: string, updates: Partial<Habit>) => {
-    const updated = habits.map((habit) => (habit.id === habitId ? { ...habit, ...updates } : habit));
+    const updated = habits.map(h => h.id === habitId ? { ...h, ...updates } : h);
     setHabits(updated);
     syncToFirebase('habits', updated);
   };
 
+  // ── Writing Goals ────────────────────────────────────────────────────────
   const handleAddWeeklyWritingGoal = (content: string) => {
     const g = createWeeklyWritingGoal(content);
     const updated = [...weeklyWritingGoals, g];
@@ -261,7 +255,7 @@ export default function Page() {
   };
 
   const handleDeleteWeeklyWritingGoal = (goalId: string) => {
-    const updated = weeklyWritingGoals.filter((g) => g.id !== goalId);
+    const updated = weeklyWritingGoals.filter(g => g.id !== goalId);
     setWeeklyWritingGoals(updated);
     syncToFirebase('weeklyWritingGoals', updated);
   };
@@ -274,7 +268,7 @@ export default function Page() {
   };
 
   const handleDeleteMonthlyWritingGoal = (goalId: string) => {
-    const updated = monthlyWritingGoals.filter((g) => g.id !== goalId);
+    const updated = monthlyWritingGoals.filter(g => g.id !== goalId);
     setMonthlyWritingGoals(updated);
     syncToFirebase('monthlyWritingGoals', updated);
   };
@@ -282,7 +276,7 @@ export default function Page() {
   if (isLoadingFirebase) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-600 gap-3">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
         <p className="text-sm font-medium">Syncing with cloud...</p>
       </div>
     );
@@ -290,18 +284,29 @@ export default function Page() {
 
   return (
     <RequireAuth>
+      {/* Onboarding Guide Modal */}
+      <GuideModal isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
+
+      {/* Sticky Navbar */}
+      <Navbar
+        user={currentUser}
+        onOpenGuide={() => setGuideOpen(true)}
+        onScrollToProfile={handleScrollToProfile}
+      />
+
       <main className="min-h-screen bg-slate-50 p-6 text-slate-950">
         <div className="mx-auto max-w-7xl space-y-6">
-          <TitleBanner />
 
-          <section className="rounded-3xl border border-border bg-white p-6 shadow-sm">
-            <h1 className="text-3xl font-bold">HabitBloom is working</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              This page runs with a working HabitGrid component and a working page import.
-            </p>
-          </section>
+          {/* Guide reminder banner (shown if user skipped) */}
+          <GuideReminder onOpenGuide={() => setGuideOpen(true)} />
 
-          <CalendarSettings year={year} month={month} onYearChange={setYear} onMonthChange={setMonth} />
+          <CalendarSettings
+            year={year}
+            month={month}
+            onYearChange={setYear}
+            onMonthChange={setMonth}
+            onResetMonth={handleResetMonth}
+          />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-6">
@@ -311,7 +316,6 @@ export default function Page() {
                 onDelete={handleDeleteWeeklyWritingGoal}
               />
             </div>
-
             <div className="space-y-6">
               <MonthlyCustomGoals
                 goals={monthlyWritingGoals}
@@ -333,17 +337,32 @@ export default function Page() {
             onUpdateHabit={handleUpdateHabit}
           />
 
+          <HabitReminderSettings
+            config={reminderConfig}
+            permission={notificationPermission}
+            habits={habits}
+            onUpdateConfig={updateReminderConfig}
+            onRequestPermission={requestNotificationPermission}
+            onSendTestNotification={sendTestNotification}
+            onUpdateHabit={handleUpdateHabit}
+          />
+
           <OverviewPanel
             habits={habits}
             logs={logs}
             daysInMonth={daysInMonth}
             year={year}
             month={month}
-            monthlyOverviewData={monthlyOverviewData}
           />
 
           <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-[1.6fr_1fr]">
-            <HabitSummaryTable habits={habits} logs={logs} daysInMonth={daysInMonth} />
+            <HabitSummaryTable
+              habits={habits}
+              logs={logs}
+              daysInMonth={daysInMonth}
+              year={year}
+              month={month}
+            />
             <WeeklyProgress
               habits={habits}
               logs={logs}
@@ -352,9 +371,25 @@ export default function Page() {
               daysInMonth={daysInMonth}
             />
           </div>
+
+          {/* User Profile + Referral — side by side on large screens */}
+          <div ref={profileRef} className="grid gap-6 lg:grid-cols-2">
+            {currentUser && (
+              <UserProfile
+                user={currentUser}
+                habits={habits}
+                logs={logs}
+                currentYear={year}
+                currentMonth={month}
+              />
+            )}
+            {currentUser && (
+              <ReferralPanel userId={currentUser.uid} />
+            )}
+          </div>
+
         </div>
       </main>
     </RequireAuth>
   );
 }
-

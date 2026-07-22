@@ -8,9 +8,11 @@ interface HabitSummaryTableProps {
   habits: Habit[];
   logs: HabitLog;
   daysInMonth: number;
+  year: number;
+  month: number;
 }
 
-export default function HabitSummaryTable({ habits, logs, daysInMonth }: HabitSummaryTableProps) {
+export default function HabitSummaryTable({ habits, logs, daysInMonth, year, month }: HabitSummaryTableProps) {
   if (habits.length === 0) return null;
   return (
     <div className="bg-card rounded-xl card-shadow border border-border">
@@ -31,7 +33,7 @@ export default function HabitSummaryTable({ habits, logs, daysInMonth }: HabitSu
           </thead>
           <tbody>
             {habits.map((habit, idx) => {
-              const { done, goal, pct } = getHabitStats(habit, logs, daysInMonth);
+              const { done, goal, pct } = getHabitStats(habit, logs, daysInMonth, year, month);
               const rowBg = idx % 2 === 0 ? 'bg-background' : 'bg-muted/30';
               const barColor = pct >= 80 ? 'bg-primary' : pct >= 50 ? 'bg-yellow-400' : 'bg-red-400';
               return (

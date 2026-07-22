@@ -68,11 +68,21 @@ src/
 
 ### Deploy to Vercel (Recommended)
 
-1. Push your code to GitHub
-2. Go to [vercel.com](https://vercel.com)
-3. Import your GitHub repository
-4. Click Deploy
-5. Your site will be live!
+1. Push your code to GitHub.
+2. Go to [vercel.com](https://vercel.com) and import your GitHub repository.
+3. **Configure Environment Variables**: Before clicking Deploy, expand the **Environment Variables** section and add the following keys from your `.env.local` file:
+   - `NEXT_PUBLIC_FIREBASE_API_KEY`
+   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+   - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+   - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+   - `NEXT_PUBLIC_FIREBASE_APP_ID`
+   - `NEXT_PUBLIC_FIREBASE_DATABASE_URL`
+   
+   > [!IMPORTANT]
+   > Make sure the keys are named exactly as shown above (including the `NEXT_PUBLIC_` prefix) so they are exposed to the client-side browser runtime.
+4. Click **Deploy**.
+5. Your site will be live and connected to Firebase!
 
 ## License
 

@@ -11,7 +11,7 @@ import {
   onAuthStateChanged,
 } from 'firebase/auth';
 import { auth } from '../../../lib/firebase';
-import { Mail, Lock, Eye, EyeOff, Sparkles, CheckCircle2, ArrowRight, ShieldCheck, Flame, Bell, BarChart3 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Sparkles, ArrowRight, ShieldCheck, Flame, Bell, BarChart3 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();

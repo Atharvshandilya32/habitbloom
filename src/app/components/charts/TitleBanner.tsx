@@ -15,7 +15,6 @@ interface NavbarProps {
 }
 
 export default function Navbar({ user, onOpenGuide, onScrollToProfile, onScrollToSection }: NavbarProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'statistics' | 'achievements' | 'profile'>('dashboard');
 

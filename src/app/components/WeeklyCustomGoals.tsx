@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { CustomWritingGoal } from '../../../lib/customWritingGoals';
-import { Plus, Trash2, CheckCircle2, Calendar, Target, Sparkles } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, Calendar, Target } from 'lucide-react';
 import { isWeeklyGoalActive } from '../../../lib/customWritingGoals';
 
 type Props = {

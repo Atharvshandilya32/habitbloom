@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Flame, Target, Award, TrendingUp, CheckCircle2, BarChart2 } from 'lucide-react';
+import { Flame, Target, TrendingUp, CheckCircle2, BarChart2 } from 'lucide-react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import {
   getHabitStats,

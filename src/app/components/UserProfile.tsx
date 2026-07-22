@@ -5,7 +5,7 @@ import { User } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth';
 import { Pencil, Check, X, User as UserIcon, Mail, Calendar, Target, Flame, TrendingUp } from 'lucide-react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
-import { getLast6MonthsStats, getCurrentStreak, makeLogKey } from '../../../lib/habitUtils';
+import { getLast6MonthsStats, getCurrentStreak } from '../../../lib/habitUtils';
 
 interface UserProfileProps {
   user: User;

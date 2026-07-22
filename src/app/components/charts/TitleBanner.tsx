@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { LogOut, BookOpen, Menu, X, User } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../../lib/firebase';
@@ -40,14 +41,14 @@ export default function Navbar({ user, onOpenGuide, onScrollToProfile }: NavbarP
     <nav className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 h-14 flex items-center gap-3">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2 flex-shrink-0 group">
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0 group">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
             <span className="text-base leading-none">🌱</span>
           </div>
           <span className="text-base font-bold text-slate-800 tracking-tight">
             Habit<span className="text-emerald-500">Bloom</span>
           </span>
-        </a>
+        </Link>
 
         {/* Spacer */}
         <div className="flex-1" />

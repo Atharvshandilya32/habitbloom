@@ -14,7 +14,8 @@ function makeShortCode(uid: string): string {
 
 export default function ReferralPanel({ userId }: ReferralPanelProps) {
   const code = makeShortCode(userId);
-  const referralLink = `https://habitbloom.app/?ref=${code}`;
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://habitbloom.in';
+  const referralLink = `${baseUrl}/?ref=${code}`;
   const shareText = `I'm building better habits with HabitBloom! Join me and start your own habit tracker 🌱`;
 
   const [copied, setCopied] = useState(false);

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Navbar from './components/charts/TitleBanner';
 import RequireAuth from './auth/RequireAuth';
+import KpiSummaryHeader from './components/KpiSummaryHeader';
 import HabitGrid from './components/habitGrid';
 import HabitSummaryTable from './components/HabitSummaryTable';
 import WeeklyProgress from './components/WeeklyProgress';
@@ -44,8 +45,10 @@ export default function Page() {
   // Guide modal
   const [guideOpen, setGuideOpen] = useState(false);
 
-  // Profile section ref for scrolling
+  // Section refs for smooth scrolling navigation
   const profileRef = useRef<HTMLDivElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const statisticsRef = useRef<HTMLDivElement>(null);
 
   // Reminders hook
   const {
@@ -63,6 +66,16 @@ export default function Page() {
 
   const handleScrollToProfile = () => {
     profileRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleScrollToSection = (sectionId: string) => {
+    if (sectionId === 'calendar') {
+      calendarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (sectionId === 'statistics') {
+      statisticsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   // Helper function to sync individual paths to Firebase
@@ -199,7 +212,7 @@ export default function Page() {
     setLogs(updatedLogs);
     syncToFirebase('logs', updatedLogs);
 
-    // Also clean habitLogsArray for this month
+    // Clean habitLogsArray for this month
     const monthStart = new Date(year, month - 1, 1).getTime();
     const monthEnd = new Date(year, month, 1).getTime();
     const updatedLogsArray = Object.fromEntries(
@@ -292,39 +305,36 @@ export default function Page() {
         user={currentUser}
         onOpenGuide={() => setGuideOpen(true)}
         onScrollToProfile={handleScrollToProfile}
+        onScrollToSection={handleScrollToSection}
       />
 
-      <main className="min-h-screen bg-slate-50 p-6 text-slate-950">
+      <main className="min-h-screen bg-slate-50/70 p-4 sm:p-6 text-slate-950">
         <div className="mx-auto max-w-7xl space-y-6">
 
           {/* Guide reminder banner (shown if user skipped) */}
           <GuideReminder onOpenGuide={() => setGuideOpen(true)} />
 
-          <CalendarSettings
-            year={year}
-            month={month}
-            onYearChange={setYear}
-            onMonthChange={setMonth}
-            onResetMonth={handleResetMonth}
-          />
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-6">
-              <WeeklyCustomGoals
-                goals={weeklyWritingGoals}
-                onAdd={handleAddWeeklyWritingGoal}
-                onDelete={handleDeleteWeeklyWritingGoal}
-              />
-            </div>
-            <div className="space-y-6">
-              <MonthlyCustomGoals
-                goals={monthlyWritingGoals}
-                onAdd={handleAddMonthlyWritingGoal}
-                onDelete={handleDeleteMonthlyWritingGoal}
-              />
-            </div>
+          {/* Calendar Month & Year Controls */}
+          <div ref={calendarRef}>
+            <CalendarSettings
+              year={year}
+              month={month}
+              onYearChange={setYear}
+              onMonthChange={setMonth}
+              onResetMonth={handleResetMonth}
+            />
           </div>
 
+          {/* ROW 1: Top KPI Summary Header */}
+          <KpiSummaryHeader
+            habits={habits}
+            logs={logs}
+            year={year}
+            month={month}
+            onAddHabit={handleAddHabit}
+          />
+
+          {/* ROW 2: Daily Habit Grid (Hero Section) */}
           <HabitGrid
             habits={habits}
             logs={logs}
@@ -337,6 +347,32 @@ export default function Page() {
             onUpdateHabit={handleUpdateHabit}
           />
 
+          {/* ROW 3: Goals Hub (Weekly & Monthly Goals) */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <WeeklyCustomGoals
+              goals={weeklyWritingGoals}
+              onAdd={handleAddWeeklyWritingGoal}
+              onDelete={handleDeleteWeeklyWritingGoal}
+            />
+            <MonthlyCustomGoals
+              goals={monthlyWritingGoals}
+              onAdd={handleAddMonthlyWritingGoal}
+              onDelete={handleDeleteMonthlyWritingGoal}
+            />
+          </div>
+
+          {/* ROW 4: Statistics Summary Cards */}
+          <div ref={statisticsRef}>
+            <OverviewPanel
+              habits={habits}
+              logs={logs}
+              daysInMonth={daysInMonth}
+              year={year}
+              month={month}
+            />
+          </div>
+
+          {/* ROW 5: Reminder Settings */}
           <HabitReminderSettings
             config={reminderConfig}
             permission={notificationPermission}
@@ -347,14 +383,7 @@ export default function Page() {
             onUpdateHabit={handleUpdateHabit}
           />
 
-          <OverviewPanel
-            habits={habits}
-            logs={logs}
-            daysInMonth={daysInMonth}
-            year={year}
-            month={month}
-          />
-
+          {/* ROW 6: Charts & Analytics Breakdown */}
           <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-[1.6fr_1fr]">
             <HabitSummaryTable
               habits={habits}
@@ -372,7 +401,7 @@ export default function Page() {
             />
           </div>
 
-          {/* User Profile + Referral — side by side on large screens */}
+          {/* ROW 7 (Bottom): User Profile & Referral Panel */}
           <div ref={profileRef} className="grid gap-6 lg:grid-cols-2">
             {currentUser && (
               <UserProfile

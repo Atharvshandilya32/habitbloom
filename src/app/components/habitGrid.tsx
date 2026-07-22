@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Check, Pencil, X } from 'lucide-react';
+import { Plus, Trash2, Check, Pencil, X, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { makeLogKey } from '../../../lib/habitUtils';
@@ -79,19 +79,19 @@ export default function HabitGrid({
   const handleToggle = (habitId: string, day: number) => {
     const cellKey = makeLogKey(habitId, year, month, day);
     onToggleCell(habitId, day);
-    setPulseCells(prev => {
+    setPulseCells((prev) => {
       const next = new Set(prev);
       next.add(cellKey);
       return next;
     });
 
     setTimeout(() => {
-      setPulseCells(prev => {
+      setPulseCells((prev) => {
         const next = new Set(prev);
         next.delete(cellKey);
         return next;
       });
-    }, 200);
+    }, 250);
   };
 
   const handleDelete = (habitId: string, habitName: string) => {
@@ -100,113 +100,133 @@ export default function HabitGrid({
   };
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border bg-muted">
-        <h2 className="text-base font-semibold text-foreground">Daily Habit Grid</h2>
+    <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden transition-all">
+      {/* Grid Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">Daily Habit Grid</h2>
+            <p className="text-xs text-slate-500">Track daily consistency and hit monthly target goals</p>
+          </div>
+        </div>
+
         <button
           onClick={onAddHabit}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-green-700"
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98] transition-all"
         >
-          <Plus size={14} /> Add Habit
+          <Plus className="h-4 w-4" /> Add Habit
         </button>
       </div>
+
+      {/* Grid Table Container */}
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse" style={{ minWidth: `${180 + daysInMonth * 36}px` }}>
+        <table className="w-full border-collapse" style={{ minWidth: `${200 + daysInMonth * 34}px` }}>
           <thead>
-            <tr>
-              <th className="sticky left-0 z-20 bg-muted border-b border-r border-border px-3 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <tr className="bg-slate-50/90 text-xs font-semibold text-slate-500 border-b border-slate-200/80">
+              <th className="sticky left-0 z-20 bg-slate-50 px-4 py-2.5 text-left border-r border-slate-200/80 min-w-[170px] uppercase tracking-wider text-[11px]">
                 Habit
               </th>
-              {days.map(d => {
+              {days.map((d) => {
                 const dow = getDayOfWeek(year, month, d);
                 const isToday = d === todayDay;
                 return (
                   <th
                     key={`day-header-${d}`}
-                    className={`border-b border-r border-border px-0 py-2 text-center min-w-[36px] w-[36px] ${
-                      isToday ? 'bg-yellow-50' : 'bg-muted'
+                    className={`px-0 py-2 text-center min-w-[34px] w-[34px] border-r border-slate-200/50 ${
+                      isToday ? 'bg-emerald-50/80 border-emerald-300' : ''
                     }`}
                   >
                     <div className="flex flex-col items-center gap-0.5">
-                      <span className={`text-[10px] font-medium ${isToday ? 'text-yellow-700' : 'text-muted-foreground'}`}>
+                      <span className={`text-[10px] font-bold ${isToday ? 'text-emerald-700' : 'text-slate-400'}`}>
                         {DAY_LETTERS[dow]}
                       </span>
-                      <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${
-                        isToday ? 'bg-yellow-400 text-yellow-900' : 'text-foreground'
-                      }`}>
+                      <span
+                        className={`flex h-6 w-6 items-center justify-center rounded-lg text-xs font-black ${
+                          isToday ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-700'
+                        }`}
+                      >
                         {d}
                       </span>
                     </div>
                   </th>
                 );
               })}
-              <th className="sticky right-0 z-20 bg-muted border-b border-l border-border px-2 py-2 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="sticky right-0 z-20 bg-slate-50 px-3 py-2.5 text-center border-l border-slate-200/80 text-[11px] uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {habits.map((habit, rowIdx) => {
               const isEditing = editingId === habit.id;
-              const rowBg = rowIdx % 2 === 0 ? 'bg-background' : 'bg-muted/50';
+              const rowBg = rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30';
               return (
-                <tr key={habit.id} className={`${rowBg} group hover:bg-accent/30 transition-colors`}>
-                  <td className={`sticky left-0 z-10 border-b border-r border-border px-3 py-3 ${rowBg}`}>
+                <tr key={habit.id} className={`${rowBg} hover:bg-slate-50/80 transition-colors group`}>
+                  {/* Habit Name / Edit Cell */}
+                  <td className={`sticky left-0 z-10 border-r border-slate-200/80 px-4 py-2.5 ${rowBg} group-hover:bg-slate-50`}>
                     {isEditing ? (
-                      <div className="space-y-2">
-                        <div className="flex gap-2">
+                      <div className="space-y-2 py-1">
+                        <div className="flex gap-1.5">
                           <input
                             ref={editNameRef}
                             value={editEmoji}
-                            onChange={e => setEditEmoji(e.target.value)}
-                            className="w-10 rounded border border-border bg-background px-2 py-1 text-center text-sm"
+                            onChange={(e) => setEditEmoji(e.target.value)}
+                            className="w-9 rounded-lg border border-slate-200 bg-white px-2 py-1 text-center text-xs"
                             maxLength={2}
                           />
                           <input
                             value={editName}
-                            onChange={e => setEditName(e.target.value)}
-                            onKeyDown={e => {
+                            onChange={(e) => setEditName(e.target.value)}
+                            onKeyDown={(e) => {
                               if (e.key === 'Enter') saveEdit(habit.id);
                               if (e.key === 'Escape') cancelEdit();
                             }}
-                            className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
+                            className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-900 focus:border-emerald-500 focus:outline-none"
                           />
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>Goal:</span>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                          <span>Target:</span>
                           <input
                             type="number"
                             value={editGoal}
                             min={1}
                             max={daysInMonth}
-                            onChange={e => setEditGoal(parseInt(e.target.value, 10) || 1)}
-                            className="w-16 rounded border border-border bg-background px-2 py-1 text-xs"
+                            onChange={(e) => setEditGoal(parseInt(e.target.value, 10) || 1)}
+                            className="w-14 rounded-lg border border-slate-200 bg-white px-1.5 py-0.5 text-xs font-semibold text-slate-900"
                           />
-                          <span>days</span>
+                          <span>days/mo</span>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
                           <button
                             onClick={() => saveEdit(habit.id)}
-                            className="flex-1 rounded bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-green-700"
+                            className="flex-1 flex items-center justify-center gap-1 rounded-md bg-emerald-600 py-1 text-[11px] font-bold text-white hover:bg-emerald-700"
                           >
-                            <Check size={12} /> Save
+                            <Check className="h-3 w-3" /> Save
                           </button>
                           <button
                             onClick={cancelEdit}
-                            className="flex-1 rounded border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-border"
+                            className="flex-1 flex items-center justify-center gap-1 rounded-md border border-slate-200 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-100"
                           >
-                            <X size={12} /> Cancel
+                            <X className="h-3 w-3" /> Cancel
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-base leading-none">{habit.emoji}</span>
-                        <span className="truncate text-sm font-medium text-foreground max-w-[130px]">{habit.name}</span>
+                      <div className="flex items-center gap-2.5 min-w-[150px]">
+                        <span className="text-lg shrink-0">{habit.emoji}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-bold text-slate-900">{habit.name}</p>
+                          <p className="text-[10px] font-medium text-slate-400">Target: {habit.goal} days</p>
+                        </div>
                       </div>
                     )}
                   </td>
-                  {days.map(d => {
+
+                  {/* Days Matrix Cells */}
+                  {days.map((d) => {
                     const cellKey = makeLogKey(habit.id, year, month, d);
                     const checked = !!logs[cellKey];
                     const isToday = d === todayDay;
@@ -214,55 +234,67 @@ export default function HabitGrid({
                     return (
                       <td
                         key={`cell-${habit.id}-${d}`}
-                        className={`border-b border-r border-border p-1 text-center ${isToday ? 'bg-yellow-50' : ''}`}
+                        className={`p-0.5 text-center border-r border-slate-200/40 ${
+                          isToday ? 'bg-emerald-50/40' : ''
+                        }`}
                       >
                         <button
                           onClick={() => handleToggle(habit.id, d)}
                           aria-label={`${checked ? 'Uncheck' : 'Check'} ${habit.name} on day ${d}`}
-                          className={`inline-flex h-7 w-7 items-center justify-center rounded border-2 transition ${
-                            isPulsing ? 'scale-105 border-yellow-500' : ''
-                          } ${checked ? 'border-primary bg-primary text-white' : 'border-border bg-background text-muted-foreground'}`}
+                          className={`inline-flex h-6 w-6 items-center justify-center rounded-md text-xs transition-all duration-150 ${
+                            isPulsing ? 'scale-125 shadow-md ring-2 ring-emerald-400' : ''
+                          } ${
+                            checked
+                              ? 'bg-emerald-600 text-white font-bold shadow-sm hover:bg-emerald-700'
+                              : 'bg-slate-100/80 text-transparent hover:bg-slate-200/80 hover:text-slate-300'
+                          }`}
                         >
-                          {checked ? <Check size={12} /> : null}
+                          <Check className="h-3.5 w-3.5 stroke-[3]" />
                         </button>
                       </td>
                     );
                   })}
-                  <td className={`sticky right-0 z-10 border-b border-l border-border px-2 py-2 text-center ${rowBg}`}>
-                    <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+
+                  {/* Actions Cell */}
+                  <td className={`sticky right-0 z-10 border-l border-slate-200/80 px-2 py-2 text-center ${rowBg} group-hover:bg-slate-50`}>
+                    <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => startEdit(habit)}
                         title="Edit habit"
-                        className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        className="rounded-lg p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
                       >
-                        <Pencil size={13} />
+                        <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(habit.id, habit.name)}
                         title="Delete habit"
-                        className="rounded p-1 text-muted-foreground hover:bg-red-100 hover:text-red-600"
+                        className="rounded-lg p-1 text-slate-400 hover:bg-rose-100 hover:text-rose-600 transition-colors"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </td>
                 </tr>
               );
             })}
+
+            {/* Empty State */}
             {habits.length === 0 && (
               <tr>
-                <td colSpan={daysInMonth + 2} className="py-12 text-center text-muted-foreground text-sm">
-                  <div className="flex flex-col items-center gap-3">
-                    <span className="text-4xl">📋</span>
-                    <p className="font-semibold text-foreground">No habits yet</p>
-                    <p className="max-w-xs text-xs text-muted-foreground">
-                      Add your first habit to start tracking progress.
+                <td colSpan={daysInMonth + 2} className="py-12 px-4 text-center">
+                  <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center text-2xl mb-3 shadow-sm">
+                      🌱
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900">No habits tracked yet</h3>
+                    <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                      Start building your daily streak! Add your first habit target to begin tracking consistency.
                     </p>
                     <button
                       onClick={onAddHabit}
-                      className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-green-700"
+                      className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98] transition-all"
                     >
-                      <Plus size={14} /> Add First Habit
+                      <Plus className="h-4 w-4" /> Create First Habit
                     </button>
                   </div>
                 </td>
@@ -271,6 +303,6 @@ export default function HabitGrid({
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }

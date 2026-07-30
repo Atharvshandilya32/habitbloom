@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { LogOut, BookOpen, User, LayoutDashboard, Calendar, BarChart2, Award } from 'lucide-react';
+import { LogOut, BookOpen, User, LayoutDashboard, Calendar, BarChart2, Award, Menu, X } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../../lib/firebase';
 import { User as FirebaseUser } from 'firebase/auth';
@@ -16,6 +16,7 @@ interface NavbarProps {
 
 export default function Navbar({ user, onOpenGuide, onScrollToProfile, onScrollToSection }: NavbarProps) {
   const [signingOut, setSigningOut] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'statistics' | 'achievements' | 'profile'>('dashboard');
 
   const handleLogout = async () => {
@@ -152,8 +153,87 @@ export default function Navbar({ user, onOpenGuide, onScrollToProfile, onScrollT
               </button>
             </div>
           )}
+
+          {/* Mobile Menu Toggle Button */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden flex items-center justify-center p-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all"
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
         </div>
       </div>
+
+      {/* Collapsible Mobile Drawer */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 space-y-1 shadow-lg">
+          <button
+            onClick={() => handleNavClick('dashboard')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
+              activeTab === 'dashboard' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <LayoutDashboard size={15} />
+            Dashboard
+          </button>
+          <button
+            onClick={() => handleNavClick('calendar')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
+              activeTab === 'calendar' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <Calendar size={15} />
+            Calendar
+          </button>
+          <button
+            onClick={() => handleNavClick('statistics')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
+              activeTab === 'statistics' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <BarChart2 size={15} />
+            Statistics
+          </button>
+          <button
+            onClick={() => handleNavClick('achievements')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
+              activeTab === 'achievements' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <Award size={15} />
+            Achievements
+          </button>
+          <button
+            onClick={() => handleNavClick('profile')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
+              activeTab === 'profile' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <User size={15} />
+            Profile
+          </button>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+            <button
+              onClick={() => { setMobileOpen(false); onOpenGuide(); }}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all"
+            >
+              <BookOpen size={14} className="text-emerald-600" />
+              User Guide
+            </button>
+            {user && (
+              <button
+                onClick={() => { setMobileOpen(false); handleLogout(); }}
+                disabled={signingOut}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-all disabled:opacity-50"
+              >
+                <LogOut size={14} />
+                Logout
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

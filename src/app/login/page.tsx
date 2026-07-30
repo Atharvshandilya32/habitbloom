@@ -323,6 +323,14 @@ export default function LoginPage() {
               </button>
             </p>
 
+            {/* Legal footer */}
+            <p className="text-center text-xs text-slate-400 mt-4">
+              By signing in you agree to our{' '}
+              <Link href="/privacy" className="text-emerald-600 hover:underline font-medium">
+                Privacy Policy
+              </Link>
+            </p>
+
           </div>
         </div>
 

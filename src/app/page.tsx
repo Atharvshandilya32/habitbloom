@@ -309,6 +309,8 @@ export default function Page() {
       />
 
       <main className="min-h-screen bg-slate-50/70 p-4 sm:p-6 text-slate-950">
+        {/* Visually-hidden h1 for SEO – one primary heading per page */}
+        <h1 className="sr-only">HabitBloom – Daily Discipline &amp; Micro-Progress Tracker</h1>
         <div className="mx-auto max-w-7xl space-y-6">
 
           {/* Guide reminder banner (shown if user skipped) */}
@@ -419,6 +421,21 @@ export default function Page() {
 
         </div>
       </main>
+
+      {/* Site Footer */}
+      <footer className="border-t border-slate-200 bg-white py-5 px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <p>© {new Date().getFullYear()} HabitBloom. All rights reserved.</p>
+          <nav className="flex items-center gap-4">
+            <a
+              href="/privacy"
+              className="hover:text-emerald-600 transition-colors font-medium"
+            >
+              Privacy Policy
+            </a>
+          </nav>
+        </div>
+      </footer>
     </RequireAuth>
   );
 }

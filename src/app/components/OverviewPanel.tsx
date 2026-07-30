@@ -81,13 +81,6 @@ export default function OverviewPanel({ habits, logs, daysInMonth, year, month }
   const displaySixMonth = isClient ? sixMonthData : sixMonthDataSSR;
   const monthsWithData = isClient ? sixMonthData.filter(d => d.hasData).length : 0;
 
-  // ── Streaks ───────────────────────────────────────────────────────────────
-  const streaks = useMemo(() =>
-    habits.map(h => ({ ...h, streak: getCurrentStreak(h, logs, year, month, daysInMonth) }))
-      .sort((a, b) => b.streak - a.streak),
-    [habits, logs, year, month, daysInMonth]
-  );
-  const streaksSSR = useMemo(() => habits.map(h => ({ ...h, streak: 0 })), [habits]);
 
   // ── Trends ────────────────────────────────────────────────────────────────
   const trends = useMemo(() =>
@@ -106,7 +99,6 @@ export default function OverviewPanel({ habits, logs, daysInMonth, year, month }
     [habits]
   );
 
-  const displayStreaks = isClient ? streaks : streaksSSR;
   const displayTrends = isClient ? trends : trendsSSR;
   const displayRanks = isClient ? ranks : ranksSSR;
   const prevMonthName = MONTH_NAMES[month === 1 ? 11 : month - 2];

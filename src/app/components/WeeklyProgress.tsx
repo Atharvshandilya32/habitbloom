@@ -41,7 +41,7 @@ export default function WeeklyProgress({ habits, logs, year, month, daysInMonth 
               <div className="w-12 text-right flex-shrink-0">
                 <span className={`text-sm font-700 tabular-nums ${textColor}`}>{week.pct}%</span>
               </div>
-              <div className="w-20 text-right flex-shrink-0">
+              <div className="hidden sm:block w-16 text-right flex-shrink-0">
                 <span className="text-xs text-muted-foreground tabular-nums">{week.done}/{week.possible}</span>
               </div>
             </div>

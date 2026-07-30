@@ -122,11 +122,16 @@ export default function HabitGrid({
       </div>
 
       {/* Grid Table Container */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto relative">
+        {/* Mobile scroll hint banner */}
+        <div className="sm:hidden text-[11px] font-semibold text-emerald-700 bg-emerald-50/90 px-4 py-1.5 border-b border-emerald-100 flex items-center justify-between">
+          <span>👈 Swipe horizontally to view all days 👉</span>
+          <span className="font-bold text-[10px] uppercase bg-white px-2 py-0.5 rounded-full border border-emerald-200">{daysInMonth} Days</span>
+        </div>
         <table className="w-full border-collapse" style={{ minWidth: `${200 + daysInMonth * 34}px` }}>
           <thead>
             <tr className="bg-slate-50/90 text-xs font-semibold text-slate-500 border-b border-slate-200/80">
-              <th className="sticky left-0 z-20 bg-slate-50 px-4 py-2.5 text-left border-r border-slate-200/80 min-w-[170px] uppercase tracking-wider text-[11px]">
+              <th className="sticky left-0 z-20 bg-slate-50 px-4 py-2.5 text-left border-r border-slate-200/80 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.06)] min-w-[160px] sm:min-w-[170px] uppercase tracking-wider text-[11px]">
                 Habit
               </th>
               {days.map((d) => {
@@ -166,7 +171,7 @@ export default function HabitGrid({
               return (
                 <tr key={habit.id} className={`${rowBg} hover:bg-slate-50/80 transition-colors group`}>
                   {/* Habit Name / Edit Cell */}
-                  <td className={`sticky left-0 z-10 border-r border-slate-200/80 px-4 py-2.5 ${rowBg} group-hover:bg-slate-50`}>
+                  <td className={`sticky left-0 z-10 border-r border-slate-200/80 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.06)] px-4 py-2.5 ${rowBg} group-hover:bg-slate-50`}>
                     {isEditing ? (
                       <div className="space-y-2 py-1">
                         <div className="flex gap-1.5">

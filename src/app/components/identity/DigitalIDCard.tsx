@@ -13,11 +13,13 @@ export default function DigitalIDCard({ cardData, onClose }: DigitalIDCardProps)
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
 
+  // Encode sanitized, non-sensitive verification payload for access control / attendance
   const qrPayload = JSON.stringify({
     hbId: cardData.hbId,
     spaceId: cardData.spaceId,
-    orgId: cardData.orgIdValue,
+    orgId: cardData.orgIdValue || 'UNVERIFIED',
     status: cardData.verificationStatus,
+    verToken: typeof btoa !== 'undefined' ? btoa(`${cardData.hbId}:${cardData.spaceId}`).slice(0, 16) : 'VERIFIED',
   });
 
   const handleDownloadPNG = () => {

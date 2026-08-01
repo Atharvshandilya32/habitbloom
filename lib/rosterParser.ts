@@ -10,12 +10,36 @@ export interface ParsedRosterResult {
 }
 
 /**
+ * Sanitizes CSV cell content against CSV Formula Injection vulnerabilities
+ */
+export function sanitizeCSVCell(val: string): string {
+  if (!val) return '';
+  let clean = val.trim().replace(/^["']|["']$/g, '');
+  // Strip leading formula injection characters
+  while (clean.length > 0 && ['=', '+', '-', '@', '\t', '\r'].includes(clean[0])) {
+    clean = clean.substring(1).trim();
+  }
+  return clean;
+}
+
+/**
  * Parses raw CSV text into RosterEntries
  */
 export function parseCSVText(csvText: string): ParsedRosterResult {
+  const errors: string[] = [];
+  
+  // File size guard (max 2MB raw text)
+  if (csvText.length > 2 * 1024 * 1024) {
+    return { total: 0, entries: [], errors: ['File size exceeds 2MB limit.'] };
+  }
+
   const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   if (lines.length === 0) {
     return { total: 0, entries: [], errors: ['File is empty.'] };
+  }
+
+  if (lines.length > 5001) {
+    errors.push('File contains over 5,000 rows. Only the first 5,000 rows were parsed.');
   }
 
   // Detect header row
@@ -31,15 +55,24 @@ export function parseCSVText(csvText: string): ParsedRosterResult {
   if (nameIdx === -1) nameIdx = 1 < headers.length ? 1 : 0; // Fallback to 2nd column
 
   const entries: RosterEntry[] = [];
-  const errors: string[] = [];
+  const seenIds = new Set<string>();
   const now = new Date().toISOString();
 
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+  const maxRows = Math.min(lines.length, 5001);
+  for (let i = 1; i < maxRows; i++) {
+    const cols = lines[i].split(',').map(c => sanitizeCSVCell(c));
     if (cols.length < 1 || !cols[idIdx]) continue;
 
     const rawId = cols[idIdx];
     const cleanId = rawId.replace(/[^a-zA-Z0-9_-]/g, '-').toUpperCase();
+    if (!cleanId) continue;
+
+    if (seenIds.has(cleanId)) {
+      errors.push(`Skipped duplicate ID in file: ${cleanId}`);
+      continue;
+    }
+    seenIds.add(cleanId);
+
     const name = cols[nameIdx] || `Member ${cleanId}`;
     const email = emailIdx !== -1 ? cols[emailIdx] : undefined;
     const roleId = roleIdx !== -1 ? cols[roleIdx] : undefined;
@@ -48,7 +81,7 @@ export function parseCSVText(csvText: string): ParsedRosterResult {
     const secondaryData: Record<string, string> = {};
     headers.forEach((h, idx) => {
       if (idx !== idIdx && idx !== nameIdx && idx !== emailIdx && idx !== roleIdx && cols[idx]) {
-        secondaryData[h] = cols[idx];
+        secondaryData[sanitizeCSVCell(h)] = cols[idx];
       }
     });
 

@@ -16,6 +16,7 @@ export interface RosterEntry {
 
 export type AuditActionType = 
   | 'JOIN'
+  | 'LEAVE'
   | 'VERIFY_APPROVE'
   | 'VERIFY_REJECT'
   | 'ROLE_CHANGE'
@@ -23,7 +24,10 @@ export type AuditActionType =
   | 'DEMOTED'
   | 'ROSTER_UPLOAD'
   | 'MEMBER_SUSPENDED'
-  | 'REMOVED';
+  | 'REMOVED'
+  | 'SPACE_CREATED'
+  | 'SPACE_DELETED'
+  | 'PROFILE_UPDATED';
 
 export interface AuditLogEntry {
   id: string;

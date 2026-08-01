@@ -22,6 +22,7 @@ export interface Space {
     advancedChallenges?: boolean;
     maxMembers?: number;
   };
+  identityConfig?: import('./identityTypes').SpaceIdentityConfig;
 }
 
 export interface SpacePermissions {
@@ -57,6 +58,9 @@ export interface SpaceMember {
   roleId: string;
   role?: string; // Legacy string role, optional for backward compatibility during migration
   joinedAt: string; // ISO timestamp
+  orgId?: string; // e.g. Admission Number, Employee ID, Member ID
+  verified?: boolean;
+  verificationStatus?: 'verified' | 'pending' | 'rejected' | 'unverified';
 }
 
 export interface SpaceInvite {

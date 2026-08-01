@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Space, SpaceMember, CustomRole } from '../../../../lib/spaceTypes';
 import { database } from '../../../../lib/firebase';
-import { ref, onValue, off, DataSnapshot, set } from 'firebase/database';
-import { Search, User, Filter, AlertCircle, Edit2, Copy, Check, Shield, Hash, X } from 'lucide-react';
+import { ref, onValue, off, DataSnapshot, set, get, child } from 'firebase/database';
+import { Search, User, Filter, AlertCircle, Edit2, Copy, Check, Hash, X, Download, CheckCircle, XCircle } from 'lucide-react';
 import { Skeleton } from '../ui/Skeleton';
 import { hasPermission } from '../../../../lib/spacePermissions';
+import { formatHbId } from '../../../../lib/identityUtils';
+import { logAuditEvent } from '../../../../lib/auditLogger';
 
 interface SpaceMembersProps {
   space: Space;
@@ -16,6 +18,8 @@ interface MemberWithProfile extends SpaceMember {
   avatarUrl?: string;
   bio?: string;
   dbKey: string;
+  hbId?: string;
+  email?: string;
 }
 
 export default function SpaceMembers({ space, currentUserRole }: SpaceMembersProps) {
@@ -46,7 +50,7 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
       }
     };
 
-    const handleData = (snapshot: DataSnapshot) => {
+    const handleData = async (snapshot: DataSnapshot) => {
       const data = snapshot.val();
       if (!data) {
         setMembers([]);
@@ -63,11 +67,35 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
         }
       });
 
-      const membersWithProfiles: MemberWithProfile[] = spaceMembers.map((m) => ({
-        ...m,
-        displayName: `User ${m.userId.substring(0, 5)}`, // Fallback display name
-        bio: m.roleId ? 'Habit Builder' : 'Community Leader',
-      }));
+      // Try resolving user profiles from /users/{userId}/profile
+      const userProfilesMap: Record<string, { displayName?: string; photoURL?: string; hbId?: string; email?: string }> = {};
+      if (database) {
+        try {
+          const profilesSnap = await get(child(ref(database), 'users'));
+          if (profilesSnap.exists()) {
+            const usersData = profilesSnap.val();
+            Object.keys(usersData).forEach(uId => {
+              if (usersData[uId]?.profile) {
+                userProfilesMap[uId] = usersData[uId].profile;
+              }
+            });
+          }
+        } catch {
+          // Fallback gracefully if permission restricted
+        }
+      }
+
+      const membersWithProfiles: MemberWithProfile[] = spaceMembers.map((m) => {
+        const profile = userProfilesMap[m.userId];
+        return {
+          ...m,
+          displayName: profile?.displayName || `User ${m.userId.substring(0, 5)}`,
+          avatarUrl: profile?.photoURL,
+          hbId: profile?.hbId,
+          email: profile?.email || undefined,
+          bio: m.roleId ? 'Habit Builder' : 'Community Leader',
+        };
+      });
 
       // Sort by joinedAt
       membersWithProfiles.sort((a, b) => new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime());
@@ -86,7 +114,14 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
   }, [space.id]);
 
   const filteredMembers = members.filter(m => {
-    const matchesSearch = m.displayName.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = 
+      m.displayName.toLowerCase().includes(q) ||
+      m.userId.toLowerCase().includes(q) ||
+      (m.hbId && m.hbId.includes(q)) ||
+      (m.orgId && m.orgId.toLowerCase().includes(q)) ||
+      (m.email && m.email.toLowerCase().includes(q));
+
     const matchesRole = roleFilter === 'all' || m.roleId === roleFilter;
     return matchesSearch && matchesRole;
   });
@@ -112,14 +147,62 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
     return role ? role.name : 'Unknown Role';
   };
 
-  const handleChangeRole = (dbKey: string, newRoleId: string) => {
+  const handleChangeRole = (dbKey: string, newRoleId: string, targetMember?: MemberWithProfile) => {
     if (database) {
       set(ref(database, `spaceMembers/${dbKey}/roleId`), newRoleId);
       setEditingMemberId(null);
       if (selectedMember) {
         setSelectedMember(prev => prev ? { ...prev, roleId: newRoleId } : null);
       }
+
+      if (targetMember) {
+        logAuditEvent(
+          space.id,
+          { id: 'admin', name: 'Administrator' },
+          { id: targetMember.userId, name: targetMember.displayName },
+          'ROLE_CHANGE',
+          `Changed role to ${getRoleName(newRoleId)}`
+        );
+      }
     }
+  };
+
+  const handleVerifyMember = (dbKey: string, targetMember: MemberWithProfile, status: 'verified' | 'rejected') => {
+    if (database) {
+      set(ref(database, `spaceMembers/${dbKey}/verified`), status === 'verified');
+      set(ref(database, `spaceMembers/${dbKey}/verificationStatus`), status);
+
+      logAuditEvent(
+        space.id,
+        { id: 'admin', name: 'Administrator' },
+        { id: targetMember.userId, name: targetMember.displayName },
+        status === 'verified' ? 'VERIFY_APPROVE' : 'VERIFY_REJECT',
+        `Verification set to ${status}`
+      );
+    }
+  };
+
+  const handleExportCSV = () => {
+    const rows = [
+      ['Name', 'HabitBloom ID', 'Organization ID', 'Role', 'Verified', 'Joined Date'],
+      ...members.map(m => [
+        m.displayName,
+        m.hbId ? formatHbId(m.hbId) : m.userId,
+        m.orgId || 'N/A',
+        getRoleName(m.roleId),
+        m.verified ? 'YES' : 'NO',
+        new Date(m.joinedAt).toLocaleDateString()
+      ])
+    ];
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `${space.name.replace(/\s+/g, '-')}-members.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleCopyId = (userId: string, e?: React.MouseEvent) => {
@@ -140,6 +223,16 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
             {members.length} {members.length === 1 ? 'member' : 'members'} in {space.name}
           </p>
         </div>
+
+        {hasPermission(currentUserRole, 'manageMembers') && (
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 font-bold text-xs rounded-xl shadow-sm transition-colors"
+          >
+            <Download size={14} />
+            <span>Export Directory CSV</span>
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -211,19 +304,36 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
                     </h4>
                   </div>
                   
-                  {/* App ID Tag */}
-                  <div className="flex items-center gap-1.5 mt-0.5">
+                  {/* App ID & Verification Status Tag */}
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 text-[10px] font-mono font-medium">
                       <Hash size={10} className="text-slate-400" />
-                      {member.userId.substring(0, 10)}...
+                      {member.hbId ? formatHbId(member.hbId) : `${member.userId.substring(0, 8)}...`}
                     </span>
                     <button 
-                      onClick={(e) => handleCopyId(member.userId, e)}
+                      onClick={(e) => handleCopyId(member.hbId || member.userId, e)}
                       className="p-0.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-indigo-600 transition-colors"
                       title="Copy App ID"
                     >
-                      {copiedId === member.userId ? <Check size={12} className="text-emerald-500" /> : <Copy size={11} />}
+                      {copiedId === (member.hbId || member.userId) ? <Check size={12} className="text-emerald-500" /> : <Copy size={11} />}
                     </button>
+
+                    {member.verified ? (
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                        <CheckCircle size={10} /> Verified
+                      </span>
+                    ) : member.verificationStatus === 'pending' && hasPermission(currentUserRole, 'manageMembers') ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleVerifyMember(member.dbKey, member, 'verified');
+                        }}
+                        className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800 hover:bg-amber-100"
+                        title="Click to approve member verification"
+                      >
+                        <XCircle size={10} className="text-amber-500" /> Verify
+                      </button>
+                    ) : null}
                   </div>
 
                   <div className="flex items-center justify-between gap-2 mt-2">

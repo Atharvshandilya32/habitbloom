@@ -11,6 +11,7 @@ import {
   onAuthStateChanged,
 } from 'firebase/auth';
 import { auth } from '../../../lib/firebase';
+import { ensureUserProfile } from '../../../lib/userProfile';
 import { Mail, Lock, Eye, EyeOff, Sparkles, ArrowRight, ShieldCheck, Flame, Bell, BarChart3 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -43,10 +44,14 @@ export default function LoginPage() {
       if (!auth) throw new Error('Firebase auth is not configured.');
       if (!email || !password) throw new Error('Please enter both email and password.');
 
+      let userCred;
       if (mode === 'login') {
-        await signInWithEmailAndPassword(auth, email, password);
+        userCred = await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        userCred = await createUserWithEmailAndPassword(auth, email, password);
+      }
+      if (userCred.user) {
+        await ensureUserProfile(userCred.user);
       }
       router.replace('/');
     } catch (e) {
@@ -70,7 +75,10 @@ export default function LoginPage() {
     setLoading(true);
     try {
       if (!auth) throw new Error('Firebase auth is not configured.');
-      await signInWithPopup(auth, provider);
+      const res = await signInWithPopup(auth, provider);
+      if (res.user) {
+        await ensureUserProfile(res.user);
+      }
       router.replace('/');
     } catch (e) {
       const err = e as Error;

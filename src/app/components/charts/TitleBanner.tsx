@@ -15,6 +15,7 @@ import {
   Clock,
   Search,
   Users,
+  CreditCard,
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../../lib/firebase';
@@ -28,9 +29,10 @@ interface NavbarProps {
   onTabChange: (tab: NavTab) => void;
   onOpenGuide: () => void;
   onOpenSearch?: () => void;
+  onOpenIdentityModal?: () => void;
 }
 
-export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOpenSearch }: NavbarProps) {
+export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOpenSearch, onOpenIdentityModal }: NavbarProps) {
   const [signingOut, setSigningOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -164,6 +166,17 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
             <BookOpen size={13} className="text-emerald-600" />
             <span className="hidden sm:inline">Guide</span>
           </button>
+
+          {user && onOpenIdentityModal && (
+            <button
+              onClick={onOpenIdentityModal}
+              className="flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 px-3 py-1.5 text-xs font-bold hover:bg-indigo-100 transition-all shadow-sm"
+              title="Universal HabitBloom ID Pass"
+            >
+              <CreditCard size={13} className="text-indigo-600" />
+              <span className="hidden sm:inline">ID Pass</span>
+            </button>
+          )}
 
           {user && (
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200">

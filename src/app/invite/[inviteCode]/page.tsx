@@ -7,6 +7,7 @@ import { ref, get, child, set } from 'firebase/database';
 import { auth, database } from '../../../../lib/firebase';
 import { CheckCircle2, Users, AlertTriangle } from 'lucide-react';
 import { Space, SpaceInvite } from '../../../../lib/spaceTypes';
+import { logAuditEvent } from '../../../../lib/auditLogger';
 
 export default function InvitePage() {
   const params = useParams();
@@ -21,6 +22,7 @@ export default function InvitePage() {
   const [inviteData, setInviteData] = useState<SpaceInvite | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [memberCount, setMemberCount] = useState(0);
+  const [enteredOrgId, setEnteredOrgId] = useState('');
 
   useEffect(() => {
     if (!auth || !database) {
@@ -104,11 +106,40 @@ export default function InvitePage() {
     
     try {
       const now = new Date().toISOString();
+      // Resolve default member roleId from spaceRoles if available
+      let defaultRoleId = '';
+      const rolesSnapshot = await get(child(ref(database), `spaceRoles/${space.id}`));
+      if (rolesSnapshot.exists()) {
+        const rolesMap = rolesSnapshot.val();
+        const rolesList = Object.values(rolesMap) as import('../../../../lib/spaceTypes').CustomRole[];
+        const memberRole = rolesList.find(r => r.name.toLowerCase().includes('member') || r.name.toLowerCase().includes('student')) || rolesList[rolesList.length - 1];
+        if (memberRole) defaultRoleId = memberRole.id;
+      }
+
+      // Check Roster verification
+      const cleanOrgId = enteredOrgId.trim().toUpperCase();
+      let isVerified = false;
+      let verStatus: 'verified' | 'pending' = 'pending';
+
+      if (cleanOrgId) {
+        const rosterSnap = await get(child(ref(database), `spaceRosters/${space.id}/${cleanOrgId}`));
+        if (rosterSnap.exists()) {
+          isVerified = true;
+          verStatus = 'verified';
+          const rosterData = rosterSnap.val();
+          if (rosterData.roleId) defaultRoleId = rosterData.roleId;
+        }
+      }
+
       // Add user to space
       const newMember = {
         spaceId: space.id,
         userId: user.uid,
+        roleId: defaultRoleId,
         role: 'member',
+        orgId: cleanOrgId || undefined,
+        verified: isVerified,
+        verificationStatus: verStatus,
         joinedAt: now,
       };
       
@@ -120,6 +151,14 @@ export default function InvitePage() {
 
       await set(ref(database, `spaceMembers/${space.id}_${user.uid}`), newMember);
       await set(ref(database, `spaceInvites/${inviteData.id}`), updatedInvite);
+
+      await logAuditEvent(
+        space.id,
+        { id: user.uid, name: user.displayName || user.email || 'Member' },
+        { id: user.uid, name: user.displayName || user.email || 'Member' },
+        'JOIN',
+        `Joined space (${verStatus === 'verified' ? 'Auto-Verified via Roster' : 'Joined as Pending Verification'})`
+      );
       
       router.push(`/?joined_space=${space.id}`);
     } catch {
@@ -205,6 +244,22 @@ export default function InvitePage() {
                 <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div> View organization-wide analytics
               </li>
             </ul>
+          </div>
+
+          <div className="mt-6 text-left">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+              {space.identityConfig?.primaryIdLabel || 'Organization ID / Admission No'} (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder={`Enter your ${space.identityConfig?.primaryIdLabel || 'ID'} for auto-verification...`}
+              value={enteredOrgId}
+              onChange={(e) => setEnteredOrgId(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            />
+            <p className="text-[10px] text-slate-400 font-medium mt-1">
+              Entering a matching ID auto-verifies your official membership.
+            </p>
           </div>
 
           <div className="mt-8 space-y-3">

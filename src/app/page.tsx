@@ -29,6 +29,8 @@ import SpaceDashboard from './components/SpaceDashboard';
 import CreateSpaceModal from './components/CreateSpaceModal';
 import { Space, SpaceInvite } from '../../lib/spaceTypes';
 import { createNewSpace } from '../../lib/spaceUtils';
+import { ensureUserProfile, UserProfile } from '../../lib/userProfile';
+import IdentityModal from './components/identity/IdentityModal';
 
 import { Habit, HabitLog, Goal as GoalType, Challenge, JournalEntry } from '../../lib/habitTypes';
 import { makeLogKey, getMonthKeyPrefix } from '../../lib/habitUtils';
@@ -71,6 +73,8 @@ export default function Page() {
   // UI State
   const [guideOpen, setGuideOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [identityModalOpen, setIdentityModalOpen] = useState(false);
+  const [userProfileData, setUserProfileData] = useState<UserProfile | null>(null);
   const [toastMsg, setToastMsg] = useState('');
   const [toastOpen, setToastOpen] = useState(false);
   
@@ -180,7 +184,11 @@ export default function Page() {
       setCurrentUser(user);
       if (!user) {
         setIsLoadingFirebase(false);
+        setUserProfileData(null);
       } else {
+        ensureUserProfile(user).then(p => {
+          if (p) setUserProfileData(p);
+        });
         // Process pending referral
         const pendingRef = localStorage.getItem('habitbloom_pending_referral');
         if (pendingRef && database) {
@@ -495,6 +503,12 @@ export default function Page() {
         onNavigate={setActiveTab}
       />
       <Toast message={toastMsg} isVisible={toastOpen} onClose={() => setToastOpen(false)} />
+      <IdentityModal
+        isOpen={identityModalOpen}
+        onClose={() => setIdentityModalOpen(false)}
+        profile={userProfileData}
+        userSpaces={userSpaces}
+      />
       <JournalModal 
         isOpen={journalModalOpen} 
         onClose={() => { 
@@ -528,6 +542,7 @@ export default function Page() {
         onTabChange={setActiveTab}
         onOpenGuide={() => setGuideOpen(true)}
         onOpenSearch={() => setCmdOpen(true)}
+        onOpenIdentityModal={() => setIdentityModalOpen(true)}
       />
 
       <main className="min-h-screen bg-slate-50/70 p-4 sm:p-6 text-slate-950 pb-20">

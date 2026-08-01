@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, Image as ImageIcon, Palette, Save, QrCode, Download, Copy, Shield, Plus, Check } from 'lucide-react';
+import { X, Settings, Image as ImageIcon, Palette, Save, QrCode, Download, Copy, Shield, Plus, FileSpreadsheet, History } from 'lucide-react';
+import RosterUploadModal from './admin/RosterUploadModal';
+import AuditLogViewer from './admin/AuditLogViewer';
 import { QRCodeSVG } from 'qrcode.react';
 import { Space, SpaceBranding, SpaceInvite, CustomRole, SpacePermissions } from '../../../../lib/spaceTypes';
 import { createPermissions } from '../../../../lib/spaceTemplates';
@@ -11,15 +13,17 @@ interface SpaceSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   space: Space;
-  initialTab?: 'general' | 'branding' | 'invites' | 'roles';
+  initialTab?: 'general' | 'branding' | 'invites' | 'roles' | 'roster' | 'audit';
   onSave: (updates: Partial<Space>) => void;
+  currentUserId?: string;
+  currentUserName?: string;
 }
 
 const THEME_COLORS = [
   'indigo-600', 'blue-600', 'emerald-600', 'rose-600', 'amber-500', 'slate-900'
 ];
 
-export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab = 'general', onSave }: SpaceSettingsModalProps) {
+export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab = 'general', onSave, currentUserId = 'admin', currentUserName = 'Admin' }: SpaceSettingsModalProps) {
   const [name, setName] = useState(space.name);
   const [description, setDescription] = useState(space.description);
   
@@ -28,7 +32,9 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
   const [welcomeMessage, setWelcomeMessage] = useState(initialBranding.welcomeMessage || '');
   const [coverUrl, setCoverUrl] = useState(initialBranding.coverUrl || '');
 
-  const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'invites' | 'roles'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'invites' | 'roles' | 'roster' | 'audit'>(initialTab);
+  const [showRosterModal, setShowRosterModal] = useState(false);
+  const [primaryIdLabel, setPrimaryIdLabel] = useState(space.identityConfig?.primaryIdLabel || 'Admission Number');
 
   // Custom Roles State
   const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
@@ -203,6 +209,20 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
             >
               <span>Community Roles</span>
               <Shield size={14} className="text-slate-400" />
+            </button>
+            <button 
+              onClick={() => setActiveTab('roster')}
+              className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-between ${activeTab === 'roster' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              <span>Roster & Verification</span>
+              <FileSpreadsheet size={14} className="text-slate-400" />
+            </button>
+            <button 
+              onClick={() => setActiveTab('audit')}
+              className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-between ${activeTab === 'audit' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              <span>Audit Logs</span>
+              <History size={14} className="text-slate-400" />
             </button>
           </div>
 
@@ -513,6 +533,79 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'roster' && (
+              <div className="space-y-6 animate-in slide-in-from-right-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                      <FileSpreadsheet size={18} className="text-indigo-500" />
+                      Organization Roster & Verification
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Set organization identifier label and upload CSV roster for auto-verification.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowRosterModal(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
+                  >
+                    <Plus size={14} />
+                    <span>Upload CSV Roster</span>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                      Primary Organization Identifier Label
+                    </label>
+                    <select
+                      value={primaryIdLabel}
+                      onChange={(e) => {
+                        setPrimaryIdLabel(e.target.value);
+                        if (database) {
+                          set(ref(database, `spaces/${space.id}/identityConfig`), {
+                            ...space.identityConfig,
+                            primaryIdLabel: e.target.value,
+                            requireVerification: true,
+                          });
+                        }
+                      }}
+                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    >
+                      <option value="Admission Number">Admission Number (School / College)</option>
+                      <option value="Member ID">Member ID (Gym / Studio)</option>
+                      <option value="Employee ID">Employee ID (Company)</option>
+                      <option value="Athlete Number">Athlete Number (Sports Academy)</option>
+                      <option value="Student ID">Student ID (Coaching Institute)</option>
+                      <option value="Volunteer ID">Volunteer ID (Community / NGO)</option>
+                    </select>
+                  </div>
+
+                  <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl">
+                    <h4 className="font-bold text-indigo-900 text-xs">How Verification Works</h4>
+                    <p className="text-xs text-indigo-700 mt-1 leading-relaxed">
+                      When users join <strong>{space.name}</strong>, they enter their {primaryIdLabel}. If a match exists in your uploaded roster CSV, they automatically receive official verification and their assigned role instantly.
+                    </p>
+                  </div>
+                </div>
+
+                <RosterUploadModal
+                  isOpen={showRosterModal}
+                  onClose={() => setShowRosterModal(false)}
+                  spaceId={space.id}
+                  spaceName={space.name}
+                  actor={{ id: currentUserId, name: currentUserName }}
+                />
+              </div>
+            )}
+
+            {activeTab === 'audit' && (
+              <div className="space-y-4 animate-in slide-in-from-right-4">
+                <AuditLogViewer spaceId={space.id} />
               </div>
             )}
           </div>

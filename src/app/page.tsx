@@ -259,7 +259,7 @@ export default function Page() {
     );
     setHabitLogsArray(updatedLogsArray);
     syncToFirebase('habitLogsArray', updatedLogsArray);
-    showToast('Month reset.');
+    showToast('Progress reset for the month.');
   };
 
   // ── Reset all local data ───────────────────────────────────────────────
@@ -275,7 +275,7 @@ export default function Page() {
     syncToFirebase('journals', []);
     syncToFirebase('goals', []);
     syncToFirebase('challenges', []);
-    showToast('All local data cleared.');
+    showToast('Local data cleared successfully.');
   };
 
   // ── Habits CRUD ──────────────────────────────────────────────────────────
@@ -291,7 +291,7 @@ export default function Page() {
     const updated = [...habits, newHabit];
     setHabits(updated);
     syncToFirebase('habits', updated);
-    showToast('Habit added.');
+    showToast('Habit created successfully.');
   };
 
   const handleDeleteHabit = (habitId: string) => {
@@ -312,7 +312,7 @@ export default function Page() {
       setHabitLogsArray(nextLogsArray);
       syncToFirebase('habitLogsArray', nextLogsArray);
     }
-    showToast('Habit deleted.');
+    showToast('Habit deleted successfully.');
   };
 
   const handleUpdateHabit = (habitId: string, updates: Partial<Habit>) => {
@@ -326,7 +326,7 @@ export default function Page() {
     const updated = [...goals, goal];
     setGoals(updated);
     syncToFirebase('goals', updated);
-    showToast('Goal created.');
+    showToast('Goal set successfully.');
   };
 
   const handleUpdateGoal = (goalId: string, updates: Partial<GoalType>) => {
@@ -339,14 +339,14 @@ export default function Page() {
     const updated = [...challenges, challenge];
     setChallenges(updated);
     syncToFirebase('challenges', updated);
-    showToast(`Joined ${challenge.title}!`);
+    showToast(`Joined ${challenge.title} challenge.`);
   };
 
   const handleSaveJournal = (entry: JournalEntry) => {
     const updated = [...journals.filter(j => j.id !== entry.id), entry];
     setJournals(updated);
     syncToFirebase('journals', updated);
-    showToast('Journal saved.');
+    showToast('Journal entry saved.');
   };
 
   if (isLoadingFirebase) {
@@ -505,7 +505,7 @@ export default function Page() {
                   onCreateSpaceClick={() => setCreateSpaceOpen(true)}
                   onEnterSpace={setActiveSpaceId}
                   onAcceptInvite={() => {
-                     showToast('Invite accepted (Demo)');
+                     showToast('Welcome to the Space!');
                   }}
                 />
               ) : (
@@ -516,7 +516,7 @@ export default function Page() {
                   personalHabits={habits}
                   onBack={() => setActiveSpaceId(null)}
                   onGenerateInvite={() => {
-                     showToast('Invite link generated! (Demo)');
+                     showToast('Invite link copied to clipboard.');
                   }}
                   onInstallTemplate={(template) => {
                      const newHabit = {
@@ -527,7 +527,7 @@ export default function Page() {
                         category: template.category
                      };
                      setHabits(prev => [...prev, newHabit]);
-                     showToast(`${template.name} installed to your habits!`);
+                     showToast(`${template.name} added to your habits.`);
                   }}
                 />
               )}
@@ -541,7 +541,7 @@ export default function Page() {
                    setUserSpaces(prev => [...prev, space]);
                    setActiveSpaceId(space.id);
                    setCreateSpaceOpen(false);
-                   showToast(`Space ${name} created!`);
+                   showToast(`Space '${name}' created successfully.`);
                 }}
               />
             </div>

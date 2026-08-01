@@ -139,7 +139,7 @@ export default function SpacesDirectory({ onJoinDemo, onCreateSpace }: SpacesDir
             </p>
           </div>
 
-          {/* Placeholder for other spaces (empty search results) */}
+          {/* Private Spaces Notice */}
           <div className="mt-8 pt-8 border-t border-slate-100 text-center">
             <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full mx-auto flex items-center justify-center mb-4">
               <Lock size={24} />

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { X, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
+import { X, ChevronRight, Sparkles } from 'lucide-react';
 
 const GUIDE_KEY = 'habitbloom_guide_seen';
 const REMINDER_KEY = 'habitbloom_guide_reminder_dismissed';
@@ -107,29 +107,18 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
           </div>
 
           {/* Buttons */}
-          <div className="flex items-center gap-3 mt-5">
-            {step > 0 && (
-              <button
-                onClick={() => setStep(s => s - 1)}
-                className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-100 transition-colors"
-              >
-                <ChevronLeft size={16} /> Back
-              </button>
-            )}
-
-            <div className="flex-1" />
-
+          <div className="mt-8 px-6 py-4 border-t border-slate-700 bg-slate-800/50 flex justify-end gap-3 rounded-b-2xl">
             {!isLast ? (
               <>
                 <button
                   onClick={() => handleClose(true)}
-                  className="px-4 py-2 rounded-xl text-sm text-slate-400 hover:text-slate-600 transition-colors"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
                 >
                   Skip
                 </button>
                 <button
                   onClick={() => setStep(s => s + 1)}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-colors shadow-sm"
                 >
                   Next <ChevronRight size={16} />
                 </button>
@@ -137,7 +126,7 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
             ) : (
               <button
                 onClick={() => handleClose(false)}
-                className="flex items-center gap-1.5 px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold hover:opacity-90 transition-opacity shadow-md"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold hover:opacity-90 transition-opacity shadow-sm"
               >
                 <Sparkles size={15} /> Let&apos;s Go!
               </button>

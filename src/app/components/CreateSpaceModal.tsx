@@ -131,7 +131,7 @@ export default function CreateSpaceModal({ isOpen, onClose, onCreate }: CreateSp
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center rounded-b-3xl">
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-3xl">
           {step === 2 ? (
             <button 
               onClick={() => setStep(1)}
@@ -140,13 +140,18 @@ export default function CreateSpaceModal({ isOpen, onClose, onCreate }: CreateSp
               Back
             </button>
           ) : (
-            <div /> // placeholder for flex-between
+            <button 
+              onClick={onClose}
+              className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
           )}
 
           {step === 1 ? (
             <button 
               onClick={handleNext}
-              className="px-6 py-2.5 text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-sm transition-colors"
+              className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-colors"
             >
               Continue
             </button>
@@ -154,7 +159,7 @@ export default function CreateSpaceModal({ isOpen, onClose, onCreate }: CreateSp
             <button 
               onClick={handleCreate}
               disabled={!name.trim()}
-              className="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-sm transition-colors"
+              className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-sm transition-colors"
             >
               Create Space
             </button>

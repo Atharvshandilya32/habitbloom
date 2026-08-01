@@ -271,7 +271,7 @@ export default function SettingsView({
                   Zero Paid APIs & Zero Third-Party Trackers
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  HabitBloom Phase 2 guarantees complete data privacy. Your data remains strictly within your browser and your private Firebase RTDB container.
+                  HabitBloom guarantees complete data privacy. Your data remains strictly within your browser and your private Firebase RTDB container.
                 </p>
               </div>
             </div>

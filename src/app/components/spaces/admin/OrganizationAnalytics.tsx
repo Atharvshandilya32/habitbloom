@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Space, SpaceRole } from '../../../../../lib/spaceTypes';
-import { BarChart3, TrendingUp, Users, Activity, Target, BrainCircuit, HeartPulse, Loader2 } from 'lucide-react';
+import { TrendingUp, Users, Activity, Target, BrainCircuit, HeartPulse, Loader2 } from 'lucide-react';
 import { generateSpaceWeeklyReport } from '../../../../../lib/spaceAiUtils';
 
 interface OrganizationAnalyticsProps {
@@ -37,10 +37,10 @@ export default function OrganizationAnalytics({ space, role }: OrganizationAnaly
   }
 
   const stats = [
-    { label: 'Total Members', value: '142', trend: '+12 this week', icon: Users, color: 'indigo' },
-    { label: 'Active Daily', value: '89%', trend: '+4% vs last week', icon: Activity, color: 'emerald' },
-    { label: 'Habit Adoption', value: '76%', trend: 'Installed templates', icon: Target, color: 'amber' },
-    { label: 'Challenges', value: '3', trend: 'Active right now', icon: TrendingUp, color: 'rose' }
+    { label: 'Total Members', value: '-', trend: 'Syncing...', icon: Users, color: 'indigo' },
+    { label: 'Active Daily', value: '-', trend: 'Calculating...', icon: Activity, color: 'emerald' },
+    { label: 'Habit Adoption', value: '-', trend: 'Analyzing...', icon: Target, color: 'amber' },
+    { label: 'Challenges', value: '-', trend: 'Aggregating...', icon: TrendingUp, color: 'rose' }
   ];
 
   return (
@@ -115,66 +115,15 @@ export default function OrganizationAnalytics({ space, role }: OrganizationAnaly
         })}
       </div>
 
-      {/* Detailed Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Engagement Chart Mock */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2">
-              <BarChart3 size={18} className="text-indigo-500" />
-              Weekly Engagement
-            </h3>
-            <select className="bg-slate-50 border border-slate-200 text-xs font-bold px-2 py-1 rounded-lg text-slate-600 focus:outline-none">
-              <option>Last 30 Days</option>
-              <option>This Quarter</option>
-            </select>
-          </div>
-          
-          <div className="h-48 flex items-end justify-between gap-2 px-2 pb-2 border-b border-slate-100">
-            {[40, 65, 80, 55, 90, 75, 85].map((height, i) => (
-              <div key={i} className="w-full relative group">
-                <div 
-                  className="bg-indigo-500 hover:bg-indigo-400 rounded-t-md transition-all w-full absolute bottom-0" 
-                  style={{ height: `${height}%` }}
-                ></div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-2 px-2 text-xs font-bold text-slate-400">
-            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-          </div>
+      {/* Detailed Charts Row - Insufficient Data State */}
+      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-3xl p-12 border border-dashed border-slate-300 dark:border-slate-700 text-center flex flex-col items-center justify-center min-h-[300px]">
+        <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-700 mb-4">
+          <Activity size={28} className="text-slate-400 dark:text-slate-500" />
         </div>
-
-        {/* Popular Templates */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
-           <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-             <Target size={18} className="text-amber-500" />
-             Top Habit Templates
-           </h3>
-           
-           <div className="space-y-4">
-             {[
-               { name: "Morning Hydration", emoji: "💧", count: 112, pct: 85 },
-               { name: "Daily Standup", emoji: "📢", count: 98, pct: 70 },
-               { name: "Deep Work (2 hrs)", emoji: "🧠", count: 64, pct: 45 },
-             ].map((template, i) => (
-               <div key={i} className="flex items-center gap-4">
-                 <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-xl shadow-sm border border-slate-100">
-                   {template.emoji}
-                 </div>
-                 <div className="flex-1">
-                   <div className="flex justify-between mb-1">
-                     <span className="text-sm font-bold text-slate-800">{template.name}</span>
-                     <span className="text-xs font-bold text-slate-500">{template.count} installs</span>
-                   </div>
-                   <div className="w-full bg-slate-100 rounded-full h-2">
-                     <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${template.pct}%` }}></div>
-                   </div>
-                 </div>
-               </div>
-             ))}
-           </div>
-        </div>
+        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">Gathering Organization Insights</h3>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+          We need a bit more data before we can generate meaningful engagement charts and template adoption metrics. Encourage your members to check in daily!
+        </p>
       </div>
 
     </div>

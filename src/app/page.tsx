@@ -6,7 +6,7 @@ import RequireAuth from './auth/RequireAuth';
 import GuideModal, { shouldShowGuide } from './components/GuideModal';
 import CalendarSettings from './components/CalendarSettings';
 
-// Phase 2 & 3 Views
+
 import DailyFocusView from './components/DailyFocusView';
 import DashboardView from './components/DashboardView';
 import WeeklyReviewView from './components/WeeklyReviewView';
@@ -17,13 +17,13 @@ import GoalsView from './components/GoalsView';
 import ChallengesView from './components/ChallengesView';
 import TimelineView from './components/TimelineView';
 
-// Phase 3 UX Components
+
 import CommandPalette from './components/CommandPalette';
 import Toast from './components/Toast';
 import JournalModal from './components/JournalModal';
 import { useKeyboardShortcuts } from '../../lib/keyboardShortcuts';
 
-// Phase 4A Spaces
+
 import SpacesHub from './components/SpacesHub';
 import SpaceDashboard from './components/SpaceDashboard';
 import CreateSpaceModal from './components/CreateSpaceModal';
@@ -48,12 +48,12 @@ export default function Page() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
 
-  // Phase 3 Data State
+  // Data State
   const [goals, setGoals] = useState<GoalType[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [journals, setJournals] = useState<JournalEntry[]>([]);
 
-  // Phase 4A Spaces State
+  // Spaces State
   const [userSpaces, setUserSpaces] = useState<Space[]>([]);
   const [pendingInvites] = useState<SpaceInvite[]>([]);
   const [activeSpaceId, setActiveSpaceId] = useState<string | null>(null);
@@ -321,7 +321,7 @@ export default function Page() {
     syncToFirebase('habits', updated);
   };
 
-  // ── Phase 3 CRUD Handlers ────────────────────────────────────────────────
+  // ── CRUD Handlers ────────────────────────────────────────────────
   const handleAddGoal = (goal: GoalType) => {
     const updated = [...goals, goal];
     setGoals(updated);

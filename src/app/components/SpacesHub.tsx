@@ -100,7 +100,7 @@ export default function SpacesHub({
         )}
       </div>
 
-      {/* Discover (Placeholder for 4D) */}
+
       <div className="space-y-4 pt-8 border-t border-slate-200/60">
         <div className="flex justify-between items-center">
           <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Discover Public Spaces</h3>
@@ -117,7 +117,7 @@ export default function SpacesHub({
         </div>
         
         <div className="text-center py-12 bg-slate-100/50 rounded-3xl border border-slate-200">
-          <p className="text-slate-500 font-medium">Public discovery directory coming in Phase 4D.</p>
+          <p className="text-slate-500 font-medium">Use the search bar to find public organizations.</p>
         </div>
       </div>
 

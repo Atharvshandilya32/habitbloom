@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '../../../../lib/firebase';
-import { CheckCircle2, Users } from 'lucide-react';
+import { ref, get, child, set } from 'firebase/database';
+import { auth, database } from '../../../../lib/firebase';
+import { CheckCircle2, Users, AlertTriangle } from 'lucide-react';
+import { Space, SpaceInvite } from '../../../../lib/spaceTypes';
 
 export default function InvitePage() {
   const params = useParams();
@@ -14,33 +16,109 @@ export default function InvitePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkingInvite, setCheckingInvite] = useState(true);
-
-  // Mock Space Data for the invite preview
-  const mockSpace = {
-    name: 'Titan Fitness Elite',
-    type: 'gym',
-    description: 'The premier community for athletes committed to daily growth and excellence.',
-    memberCount: 142
-  };
+  
+  const [space, setSpace] = useState<Space | null>(null);
+  const [inviteData, setInviteData] = useState<SpaceInvite | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [memberCount, setMemberCount] = useState(0);
 
   useEffect(() => {
-    if (!auth) {
+    if (!auth || !database) {
       setLoading(false);
       return;
     }
-    const unsub = onAuthStateChanged(auth, (u) => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setLoading(false);
+      
       if (!u) {
         // Unauthenticated -> redirect to login with invite code
         router.push(`/login?space_invite=${inviteCode}`);
-      } else {
-        // Authenticated -> validate invite
-        setTimeout(() => setCheckingInvite(false), 800);
+        return;
+      }
+
+      // Validate Invite Code against Firebase
+      try {
+        const dbRef = ref(database);
+        const invitesSnapshot = await get(child(dbRef, 'invites'));
+        
+        let foundInvite: SpaceInvite | null = null;
+        if (invitesSnapshot.exists()) {
+          const invites = invitesSnapshot.val();
+          for (const key in invites) {
+            if (invites[key].code === inviteCode) {
+              foundInvite = invites[key];
+              break;
+            }
+          }
+        }
+
+        if (!foundInvite) {
+          setError('Invalid or expired invitation link.');
+          setCheckingInvite(false);
+          return;
+        }
+
+        setInviteData(foundInvite);
+
+        // Fetch Space Details
+        const spaceSnapshot = await get(child(dbRef, `spaces/${foundInvite.spaceId}`));
+        if (spaceSnapshot.exists()) {
+          setSpace(spaceSnapshot.val());
+        } else {
+          setError('The space for this invitation no longer exists.');
+          setCheckingInvite(false);
+          return;
+        }
+
+        // Count Members
+        const membersSnapshot = await get(child(dbRef, 'members'));
+        if (membersSnapshot.exists()) {
+          const members = membersSnapshot.val();
+          let count = 0;
+          for (const key in members) {
+            if (members[key].spaceId === foundInvite.spaceId) count++;
+          }
+          setMemberCount(count);
+        }
+
+        setCheckingInvite(false);
+      } catch {
+        setError('A network error occurred while validating the invitation.');
+        setCheckingInvite(false);
       }
     });
+    
     return () => unsub();
   }, [inviteCode, router]);
+
+  const handleJoinSpace = async () => {
+    if (!user || !space || !inviteData || !database) return;
+    
+    try {
+      const now = new Date().toISOString();
+      // Add user to space
+      const newMember = {
+        spaceId: space.id,
+        userId: user.uid,
+        role: 'member',
+        joinedAt: now,
+      };
+      
+      // Update invite uses
+      const updatedInvite = {
+        ...inviteData,
+        uses: (inviteData.uses || 0) + 1
+      };
+
+      await set(ref(database, `members/member-${user.uid}-${space.id}`), newMember);
+      await set(ref(database, `invites/${inviteData.id}`), updatedInvite);
+      
+      router.push(`/?joined_space=${space.id}`);
+    } catch {
+      alert('Failed to join the space. Please try again.');
+    }
+  };
 
   if (loading || checkingInvite) {
     return (
@@ -51,7 +129,25 @@ export default function InvitePage() {
     );
   }
 
-  if (!user) return null; // Let the redirect happen
+  if (!user) return null; // Redirecting
+
+  if (error || !space) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-[2rem] shadow-xl p-8 text-center border border-slate-200">
+          <AlertTriangle size={48} className="text-amber-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">Invitation Error</h1>
+          <p className="text-slate-500 mb-6">{error || 'Something went wrong.'}</p>
+          <button 
+            onClick={() => router.push('/')}
+            className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors"
+          >
+            Return Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
@@ -65,7 +161,7 @@ export default function InvitePage() {
         <div className="h-40 bg-slate-900 relative">
            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/60 to-purple-600/60 mix-blend-overlay"></div>
            <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-white rounded-3xl flex items-center justify-center text-5xl shadow-xl border-[6px] border-white z-20">
-             🏋️
+             {space.type === 'gym' ? '🏋️' : space.type === 'company' ? '🏢' : space.type === 'school' ? '🏫' : '🌍'}
            </div>
         </div>
 
@@ -74,18 +170,18 @@ export default function InvitePage() {
           <div className="inline-block px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4">
             You&apos;ve been invited
           </div>
-          <h1 className="text-3xl font-black text-slate-900 leading-tight mb-3">{mockSpace.name}</h1>
-          <p className="text-slate-500 font-medium leading-relaxed">{mockSpace.description}</p>
+          <h1 className="text-3xl font-black text-slate-900 leading-tight mb-3">{space.name}</h1>
+          <p className="text-slate-500 font-medium leading-relaxed">{space.description}</p>
           
           <div className="flex justify-center items-center gap-4 mt-6 py-5 border-y border-slate-100">
             <div className="flex flex-col items-center gap-1">
               <Users size={20} className="text-indigo-400" />
-              <span className="text-xs font-bold text-slate-700">{mockSpace.memberCount} Members</span>
+              <span className="text-xs font-bold text-slate-700">{memberCount} Members</span>
             </div>
             <div className="w-px h-8 bg-slate-100"></div>
             <div className="flex flex-col items-center gap-1">
               <CheckCircle2 size={20} className="text-emerald-400" />
-              <span className="text-xs font-bold text-slate-700">Official {mockSpace.type}</span>
+              <span className="text-xs font-bold text-slate-700">Official {space.type}</span>
             </div>
           </div>
 
@@ -106,19 +202,13 @@ export default function InvitePage() {
 
           <div className="mt-8 space-y-3">
             <button 
-              onClick={() => {
-                // In a real app, write to Firebase to join space, then redirect to app
-                router.push(`/?joined_space=${inviteCode}`);
-              }}
+              onClick={handleJoinSpace}
               className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all hover:-translate-y-0.5 active:translate-y-0 text-lg"
             >
               Join Community
             </button>
             <button 
-              onClick={() => {
-                // Postpone, redirect to personal dashboard
-                router.push('/');
-              }}
+              onClick={() => router.push('/')}
               className="w-full py-3 text-slate-500 hover:text-slate-800 font-bold rounded-xl transition-colors text-sm"
             >
               Maybe Later

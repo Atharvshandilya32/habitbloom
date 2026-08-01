@@ -6,6 +6,7 @@ import SpaceSettingsModal from './spaces/SpaceSettingsModal';
 import AnnouncementsFeed from './spaces/AnnouncementsFeed';
 import SpaceHabitTemplates from './spaces/SpaceHabitTemplates';
 import SpaceChallenges from './spaces/SpaceChallenges';
+import SpaceMembers from './spaces/SpaceMembers';
 import { CardSkeleton } from './ui/Skeleton';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 
@@ -275,13 +276,7 @@ export default function SpaceDashboard({
         )}
 
         {activeTab === 'members' && (
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm text-center">
-            <Users size={48} className="mx-auto text-slate-300 mb-4" />
-            <h3 className="text-lg font-bold text-slate-700">Member Directory</h3>
-            <p className="text-slate-500 font-medium max-w-sm mx-auto mt-2">
-              (Coming soon) You&apos;ll be able to see other members, coaches, and their public achievements here.
-            </p>
-          </div>
+          <SpaceMembers space={space} />
         )}
 
         {activeTab === 'analytics' && (

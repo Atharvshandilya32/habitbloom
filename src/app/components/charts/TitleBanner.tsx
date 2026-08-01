@@ -14,12 +14,13 @@ import {
   Trophy,
   Clock,
   Search,
+  Users,
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../../lib/firebase';
 import { User as FirebaseUser } from 'firebase/auth';
 
-export type NavTab = 'focus' | 'dashboard' | 'analytics' | 'records' | 'goals' | 'challenges' | 'timeline' | 'settings';
+export type NavTab = 'focus' | 'dashboard' | 'analytics' | 'records' | 'goals' | 'challenges' | 'timeline' | 'settings' | 'spaces';
 
 interface NavbarProps {
   user: FirebaseUser | null;
@@ -130,6 +131,16 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
           >
             <Activity size={13} />
             Analytics
+          </button>
+          <div className="w-px h-4 bg-slate-300 mx-1"></div>
+          <button
+            onClick={() => handleNavClick('spaces')}
+            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
+              activeTab === 'spaces' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Users size={13} />
+            Spaces
           </button>
         </div>
 

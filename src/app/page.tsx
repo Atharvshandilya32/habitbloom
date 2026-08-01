@@ -23,6 +23,13 @@ import Toast from './components/Toast';
 import JournalModal from './components/JournalModal';
 import { useKeyboardShortcuts } from '../../lib/keyboardShortcuts';
 
+// Phase 4A Spaces
+import SpacesHub from './components/SpacesHub';
+import SpaceDashboard from './components/SpaceDashboard';
+import CreateSpaceModal from './components/CreateSpaceModal';
+import { Space, SpaceInvite } from '../../lib/spaceTypes';
+import { createNewSpace } from '../../lib/spaceUtils';
+
 import { Habit, HabitLog, Goal as GoalType, Challenge, JournalEntry } from '../../lib/habitTypes';
 import { makeLogKey, getMonthKeyPrefix } from '../../lib/habitUtils';
 import { useHabitReminders } from '../../lib/useHabitReminders';
@@ -45,6 +52,12 @@ export default function Page() {
   const [goals, setGoals] = useState<GoalType[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [journals, setJournals] = useState<JournalEntry[]>([]);
+
+  // Phase 4A Spaces State
+  const [userSpaces, setUserSpaces] = useState<Space[]>([]);
+  const [pendingInvites] = useState<SpaceInvite[]>([]);
+  const [activeSpaceId, setActiveSpaceId] = useState<string | null>(null);
+  const [createSpaceOpen, setCreateSpaceOpen] = useState(false);
 
   // Navigation Tab state
   const [activeTab, setActiveTab] = useState<NavTab>('focus');
@@ -481,6 +494,44 @@ export default function Page() {
               sendTestNotification={sendTestNotification}
               onClearData={handleClearLocalData}
             />
+          )}
+
+          {activeTab === 'spaces' && (
+            <div className="space-y-6">
+              {!activeSpaceId ? (
+                <SpacesHub
+                  userSpaces={userSpaces}
+                  pendingInvites={pendingInvites}
+                  onCreateSpaceClick={() => setCreateSpaceOpen(true)}
+                  onEnterSpace={setActiveSpaceId}
+                  onAcceptInvite={() => {
+                     showToast('Invite accepted (Demo)');
+                  }}
+                />
+              ) : (
+                <SpaceDashboard
+                  space={userSpaces.find(s => s.id === activeSpaceId)!}
+                  role={'admin'}
+                  onBack={() => setActiveSpaceId(null)}
+                  onGenerateInvite={() => {
+                     showToast('Invite link generated! (Demo)');
+                  }}
+                />
+              )}
+              
+              <CreateSpaceModal
+                isOpen={createSpaceOpen}
+                onClose={() => setCreateSpaceOpen(false)}
+                onCreate={(name, desc, type) => {
+                   if (!currentUser) return;
+                   const { space } = createNewSpace(name, desc, type, currentUser.uid);
+                   setUserSpaces(prev => [...prev, space]);
+                   setActiveSpaceId(space.id);
+                   setCreateSpaceOpen(false);
+                   showToast(`Space ${name} created!`);
+                }}
+              />
+            </div>
           )}
         </div>
       </main>

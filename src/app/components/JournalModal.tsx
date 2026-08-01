@@ -9,6 +9,7 @@ interface JournalModalProps {
   dateStr: string; // YYYY-MM-DD
   existingEntry?: JournalEntry;
   onSave: (entry: JournalEntry) => void;
+  onDelete?: (id: string) => void;
 }
 
 const MOODS: { type: MoodType; emoji: string; label: string }[] = [
@@ -25,7 +26,8 @@ export default function JournalModal({
   habit,
   dateStr,
   existingEntry,
-  onSave
+  onSave,
+  onDelete
 }: JournalModalProps) {
   const [notes, setNotes] = useState('');
   const [mood, setMood] = useState<MoodType | undefined>(undefined);
@@ -161,19 +163,29 @@ export default function JournalModal({
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-3xl">
-          <button 
-            onClick={onClose}
-            className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-xl transition-colors"
-          >
-            Cancel
-          </button>
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-between gap-3 rounded-b-3xl">
+          <div className="flex gap-3">
+            {existingEntry && onDelete && (
+              <button 
+                onClick={() => onDelete(existingEntry.id)}
+                className="px-5 py-2.5 text-sm font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-100 rounded-xl transition-colors"
+              >
+                Delete
+              </button>
+            )}
+            <button 
+              onClick={onClose}
+              className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
           <button 
             onClick={handleSave}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition-colors"
+            disabled={!notes.trim() && !wins.trim() && !challenges.trim()}
+            className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save size={16} />
-            Save Journal
+            <Save size={16} /> Save Entry
           </button>
         </div>
       </div>

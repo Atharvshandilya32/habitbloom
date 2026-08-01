@@ -1,5 +1,7 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Space, SpaceRole, SpaceAnnouncement, SpaceHabitTemplate, SpaceChallenge, SpaceChallengeType } from '../../../lib/spaceTypes';
+import { ref, onValue, set, remove } from 'firebase/database';
+import { database } from '../../../lib/firebase';
 import { Habit } from '../../../lib/habitTypes';
 import { ArrowLeft, Users, Trophy, Target, Settings, Link as LinkIcon, Megaphone, BarChart3, BrainCircuit } from 'lucide-react';
 import SpaceSettingsModal from './spaces/SpaceSettingsModal';
@@ -37,44 +39,75 @@ export default function SpaceDashboard({
   const [activeTab, setActiveTab] = useState<SpaceTab>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
   
-  // Mock Data for UI demonstration
+  // Mock Data for UI demonstration -> Now Firebase Connected
   const [announcements, setAnnouncements] = useState<SpaceAnnouncement[]>([]);
   const [templates, setTemplates] = useState<SpaceHabitTemplate[]>([]);
   const [challenges, setChallenges] = useState<SpaceChallenge[]>([]);
 
-  // Handlers for mock data
+  useEffect(() => {
+    if (!database) return;
+    const annRef = ref(database, `spaces/${space.id}/announcements`);
+    const tplRef = ref(database, `spaces/${space.id}/templates`);
+    const chalRef = ref(database, `spaces/${space.id}/challenges`);
+
+    const unsubAnn = onValue(annRef, snap => {
+      if (snap.exists()) setAnnouncements(Object.values(snap.val()));
+      else setAnnouncements([]);
+    });
+    const unsubTpl = onValue(tplRef, snap => {
+      if (snap.exists()) setTemplates(Object.values(snap.val()));
+      else setTemplates([]);
+    });
+    const unsubChal = onValue(chalRef, snap => {
+      if (snap.exists()) setChallenges(Object.values(snap.val()));
+      else setChallenges([]);
+    });
+
+    return () => {
+      unsubAnn();
+      unsubTpl();
+      unsubChal();
+    };
+  }, [space.id]);
+
   const handlePostAnnouncement = (title: string, content: string, isPinned: boolean) => {
+    const id = `ann-${Date.now()}`;
     const newAnnouncement: SpaceAnnouncement = {
-      id: `ann-${Date.now()}`, spaceId: space.id, title, content, authorId: currentUserId,
+      id, spaceId: space.id, title, content, authorId: currentUserId,
       createdAt: new Date().toISOString(), isPinned
     };
-    setAnnouncements(prev => [newAnnouncement, ...prev]);
+    if (database) set(ref(database, `spaces/${space.id}/announcements/${id}`), newAnnouncement);
   };
   
   const handleDeleteAnnouncement = (id: string) => {
-    setAnnouncements(prev => prev.filter(a => a.id !== id));
+    if (database) remove(ref(database, `spaces/${space.id}/announcements/${id}`));
   };
 
   const handleCreateTemplate = (name: string, emoji: string, category: string, description: string) => {
+    const id = `tpl-${Date.now()}`;
     const newTemplate: SpaceHabitTemplate = {
-      id: `tpl-${Date.now()}`, spaceId: space.id, name, emoji, category, description, createdBy: currentUserId
+      id, spaceId: space.id, name, emoji, category, description, createdBy: currentUserId
     };
-    setTemplates(prev => [...prev, newTemplate]);
+    if (database) set(ref(database, `spaces/${space.id}/templates/${id}`), newTemplate);
   };
 
   const handleCreateChallenge = (title: string, description: string, type: SpaceChallengeType, totalDays: number) => {
+    const id = `chal-${Date.now()}`;
     const newChallenge: SpaceChallenge = {
-      id: `chal-${Date.now()}`, spaceId: space.id, title, description, type, totalDays,
+      id, spaceId: space.id, title, description, type, totalDays,
       startDate: new Date().toISOString(), createdBy: currentUserId, participants: []
     };
-    setChallenges(prev => [...prev, newChallenge]);
+    if (database) set(ref(database, `spaces/${space.id}/challenges/${id}`), newChallenge);
   };
 
   const handleJoinChallenge = (challengeId: string) => {
-    setChallenges(prev => prev.map(c => 
-      c.id === challengeId ? { ...c, participants: [...c.participants, currentUserId] } : c
-    ));
-    // Usually also installs a habit tracking logic here
+    const challenge = challenges.find(c => c.id === challengeId);
+    if (!challenge) return;
+    const updated = {
+      ...challenge,
+      participants: [...(challenge.participants || []), currentUserId]
+    };
+    if (database) set(ref(database, `spaces/${space.id}/challenges/${challengeId}`), updated);
   };
 
   const branding = space.branding || {};
@@ -300,9 +333,11 @@ export default function SpaceDashboard({
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         space={space}
-        onSave={() => {
-          // Real app would update firebase
-
+        onSave={(updates) => {
+          if (database) {
+            const updatedSpace = { ...space, ...updates };
+            set(ref(database, `spaces/${space.id}`), updatedSpace);
+          }
         }}
       />
 

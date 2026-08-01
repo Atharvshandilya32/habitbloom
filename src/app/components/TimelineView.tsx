@@ -15,10 +15,10 @@ interface TimelineEvent {
 interface TimelineViewProps {
   journals: JournalEntry[];
   habits: Habit[];
-  // we could pass logs or goals here to construct a full timeline, but for simplicity let's stick to journals
+  onEditJournal?: (journalId: string) => void;
 }
 
-export default function TimelineView({ journals, habits }: TimelineViewProps) {
+export default function TimelineView({ journals, habits, onEditJournal }: TimelineViewProps) {
   
   // Construct timeline events from journals
   const events: TimelineEvent[] = journals.map(j => {
@@ -78,7 +78,16 @@ export default function TimelineView({ journals, habits }: TimelineViewProps) {
                       {event.description}
                     </p>
                   )}
-                  {/* Additional Journal Details can go here */}
+                  {event.type === 'journal' && onEditJournal && (
+                    <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => onEditJournal(event.id)}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Edit Entry
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

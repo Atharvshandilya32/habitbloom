@@ -13,6 +13,7 @@ interface DailyFocusViewProps {
   day: number;
   onToggleCell: (habitId: string, day: number) => void;
   onNavigateTab: (tab: NavTab) => void;
+  onOpenJournal?: (habitId: string) => void;
 }
 
 export default function DailyFocusView({
@@ -22,7 +23,8 @@ export default function DailyFocusView({
   month,
   day,
   onToggleCell,
-  onNavigateTab
+  onNavigateTab,
+  onOpenJournal
 }: DailyFocusViewProps) {
   const [showCelebration, setShowCelebration] = useState(false);
   const [insights, setInsights] = useState<string[]>([]);
@@ -164,8 +166,9 @@ export default function DailyFocusView({
                       className="text-xs text-slate-400 hover:text-slate-600 font-medium px-2 py-1 rounded-lg hover:bg-slate-200 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Open Journal modal logic here later
-                        // Open journal logic here
+                        if (onOpenJournal) {
+                          onOpenJournal(habit.id);
+                        }
                       }}
                     >
                       Add Note

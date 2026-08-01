@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Settings, Image as ImageIcon, Palette, Save, QrCode } from 'lucide-react';
+import { X, Settings, Image as ImageIcon, Palette, Save, QrCode, Download } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Space, SpaceBranding } from '../../../../lib/spaceTypes';
 
 interface SpaceSettingsModalProps {
@@ -35,6 +36,37 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, onSave }: S
     };
     onSave({ name, description, branding });
     onClose();
+  };
+
+  const inviteUrl = typeof window !== 'undefined' 
+    ? `${window.location.origin}/invite/${space.id}` 
+    : `https://habitbloom.in/invite/${space.id}`;
+
+  const handleDownloadQR = () => {
+    const svg = document.getElementById('space-qr-code');
+    if (!svg) return;
+    
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      if (ctx) {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        
+        const a = document.createElement('a');
+        a.download = `${space.name.replace(/\s+/g, '-').toLowerCase()}-qr.png`;
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+      }
+    };
+    
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   return (
@@ -166,15 +198,25 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, onSave }: S
                 </h3>
                 
                 <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 text-center">
-                  <div className="w-24 h-24 bg-white rounded-2xl mx-auto border border-slate-200 flex items-center justify-center mb-5 shadow-sm">
-                    <QrCode size={48} className="text-slate-400" />
+                  <div className="w-32 h-32 bg-white rounded-2xl mx-auto border border-slate-200 flex items-center justify-center mb-5 shadow-sm overflow-hidden p-2">
+                    <QRCodeSVG 
+                      id="space-qr-code"
+                      value={inviteUrl} 
+                      size={110} 
+                      level="H"
+                      includeMargin={false}
+                      fgColor="#0f172a"
+                    />
                   </div>
                   <h4 className="text-lg font-bold text-slate-900 mb-2">Space QR Code</h4>
                   <p className="text-sm text-slate-500 mb-6 max-w-sm mx-auto">
                     Members can scan this code to instantly join your space. Perfect for printing at physical locations like gyms, offices, or studios.
                   </p>
-                  <button className="flex items-center gap-2 mx-auto px-5 py-2.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 font-bold rounded-xl transition-colors">
-                    <QrCode size={16} />
+                  <button 
+                    onClick={handleDownloadQR}
+                    className="flex items-center gap-2 mx-auto px-5 py-2.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 font-bold rounded-xl transition-colors"
+                  >
+                    <Download size={16} />
                     Download QR Code
                   </button>
                 </div>

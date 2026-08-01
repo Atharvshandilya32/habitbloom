@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Copy, Share2, Check, Gift } from 'lucide-react';
+import { ref, onValue } from 'firebase/database';
+import { database } from '../../../lib/firebase';
 
 interface ReferralPanelProps {
   userId: string;
@@ -20,6 +22,21 @@ export default function ReferralPanel({ userId }: ReferralPanelProps) {
 
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
+  const [referralCount, setReferralCount] = useState(0);
+
+  useEffect(() => {
+    if (!database) return;
+    const referralsRef = ref(database, `referrals/${code}`);
+    const unsubscribe = onValue(referralsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        // Count number of keys
+        setReferralCount(Object.keys(snapshot.val()).length);
+      } else {
+        setReferralCount(0);
+      }
+    });
+    return () => unsubscribe();
+  }, [code]);
 
   const handleCopy = async () => {
     try {
@@ -139,11 +156,18 @@ export default function ReferralPanel({ userId }: ReferralPanelProps) {
         </div>
 
         {/* Your code badge */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>Your referral code:</span>
-          <span className="font-mono font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-md">
-            {code}
-          </span>
+        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
+          <div className="flex items-center gap-2">
+            <span>Your referral code:</span>
+            <span className="font-mono font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-md">
+              {code}
+            </span>
+          </div>
+          {referralCount > 0 && (
+            <div className="font-bold text-emerald-600">
+              {referralCount} Friend{referralCount > 1 ? 's' : ''} Referred! 🎉
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -75,6 +75,7 @@ export default function Page() {
   // Journal Modal State
   const [journalModalOpen, setJournalModalOpen] = useState(false);
   const [selectedHabitForJournal, setSelectedHabitForJournal] = useState<Habit | undefined>(undefined);
+  const [selectedJournalEntry, setSelectedJournalEntry] = useState<JournalEntry | undefined>(undefined);
 
   // Reminders hook
   const {
@@ -158,12 +159,40 @@ export default function Page() {
   useEffect(() => { localStorage.setItem('habitbloom_challenges', JSON.stringify(challenges)); }, [challenges]);
   useEffect(() => { localStorage.setItem('habitbloom_journals', JSON.stringify(journals)); }, [journals]);
 
-  // 3. Listen to auth state
+  // 3. Listen to auth state and process referrals
   useEffect(() => {
     if (!auth) { setIsLoadingFirebase(false); return; }
+
+    // Capture ref from URL if present
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const refCode = urlParams.get('ref');
+      if (refCode) {
+        localStorage.setItem('habitbloom_pending_referral', refCode);
+        // Clean URL without refreshing
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
     const unsub = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-      if (!user) setIsLoadingFirebase(false);
+      if (!user) {
+        setIsLoadingFirebase(false);
+      } else {
+        // Process pending referral
+        const pendingRef = localStorage.getItem('habitbloom_pending_referral');
+        if (pendingRef && database) {
+          const userShortCode = user.uid.slice(0, 8).toUpperCase();
+          if (pendingRef !== userShortCode) {
+            set(ref(database, `referrals/${pendingRef}/${user.uid}`), {
+              joinedAt: new Date().toISOString(),
+              uid: user.uid
+            });
+            showToast('Referral applied!');
+          }
+          localStorage.removeItem('habitbloom_pending_referral');
+        }
+      }
     });
     return () => unsub();
   }, []);
@@ -349,6 +378,13 @@ export default function Page() {
     showToast('Journal entry saved.');
   };
 
+  const handleDeleteJournal = (journalId: string) => {
+    const updated = journals.filter(j => j.id !== journalId);
+    setJournals(updated);
+    syncToFirebase('journals', updated);
+    showToast('Journal entry deleted.');
+  };
+
   if (isLoadingFirebase) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-600 gap-3">
@@ -373,10 +409,26 @@ export default function Page() {
       <Toast message={toastMsg} isVisible={toastOpen} onClose={() => setToastOpen(false)} />
       <JournalModal 
         isOpen={journalModalOpen} 
-        onClose={() => { setJournalModalOpen(false); setSelectedHabitForJournal(undefined); }}
+        onClose={() => { 
+          setJournalModalOpen(false); 
+          setSelectedHabitForJournal(undefined); 
+          setSelectedJournalEntry(undefined);
+        }}
         habit={selectedHabitForJournal}
-        dateStr={todayDateStr}
-        onSave={handleSaveJournal}
+        dateStr={selectedJournalEntry ? selectedJournalEntry.date : todayDateStr}
+        existingEntry={selectedJournalEntry}
+        onSave={(entry) => {
+          handleSaveJournal(entry);
+          setJournalModalOpen(false);
+          setSelectedHabitForJournal(undefined);
+          setSelectedJournalEntry(undefined);
+        }}
+        onDelete={(id) => {
+          handleDeleteJournal(id);
+          setJournalModalOpen(false);
+          setSelectedHabitForJournal(undefined);
+          setSelectedJournalEntry(undefined);
+        }}
       />
 
       <GuideModal isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
@@ -416,9 +468,15 @@ export default function Page() {
               day={new Date().getDate()} // Focus today
               onToggleCell={(habitId, day) => {
                 handleToggleCell(habitId, day);
-                // Prompt for journal optionally? Or keep it simple.
               }}
               onNavigateTab={setActiveTab}
+              onOpenJournal={(habitId) => {
+                const habit = habits.find(h => h.id === habitId);
+                if (habit) {
+                  setSelectedHabitForJournal(habit);
+                  setJournalModalOpen(true);
+                }
+              }}
             />
           )}
 
@@ -438,9 +496,20 @@ export default function Page() {
           )}
 
           {activeTab === 'timeline' && (
-            <TimelineView
-              journals={journals}
+            <TimelineView 
+              journals={journals} 
               habits={habits}
+              onEditJournal={(id) => {
+                const entry = journals.find(j => j.id === id);
+                if (entry) {
+                  setSelectedJournalEntry(entry);
+                  if (entry.habitId) {
+                    const habit = habits.find(h => h.id === entry.habitId);
+                    setSelectedHabitForJournal(habit);
+                  }
+                  setJournalModalOpen(true);
+                }
+              }}
             />
           )}
 

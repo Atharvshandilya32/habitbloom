@@ -18,6 +18,7 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react';
+import { useTheme } from './ThemeProvider';
 import UserProfile from './UserProfile';
 import HabitReminderSettings from './HabitReminderSettings';
 import DataExportModal from './DataExportModal';
@@ -52,7 +53,7 @@ export default function SettingsView({
 }: SettingsViewProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [exportModalOpen, setExportModalOpen] = useState(false);
-  const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>('light');
+  const { themeMode, setThemeMode } = useTheme();
 
   const navItems: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: 'Profile', icon: <User size={16} /> },

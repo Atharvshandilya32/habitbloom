@@ -22,7 +22,7 @@ const TimelineView = dynamic(() => import('./components/TimelineView'), { ssr: f
 const SettingsView = dynamic(() => import('./components/SettingsView'), { ssr: false });
 
 const CommandPalette = dynamic(() => import('./components/CommandPalette'), { ssr: false });
-const Toast = import('./components/Toast');
+import Toast from './components/Toast';
 import JournalModal from './components/JournalModal';
 import { useKeyboardShortcuts } from '../../lib/keyboardShortcuts';
 

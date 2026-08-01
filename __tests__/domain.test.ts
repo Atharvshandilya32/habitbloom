@@ -1,7 +1,7 @@
 import { formatHbId } from '../lib/identityUtils';
 import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
-import { getTemplateForType } from '../lib/spaceTemplates';
+import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
 
 /**
  * HabitBloom Domain Unit & Security Test Suite
@@ -40,8 +40,8 @@ function runTests() {
   assert(parsed.errors.length > 0, 'Captures duplicate row warnings');
 
   // 4. Role Permission Engine Tests
-  const adminRole = { id: 'admin', name: 'Admin', permissions: { manageMembers: true, deleteSpace: true } };
-  const memberRole = { id: 'member', name: 'Member', permissions: { manageMembers: false } };
+  const adminRole = { id: 'admin', spaceId: 's1', name: 'Admin', description: 'Admin role', color: 'indigo-600', icon: 'shield', order: 1, permissions: createPermissions({ manageMembers: true, deleteSpace: true }) };
+  const memberRole = { id: 'member', spaceId: 's1', name: 'Member', description: 'Member role', color: 'blue-500', icon: 'user', order: 2, permissions: createPermissions({ manageMembers: false }) };
 
   assert(hasPermission(adminRole, 'manageMembers') === true, 'Admin role has manageMembers permission');
   assert(hasPermission(memberRole, 'manageMembers') === false, 'Member role denied manageMembers permission');

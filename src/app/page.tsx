@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Navbar, { NavTab } from './components/charts/TitleBanner';
 import RequireAuth from './auth/RequireAuth';
-import GuideModal, { GuideReminder, shouldShowGuide } from './components/GuideModal';
+import GuideModal, { shouldShowGuide } from './components/GuideModal';
 import CalendarSettings from './components/CalendarSettings';
 
 // Phase 2 & 3 Views

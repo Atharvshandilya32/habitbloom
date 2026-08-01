@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trophy, CheckCircle } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { Challenge } from '../../../lib/habitTypes';
 
 interface ChallengesViewProps {

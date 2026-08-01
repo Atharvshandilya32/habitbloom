@@ -5,7 +5,6 @@ import {
   LogOut,
   BookOpen,
   LayoutDashboard,
-  Calendar,
   Award,
   Menu,
   X,

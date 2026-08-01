@@ -1,6 +1,6 @@
 import React from 'react';
 import { LayoutTemplate, PlusCircle } from 'lucide-react';
-import { HabitTemplate, Habit } from '../../../lib/habitTypes';
+import { HabitTemplate } from '../../../lib/habitTypes';
 
 interface TemplatesGalleryProps {
   onApplyTemplate: (template: HabitTemplate) => void;

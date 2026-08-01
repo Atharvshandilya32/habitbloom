@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 
-type KeyCombo = 'N' | '/' | 'G' | 'J' | 'A' | '?';
+type Handler = () => void;
 
 interface ShortcutOptions {
-  onNewHabit: () => void;
-  onSearch: () => void;
-  onGoals: () => void;
-  onJournal: () => void;
-  onAnalytics: () => void;
-  onHelp: () => void;
+  onNewHabit: Handler;
+  onSearch: Handler;
+  onGoals: Handler;
+  onJournal: Handler;
+  onAnalytics: Handler;
+  onHelp: Handler;
 }
 
 export function useKeyboardShortcuts(options: ShortcutOptions) {

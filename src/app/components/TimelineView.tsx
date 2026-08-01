@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, CheckCircle2, MessageSquare, Target } from 'lucide-react';
+import { Clock, MessageSquare } from 'lucide-react';
 import { JournalEntry, Habit } from '../../../lib/habitTypes';
 
 interface TimelineEvent {
@@ -58,7 +58,7 @@ export default function TimelineView({ journals, habits }: TimelineViewProps) {
           </div>
         ) : (
           <div className="relative border-l-2 border-slate-100 ml-4 space-y-8">
-            {events.map((event, index) => (
+            {events.map((event) => (
               <div key={event.id} className="relative pl-8">
                 {/* Timeline Dot */}
                 <div className={`absolute -left-[17px] top-1 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center shadow-sm ${event.colorClass}`}>

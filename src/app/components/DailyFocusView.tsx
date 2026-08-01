@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { makeLogKey } from '../../../lib/habitUtils';
 import { generateSmartInsights } from '../../../lib/insightUtils';
-import { Check, CheckCircle2, ChevronRight, Zap } from 'lucide-react';
+import { Check, Zap } from 'lucide-react';
+import { NavTab } from './charts/TitleBanner';
 
 interface DailyFocusViewProps {
   habits: Habit[];
@@ -11,7 +12,7 @@ interface DailyFocusViewProps {
   month: number;
   day: number;
   onToggleCell: (habitId: string, day: number) => void;
-  onNavigateTab: (tab: any) => void;
+  onNavigateTab: (tab: NavTab) => void;
 }
 
 export default function DailyFocusView({
@@ -122,7 +123,7 @@ export default function DailyFocusView({
       <div className="space-y-4">
         {activeHabits.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-3xl border border-slate-200 border-dashed">
-            <p className="text-slate-500 font-medium mb-4">You don't have any habits yet.</p>
+            <p className="text-slate-500 font-medium mb-4">You don&apos;t have any habits yet.</p>
             <button 
               onClick={() => onNavigateTab('dashboard')}
               className="px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors"

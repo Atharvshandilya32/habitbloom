@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Space, SpaceMember, CustomRole } from '../../../../lib/spaceTypes';
 import { database } from '../../../../lib/firebase';
 import { ref, onValue, off, DataSnapshot, set } from 'firebase/database';
-import { Search, User, Filter, AlertCircle, Edit2 } from 'lucide-react';
+import { Search, User, Filter, AlertCircle, Edit2, Copy, Check, Shield, Hash, X } from 'lucide-react';
 import { Skeleton } from '../ui/Skeleton';
 import { hasPermission } from '../../../../lib/spacePermissions';
 
@@ -25,6 +25,8 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [selectedMember, setSelectedMember] = useState<MemberWithProfile | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!database) {
@@ -114,6 +116,18 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
     if (database) {
       set(ref(database, `spaceMembers/${dbKey}/roleId`), newRoleId);
       setEditingMemberId(null);
+      if (selectedMember) {
+        setSelectedMember(prev => prev ? { ...prev, roleId: newRoleId } : null);
+      }
+    }
+  };
+
+  const handleCopyId = (userId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(userId);
+      setCopiedId(userId);
+      setTimeout(() => setCopiedId(null), 2000);
     }
   };
 
@@ -182,8 +196,12 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
           {filteredMembers.map(member => {
             const style = getRoleBadgeStyle(member.roleId);
             return (
-              <div key={member.userId} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0">
+              <div 
+                key={member.userId} 
+                onClick={() => setSelectedMember(member)}
+                className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800 transition-all cursor-pointer flex items-center gap-4 group"
+              >
+                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                   <User size={20} className="text-slate-400" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -192,34 +210,51 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
                       {member.displayName}
                     </h4>
                   </div>
-                  <div className="flex flex-col gap-1 mt-1">
-                    
+                  
+                  {/* App ID Tag */}
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 text-[10px] font-mono font-medium">
+                      <Hash size={10} className="text-slate-400" />
+                      {member.userId.substring(0, 10)}...
+                    </span>
+                    <button 
+                      onClick={(e) => handleCopyId(member.userId, e)}
+                      className="p-0.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-indigo-600 transition-colors"
+                      title="Copy App ID"
+                    >
+                      {copiedId === member.userId ? <Check size={12} className="text-emerald-500" /> : <Copy size={11} />}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 mt-2">
                     {editingMemberId === member.userId && hasPermission(currentUserRole, 'manageMembers') ? (
                       <select
                         autoFocus
+                        onClick={(e) => e.stopPropagation()}
                         onBlur={() => setEditingMemberId(null)}
                         value={member.roleId}
                         onChange={(e) => handleChangeRole(member.dbKey, e.target.value)}
-                        className="text-xs font-bold border border-slate-200 rounded px-1 py-1"
+                        className="text-xs font-bold border border-slate-200 rounded px-1.5 py-1 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none"
                       >
                         {availableRoles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                       </select>
                     ) : (
                       <div 
-                        className={`inline-flex items-center w-fit px-1.5 py-0.5 rounded text-[10px] font-bold border ${style.bg} ${style.text} ${style.border} ${hasPermission(currentUserRole, 'manageMembers') ? 'cursor-pointer hover:opacity-80' : ''}`}
-                        onClick={() => {
+                        className={`inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold border ${style.bg} ${style.text} ${style.border} ${hasPermission(currentUserRole, 'manageMembers') ? 'hover:opacity-80' : ''}`}
+                        onClick={(e) => {
                           if (hasPermission(currentUserRole, 'manageMembers')) {
+                            e.stopPropagation();
                             setEditingMemberId(member.userId);
                           }
                         }}
                         title={hasPermission(currentUserRole, 'manageMembers') ? "Click to change role" : ""}
                       >
                         {getRoleName(member.roleId)}
-                        {hasPermission(currentUserRole, 'manageMembers') && <Edit2 size={8} className="ml-1 opacity-50" />}
+                        {hasPermission(currentUserRole, 'manageMembers') && <Edit2 size={8} className="ml-1 opacity-60" />}
                       </div>
                     )}
                     
-                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate mt-1">
+                    <span className="text-[11px] font-medium text-slate-400 truncate">
                       Joined {new Date(member.joinedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
                     </span>
                   </div>
@@ -227,6 +262,106 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Selected Member Detail Modal */}
+      {selectedMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="fixed inset-0" onClick={() => setSelectedMember(null)} />
+          
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700">
+            <button 
+              onClick={() => setSelectedMember(null)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="text-center pt-2">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-black text-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
+                {selectedMember.displayName.charAt(0).toUpperCase()}
+              </div>
+
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                {selectedMember.displayName}
+              </h3>
+              
+              <p className="text-xs font-semibold text-slate-400 mt-0.5">
+                {selectedMember.bio || 'Habit Builder & Community Member'}
+              </p>
+
+              {/* Role Badge */}
+              <div className="mt-3 inline-flex items-center gap-1.5">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getRoleBadgeStyle(selectedMember.roleId).bg} ${getRoleBadgeStyle(selectedMember.roleId).text} ${getRoleBadgeStyle(selectedMember.roleId).border}`}>
+                  {getRoleName(selectedMember.roleId)}
+                </span>
+              </div>
+            </div>
+
+            {/* Profile Info Details Card */}
+            <div className="mt-6 bg-slate-50 dark:bg-slate-900/60 rounded-2xl p-4 space-y-4 border border-slate-100 dark:border-slate-700/50 text-left">
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  User App ID
+                </label>
+                <div className="flex items-center justify-between bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 truncate mr-2">
+                    {selectedMember.userId}
+                  </span>
+                  <button
+                    onClick={() => handleCopyId(selectedMember.userId)}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 font-bold text-xs rounded-lg transition-colors shrink-0"
+                  >
+                    {copiedId === selectedMember.userId ? (
+                      <>
+                        <Check size={13} className="text-emerald-500" />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={13} />
+                        <span>Copy App ID</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Joined Space</span>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  {new Date(selectedMember.joinedAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                </span>
+              </div>
+
+              {hasPermission(currentUserRole, 'manageMembers') && (
+                <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                    Assign Community Role
+                  </label>
+                  <select
+                    value={selectedMember.roleId}
+                    onChange={(e) => handleChangeRole(selectedMember.dbKey, e.target.value)}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                  >
+                    {availableRoles.map(role => (
+                      <option key={role.id} value={role.id}>{role.name} — {role.description}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setSelectedMember(null)}
+                className="w-full py-2.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs rounded-xl hover:opacity-90 transition-opacity"
+              >
+                Close Profile
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

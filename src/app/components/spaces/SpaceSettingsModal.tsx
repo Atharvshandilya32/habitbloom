@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import { X, Settings, Image as ImageIcon, Palette, Save, QrCode, Download, Copy } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Settings, Image as ImageIcon, Palette, Save, QrCode, Download, Copy, Shield, Plus, Check } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Space, SpaceBranding, SpaceInvite } from '../../../../lib/spaceTypes';
+import { Space, SpaceBranding, SpaceInvite, CustomRole, SpacePermissions } from '../../../../lib/spaceTypes';
+import { createPermissions } from '../../../../lib/spaceTemplates';
 import { database } from '../../../../lib/firebase';
-import { ref, set, get, child } from 'firebase/database';
+import { ref, set, get, child, onValue, off } from 'firebase/database';
 import { generateSpaceInvite } from '../../../../lib/spaceUtils';
 
 interface SpaceSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   space: Space;
-  initialTab?: 'general' | 'branding' | 'invites';
+  initialTab?: 'general' | 'branding' | 'invites' | 'roles';
   onSave: (updates: Partial<Space>) => void;
 }
 
@@ -27,14 +28,25 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
   const [welcomeMessage, setWelcomeMessage] = useState(initialBranding.welcomeMessage || '');
   const [coverUrl, setCoverUrl] = useState(initialBranding.coverUrl || '');
 
-  const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'invites'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'invites' | 'roles'>(initialTab);
 
-  React.useEffect(() => {
+  // Custom Roles State
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
+  const [editingRole, setEditingRole] = useState<CustomRole | null>(null);
+  const [showRoleForm, setShowRoleForm] = useState(false);
+  
+  // New/Edit Role Form Fields
+  const [roleName, setRoleName] = useState('');
+  const [roleDesc, setRoleDesc] = useState('');
+  const [roleColor, setRoleColor] = useState('indigo-600');
+  const [rolePermissions, setRolePermissions] = useState<SpacePermissions>(createPermissions());
+
+  useEffect(() => {
     if (isOpen) setActiveTab(initialTab);
   }, [isOpen, initialTab]);
-  const [inviteCode, setInviteCode] = React.useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (activeTab === 'invites' && database && !inviteCode) {
       get(child(ref(database), 'spaceInvites')).then(snap => {
         if (snap.exists()) {
@@ -44,7 +56,20 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
         }
       });
     }
-  }, [activeTab, space.id, inviteCode]);
+
+    if ((activeTab === 'roles' || isOpen) && database) {
+      const rolesRef = ref(database, `spaceRoles/${space.id}`);
+      const unsubscribe = onValue(rolesRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const rolesObj = snapshot.val();
+          const list = Object.values(rolesObj) as CustomRole[];
+          list.sort((a, b) => (a.order || 0) - (b.order || 0));
+          setCustomRoles(list);
+        }
+      });
+      return () => off(rolesRef, 'value', unsubscribe);
+    }
+  }, [activeTab, space.id, inviteCode, isOpen]);
 
   if (!isOpen) return null;
 
@@ -65,6 +90,42 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
       set(ref(database, `spaceInvites/${invite.code}`), invite);
       setInviteCode(invite.code);
     }
+  };
+
+  const handleOpenRoleForm = (roleToEdit?: CustomRole) => {
+    if (roleToEdit) {
+      setEditingRole(roleToEdit);
+      setRoleName(roleToEdit.name);
+      setRoleDesc(roleToEdit.description || '');
+      setRoleColor(roleToEdit.color || 'indigo-600');
+      setRolePermissions(roleToEdit.permissions || createPermissions());
+    } else {
+      setEditingRole(null);
+      setRoleName('');
+      setRoleDesc('');
+      setRoleColor('indigo-600');
+      setRolePermissions(createPermissions());
+    }
+    setShowRoleForm(true);
+  };
+
+  const handleSaveRole = () => {
+    if (!roleName.trim() || !database) return;
+    
+    const roleId = editingRole ? editingRole.id : `role-custom-${Date.now()}`;
+    const newRole: CustomRole = {
+      id: roleId,
+      spaceId: space.id,
+      name: roleName.trim(),
+      description: roleDesc.trim(),
+      color: roleColor,
+      icon: editingRole?.icon || 'shield',
+      permissions: rolePermissions,
+      order: editingRole ? editingRole.order : customRoles.length + 1
+    };
+
+    set(ref(database, `spaceRoles/${space.id}/${roleId}`), newRole);
+    setShowRoleForm(false);
   };
 
   const inviteUrl = inviteCode 
@@ -135,6 +196,13 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
               className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors ${activeTab === 'invites' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               Invites & QR
+            </button>
+            <button 
+              onClick={() => setActiveTab('roles')}
+              className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-between ${activeTab === 'roles' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              <span>Community Roles</span>
+              <Shield size={14} className="text-slate-400" />
             </button>
           </div>
 
@@ -296,6 +364,155 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
                     </>
                   )}
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'roles' && (
+              <div className="space-y-6 animate-in slide-in-from-right-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                      <Shield size={18} className="text-indigo-500" />
+                      Community Roles & Permissions
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Configure custom roles tailored to your organization.
+                    </p>
+                  </div>
+                  {!showRoleForm && (
+                    <button
+                      onClick={() => handleOpenRoleForm()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
+                    >
+                      <Plus size={14} />
+                      <span>New Role</span>
+                    </button>
+                  )}
+                </div>
+
+                {showRoleForm ? (
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 animate-in fade-in duration-200">
+                    <h4 className="font-bold text-slate-800 text-sm">
+                      {editingRole ? `Edit Role: ${editingRole.name}` : 'Create New Community Role'}
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Role Name</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Senior Trainer, Vice Principal"
+                          value={roleName}
+                          onChange={(e) => setRoleName(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Badge Color</label>
+                        <select
+                          value={roleColor}
+                          onChange={(e) => setRoleColor(e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        >
+                          <option value="indigo-600">Indigo</option>
+                          <option value="emerald-600">Emerald</option>
+                          <option value="purple-600">Purple</option>
+                          <option value="amber-500">Amber</option>
+                          <option value="rose-600">Rose</option>
+                          <option value="slate-900">Dark Slate</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Description</label>
+                      <input
+                        type="text"
+                        placeholder="Briefly describe what members with this role do..."
+                        value={roleDesc}
+                        onChange={(e) => setRoleDesc(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Permissions Checklist</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white p-3 rounded-xl border border-slate-200 text-xs">
+                        {[
+                          { key: 'manageMembers', label: 'Manage Members & Roles' },
+                          { key: 'inviteMembers', label: 'Generate Invites' },
+                          { key: 'createChallenges', label: 'Create & Edit Challenges' },
+                          { key: 'sendAnnouncements', label: 'Post Announcements' },
+                          { key: 'manageTemplates', label: 'Create Habit Templates' },
+                          { key: 'viewAnalytics', label: 'View Organization Analytics' },
+                          { key: 'manageBranding', label: 'Edit Space Settings' },
+                          { key: 'manageRoles', label: 'Create & Edit Custom Roles' },
+                        ].map(perm => (
+                          <label key={perm.key} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-slate-50 rounded">
+                            <input
+                              type="checkbox"
+                              checked={!!rolePermissions[perm.key as keyof SpacePermissions]}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setRolePermissions(prev => ({ ...prev, [perm.key]: checked }));
+                              }}
+                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="font-semibold text-slate-700">{perm.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button
+                        onClick={() => setShowRoleForm(false)}
+                        className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveRole}
+                        disabled={!roleName.trim()}
+                        className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-colors disabled:opacity-50"
+                      >
+                        Save Role
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {customRoles.length === 0 ? (
+                      <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
+                        <p className="text-sm font-medium text-slate-500">No custom roles defined yet.</p>
+                      </div>
+                    ) : (
+                      customRoles.map(role => (
+                        <div key={role.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between gap-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 text-sm">{role.name}</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                                {Object.values(role.permissions || {}).filter(Boolean).length} permissions
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500 font-medium mt-0.5">
+                              {role.description || 'Community role'}
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => handleOpenRoleForm(role)}
+                            className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl transition-colors shrink-0"
+                          >
+                            Edit Permissions
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

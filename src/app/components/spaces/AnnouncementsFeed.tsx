@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { SpaceAnnouncement, SpaceRole } from '../../../../lib/spaceTypes';
+import { SpaceAnnouncement, CustomRole } from '../../../../lib/spaceTypes';
+import { hasPermission } from '../../../../lib/spacePermissions';
 import { Megaphone, Pin, Send, Trash2 } from 'lucide-react';
 
 interface AnnouncementsFeedProps {
   announcements: SpaceAnnouncement[];
-  role: SpaceRole;
+  role: CustomRole | null | undefined;
   onPostAnnouncement: (title: string, content: string, isPinned: boolean) => void;
   onDeleteAnnouncement: (id: string) => void;
 }
@@ -34,7 +35,7 @@ export default function AnnouncementsFeed({ announcements, role, onPostAnnouncem
     <div className="space-y-6">
       
       {/* Admin Post Actions */}
-      {role === 'admin' && !showPostForm && (
+      {hasPermission(role, 'sendAnnouncements') && !showPostForm && (
         <button 
           onClick={() => setShowPostForm(true)}
           className="w-full bg-white border border-slate-200 border-dashed rounded-3xl p-4 flex items-center justify-center gap-2 text-slate-500 font-bold hover:bg-slate-50 hover:text-indigo-600 transition-colors"
@@ -44,7 +45,7 @@ export default function AnnouncementsFeed({ announcements, role, onPostAnnouncem
         </button>
       )}
 
-      {role === 'admin' && showPostForm && (
+      {hasPermission(role, 'sendAnnouncements') && showPostForm && (
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm animate-in slide-in-from-top-2">
           <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4">
             <Megaphone size={18} className="text-indigo-500" />
@@ -109,7 +110,7 @@ export default function AnnouncementsFeed({ announcements, role, onPostAnnouncem
             <p className="text-slate-500 font-medium max-w-md mx-auto mb-8 leading-relaxed">
               Announcements are the central communication hub for your Space. Use them to share updates, celebrate wins, or kick off new challenges.
             </p>
-            {role === 'admin' ? (
+            {hasPermission(role, 'sendAnnouncements') ? (
               <button 
                 onClick={() => setShowPostForm(true)}
                 className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition-colors inline-flex items-center gap-2"
@@ -138,10 +139,11 @@ export default function AnnouncementsFeed({ announcements, role, onPostAnnouncem
                     {new Date(announcement.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
                 </div>
-                {role === 'admin' && (
+                {hasPermission(role, 'sendAnnouncements') && (
                   <button 
                     onClick={() => onDeleteAnnouncement(announcement.id)}
-                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete Announcement"
                   >
                     <Trash2 size={16} />
                   </button>

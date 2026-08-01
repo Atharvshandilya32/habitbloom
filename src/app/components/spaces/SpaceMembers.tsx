@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Space, SpaceMember, SpaceRole } from '../../../../lib/spaceTypes';
+import { Space, SpaceMember, CustomRole } from '../../../../lib/spaceTypes';
 import { database } from '../../../../lib/firebase';
-import { ref, onValue, off, DataSnapshot } from 'firebase/database';
-import { Search, Shield, User, Filter, AlertCircle } from 'lucide-react';
+import { ref, onValue, off, DataSnapshot, set } from 'firebase/database';
+import { Search, Shield, User, Filter, AlertCircle, ChevronDown, Edit2 } from 'lucide-react';
 import { Skeleton } from '../ui/Skeleton';
+import { hasPermission } from '../../../../lib/spacePermissions';
 
 interface SpaceMembersProps {
   space: Space;
+  currentUserRole: CustomRole | null | undefined;
 }
 
 interface MemberWithProfile extends SpaceMember {
@@ -15,11 +17,13 @@ interface MemberWithProfile extends SpaceMember {
   bio?: string;
 }
 
-export default function SpaceMembers({ space }: SpaceMembersProps) {
+export default function SpaceMembers({ space, currentUserRole }: SpaceMembersProps) {
   const [members, setMembers] = useState<MemberWithProfile[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<CustomRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<SpaceRole | 'all'>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!database) {
@@ -27,7 +31,18 @@ export default function SpaceMembers({ space }: SpaceMembersProps) {
       return;
     }
     const membersRef = ref(database, 'spaceMembers');
+    const rolesRef = ref(database, `spaceRoles/${space.id}`);
     
+    let roles: Record<string, CustomRole> = {};
+
+    const handleRoles = (snapshot: DataSnapshot) => {
+      if (snapshot.exists()) {
+        roles = snapshot.val();
+        const rolesList = Object.values(roles).sort((a, b) => (a.order || 0) - (b.order || 0));
+        setAvailableRoles(rolesList);
+      }
+    };
+
     const handleData = (snapshot: DataSnapshot) => {
       const data = snapshot.val();
       if (!data) {
@@ -38,20 +53,18 @@ export default function SpaceMembers({ space }: SpaceMembersProps) {
 
       // Fetch all members for this space
       const spaceMembers: SpaceMember[] = [];
+      const keys: string[] = [];
       Object.keys(data).forEach(key => {
         const member = data[key];
         if (member.spaceId === space.id) {
-          spaceMembers.push(member);
+          spaceMembers.push({ ...member, dbKey: key } as SpaceMember & { dbKey: string });
         }
       });
 
-      // To respect data privacy (Closed Beta limitation), we are mocking the user profile data
-      // since the "users" table may not have public profiles configured yet.
-      // In production, you would join this with the `users` table or a `public_profiles` table.
-      const membersWithProfiles: MemberWithProfile[] = spaceMembers.map((m) => ({
+      const membersWithProfiles: MemberWithProfile[] = spaceMembers.map((m: any) => ({
         ...m,
         displayName: `User ${m.userId.substring(0, 5)}`, // Fallback display name
-        bio: m.role === 'admin' || m.role === 'owner' ? 'Community Leader' : 'Habit Builder',
+        bio: m.roleId ? 'Habit Builder' : 'Community Leader',
       }));
 
       // Sort by joinedAt
@@ -61,32 +74,47 @@ export default function SpaceMembers({ space }: SpaceMembersProps) {
       setLoading(false);
     };
 
+    onValue(rolesRef, handleRoles);
     onValue(membersRef, handleData);
 
     return () => {
       off(membersRef, 'value', handleData);
+      off(rolesRef, 'value', handleRoles);
     };
   }, [space.id]);
 
   const filteredMembers = members.filter(m => {
     const matchesSearch = m.displayName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === 'all' || m.role === roleFilter;
+    const matchesRole = roleFilter === 'all' || m.roleId === roleFilter;
     return matchesSearch && matchesRole;
   });
 
-  const getRoleBadgeColor = (role: SpaceRole) => {
-    switch (role) {
-      case 'owner': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200 dark:border-purple-800';
-      case 'admin': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800';
-      case 'coach': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
-      case 'moderator': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800';
-      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
-    }
+  const getRoleBadgeStyle = (roleId?: string) => {
+    if (!roleId) return { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' };
+    const role = availableRoles.find(r => r.id === roleId);
+    if (!role) return { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' };
+    
+    // Dynamic color classes based on CustomRole color
+    if (role.color.includes('purple')) return { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' };
+    if (role.color.includes('indigo')) return { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200' };
+    if (role.color.includes('emerald')) return { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' };
+    if (role.color.includes('amber') || role.color.includes('orange')) return { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' };
+    if (role.color.includes('pink') || role.color.includes('rose')) return { bg: 'bg-pink-100', text: 'text-pink-700', border: 'border-pink-200' };
+    
+    return { bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-700 dark:text-slate-300', border: 'border-slate-200 dark:border-slate-700' };
   };
 
-  const getRoleIcon = (role: SpaceRole) => {
-    if (role === 'owner' || role === 'admin') return <Shield size={12} className="mr-1" />;
-    return null;
+  const getRoleName = (roleId?: string) => {
+    if (!roleId) return 'Member';
+    const role = availableRoles.find(r => r.id === roleId);
+    return role ? role.name : 'Unknown Role';
+  };
+
+  const handleChangeRole = (dbKey: string, newRoleId: string) => {
+    if (database) {
+      set(ref(database, `spaceMembers/${dbKey}/roleId`), newRoleId);
+      setEditingMemberId(null);
+    }
   };
 
   return (
@@ -116,15 +144,13 @@ export default function SpaceMembers({ space }: SpaceMembersProps) {
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <select
             value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value as SpaceRole | 'all')}
+            onChange={(e) => setRoleFilter(e.target.value)}
             className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-sm font-medium appearance-none cursor-pointer"
           >
             <option value="all">All Roles</option>
-            <option value="owner">Owners</option>
-            <option value="admin">Admins</option>
-            <option value="coach">Coaches</option>
-            <option value="moderator">Moderators</option>
-            <option value="member">Members</option>
+            {availableRoles.map(role => (
+              <option key={role.id} value={role.id}>{role.name}s</option>
+            ))}
           </select>
         </div>
       </div>
@@ -153,29 +179,54 @@ export default function SpaceMembers({ space }: SpaceMembersProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredMembers.map(member => (
-            <div key={member.userId} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0">
-                <User size={20} className="text-slate-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                    {member.displayName}
-                  </h4>
+          {filteredMembers.map(member => {
+            const style = getRoleBadgeStyle(member.roleId);
+            return (
+              <div key={member.userId} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0">
+                  <User size={20} className="text-slate-400" />
                 </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${getRoleBadgeColor(member.role)}`}>
-                    {getRoleIcon(member.role)}
-                    {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
-                  </span>
-                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
-                    Joined {new Date(member.joinedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-                  </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                      {member.displayName}
+                    </h4>
+                  </div>
+                  <div className="flex flex-col gap-1 mt-1">
+                    
+                    {editingMemberId === member.userId && hasPermission(currentUserRole, 'manageMembers') ? (
+                      <select
+                        autoFocus
+                        onBlur={() => setEditingMemberId(null)}
+                        value={member.roleId}
+                        onChange={(e) => handleChangeRole((member as any).dbKey, e.target.value)}
+                        className="text-xs font-bold border border-slate-200 rounded px-1 py-1"
+                      >
+                        {availableRoles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                      </select>
+                    ) : (
+                      <div 
+                        className={`inline-flex items-center w-fit px-1.5 py-0.5 rounded text-[10px] font-bold border ${style.bg} ${style.text} ${style.border} ${hasPermission(currentUserRole, 'manageMembers') ? 'cursor-pointer hover:opacity-80' : ''}`}
+                        onClick={() => {
+                          if (hasPermission(currentUserRole, 'manageMembers')) {
+                            setEditingMemberId(member.userId);
+                          }
+                        }}
+                        title={hasPermission(currentUserRole, 'manageMembers') ? "Click to change role" : ""}
+                      >
+                        {getRoleName(member.roleId)}
+                        {hasPermission(currentUserRole, 'manageMembers') && <Edit2 size={8} className="ml-1 opacity-50" />}
+                      </div>
+                    )}
+                    
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate mt-1">
+                      Joined {new Date(member.joinedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { SpaceChallenge, SpaceChallengeType, SpaceRole } from '../../../../lib/spaceTypes';
+import { SpaceChallenge, SpaceChallengeType, CustomRole } from '../../../../lib/spaceTypes';
+import { hasPermission } from '../../../../lib/spacePermissions';
 import { Trophy, Plus, CheckCircle2, Clock, Users, BrainCircuit, Loader2 } from 'lucide-react';
 import { generateSpaceChallengeIdeas } from '../../../../lib/spaceAiUtils';
 
 interface SpaceChallengesProps {
   challenges: SpaceChallenge[];
-  role: SpaceRole;
+  role: CustomRole | null | undefined;
   currentUserId: string;
   spaceType: import('../../../../lib/spaceTypes').SpaceType;
   onCreateChallenge: (title: string, description: string, type: SpaceChallengeType, totalDays: number) => void;
@@ -64,7 +65,7 @@ export default function SpaceChallenges({
             Join time-bound challenges with your organization.
           </p>
         </div>
-        {role === 'admin' && !showForm && (
+        {hasPermission(role, 'createChallenges') && !showForm && (
           <div className="flex gap-2">
             <button 
               onClick={handleGenerateAI}
@@ -114,7 +115,7 @@ export default function SpaceChallenges({
         </div>
       )}
 
-      {role === 'admin' && showForm && (
+      {hasPermission(role, 'createChallenges') && showForm && (
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm animate-in slide-in-from-top-2">
           <h4 className="font-bold text-slate-800 mb-4">Create Organization Challenge</h4>
           
@@ -181,7 +182,7 @@ export default function SpaceChallenges({
             <p className="text-slate-500 font-medium max-w-md mx-auto mb-8 leading-relaxed">
               Challenges are time-bound events where the entire community tracks the same habits. They are the best way to ignite engagement.
             </p>
-            {role === 'admin' ? (
+            {hasPermission(role, 'createChallenges') ? (
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button 
                   onClick={handleGenerateAI}

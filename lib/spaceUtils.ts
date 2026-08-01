@@ -31,6 +31,7 @@ export function createNewSpace(
   const member: SpaceMember = {
     spaceId,
     userId,
+    roleId: '', // Will be assigned during migration or backend trigger
     role: 'admin',
     joinedAt: now,
   };

@@ -36,7 +36,7 @@ import { useHabitReminders } from '../../lib/useHabitReminders';
 
 // Firebase imports
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { ref, onValue, set } from 'firebase/database';
+import { ref, onValue, set, get } from 'firebase/database';
 import { auth, database } from '../../lib/firebase';
 
 const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
@@ -55,8 +55,9 @@ export default function Page() {
 
   // Spaces State
   const [userSpaces, setUserSpaces] = useState<Space[]>([]);
+  const [userRoles, setUserRoles] = useState<Record<string, import('../../lib/spaceTypes').CustomRole>>({});
   const [publicSpaces, setPublicSpaces] = useState<Space[]>([]);
-  const [pendingInvites, setPendingInvites] = useState<SpaceInvite[]>([]);
+  const [pendingInvites] = useState<SpaceInvite[]>([]);
   const [activeSpaceId, setActiveSpaceId] = useState<string | null>(null);
   const [createSpaceOpen, setCreateSpaceOpen] = useState(false);
 
@@ -247,6 +248,7 @@ export default function Page() {
 
     const membersRef = ref(database, 'spaceMembers');
     const spacesRef = ref(database, 'spaces');
+    const rolesRef = ref(database, 'spaceRoles');
 
     const unsubscribeMembers = onValue(
       membersRef,
@@ -258,11 +260,13 @@ export default function Page() {
         
         const allMembers = snapshot.val();
         const mySpaceIds: string[] = [];
+        const myRoleMappings: Record<string, string> = {}; // spaceId -> roleId
         
         // Find spaces the user belongs to
         Object.keys(allMembers).forEach(key => {
           if (allMembers[key].userId === currentUser.uid) {
             mySpaceIds.push(allMembers[key].spaceId);
+            myRoleMappings[allMembers[key].spaceId] = allMembers[key].roleId;
           }
         });
 
@@ -278,12 +282,37 @@ export default function Page() {
             if (spaceSnapshot.exists()) {
               const allSpaces = spaceSnapshot.val();
               const mySpaces = mySpaceIds.map(id => allSpaces[id]).filter(Boolean);
+              
+              // Run silent migrations if necessary
+              mySpaces.forEach(space => {
+                if (space.schemaVersion !== 2) {
+                  import('../../lib/migrateSpace').then(({ migrateLegacySpace }) => migrateLegacySpace(space));
+                }
+              });
+              
               setUserSpaces(mySpaces);
               
               // Also store all spaces for public search (if no privacy settings yet, assume all are public)
               const allSpacesList = Object.values(allSpaces) as Space[];
               // For a real app we might filter out spaces the user is already in, or keep them.
               setPublicSpaces(allSpacesList);
+              
+              // Fetch roles for the spaces we belong to
+              get(rolesRef).then(rolesSnapshot => {
+                if (rolesSnapshot.exists()) {
+                  const allSpaceRoles = rolesSnapshot.val();
+                  const resolvedRoles: Record<string, import('../../lib/spaceTypes').CustomRole> = {};
+                  
+                  mySpaceIds.forEach(spaceId => {
+                     const roleId = myRoleMappings[spaceId];
+                     if (roleId && allSpaceRoles[spaceId] && allSpaceRoles[spaceId][roleId]) {
+                       resolvedRoles[spaceId] = allSpaceRoles[spaceId][roleId];
+                     }
+                  });
+                  setUserRoles(resolvedRoles);
+                }
+              });
+
             } else {
               setPublicSpaces([]);
             }
@@ -640,29 +669,10 @@ export default function Page() {
               ) : (
                 <SpaceDashboard
                   space={userSpaces.find(s => s.id === activeSpaceId)!}
-                  role={'admin'}
+                  role={userRoles[activeSpaceId]}
                   currentUserId={currentUser?.uid || ''}
                   personalHabits={habits}
                   onBack={() => setActiveSpaceId(null)}
-                  onGenerateInvite={() => {
-                     if (!currentUser) return;
-                     const invite = generateSpaceInvite(activeSpaceId, currentUser.uid);
-                     if (database) {
-                       set(ref(database, `spaceInvites/${invite.code}`), invite);
-                     }
-                     // Copy link to clipboard
-                     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://habitbloom.in';
-                     const inviteUrl = `${baseUrl}/invite/${invite.code}`;
-                     
-                     if (navigator.clipboard && navigator.clipboard.writeText) {
-                       navigator.clipboard.writeText(inviteUrl)
-                         .then(() => showToast('Invite link copied to clipboard.'))
-                         .catch(() => showToast(`Invite code: ${invite.code}`));
-                     } else {
-                       // Fallback if clipboard API is unavailable
-                       showToast(`Invite code: ${invite.code}`);
-                     }
-                  }}
                   onInstallTemplate={(template) => {
                      const newHabit = {
                         id: `habit-${Date.now()}`,

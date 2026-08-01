@@ -1,5 +1,7 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Space, SpaceRole, SpaceAnnouncement, SpaceHabitTemplate, SpaceChallenge, SpaceChallengeType } from '../../../lib/spaceTypes';
+import { Space, SpaceAnnouncement, SpaceHabitTemplate, SpaceChallenge, SpaceChallengeType, CustomRole } from '../../../lib/spaceTypes';
+import { hasPermission } from '../../../lib/spacePermissions';
+import { getSpaceUILabels } from '../../../lib/spaceUILabels';
 import { ref, onValue, set, remove } from 'firebase/database';
 import { database } from '../../../lib/firebase';
 import { Habit } from '../../../lib/habitTypes';
@@ -19,11 +21,10 @@ type SpaceTab = 'home' | 'challenges' | 'templates' | 'members' | 'analytics' | 
 
 interface SpaceDashboardProps {
   space: Space;
-  role: SpaceRole;
+  role: CustomRole | null | undefined;
   currentUserId: string;
   personalHabits: Habit[];
   onBack: () => void;
-  onGenerateInvite: () => void;
   onInstallTemplate: (template: SpaceHabitTemplate) => void;
 }
 
@@ -32,8 +33,7 @@ export default function SpaceDashboard({
   role, 
   currentUserId,
   personalHabits,
-  onBack, 
-  onGenerateInvite,
+  onBack,
   onInstallTemplate
 }: SpaceDashboardProps) {
   const [activeTab, setActiveTab] = useState<SpaceTab>('home');
@@ -113,6 +113,7 @@ export default function SpaceDashboard({
 
   const branding = space.branding || {};
   const themeColorClass = branding.themeColor ? `bg-${branding.themeColor}` : 'bg-indigo-600';
+  const labels = getSpaceUILabels(space.type);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-300">
@@ -128,7 +129,7 @@ export default function SpaceDashboard({
         </button>
 
         <div className="flex gap-2">
-          {role === 'admin' && (
+          {hasPermission(role, 'manageBranding') && (
             <>
               <button 
                 onClick={() => {
@@ -140,7 +141,10 @@ export default function SpaceDashboard({
                 <Settings size={16} />
                 Settings
               </button>
-              <button 
+            </>
+          )}
+          {hasPermission(role, 'inviteMembers') && (
+            <button 
                 onClick={() => {
                   setSettingsInitialTab('invites');
                   setSettingsOpen(true);
@@ -150,9 +154,8 @@ export default function SpaceDashboard({
                 <LinkIcon size={16} />
                 Invite
               </button>
-            </>
           )}
-          {(role === 'admin' || role === 'owner') && (
+          {hasPermission(role, 'viewAnalytics') && (
             <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200">
                Health: 84
             </div>
@@ -182,7 +185,7 @@ export default function SpaceDashboard({
                   {space.type}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-lg bg-white/30 backdrop-blur-md text-xs font-bold capitalize text-white">
-                  Role: {role}
+                  Role: {role?.name || 'Member'}
                 </span>
               </div>
               <h1 className="text-3xl font-black drop-shadow-md">{space.name}</h1>
@@ -213,7 +216,7 @@ export default function SpaceDashboard({
           onClick={() => setActiveTab('home')}
           className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'home' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
-          <Megaphone size={16} aria-hidden="true" /> Home & Announcements
+          <Megaphone size={16} aria-hidden="true" /> {labels.announcementsTitle}
         </button>
         <button 
           role="tab"
@@ -222,7 +225,7 @@ export default function SpaceDashboard({
           onClick={() => setActiveTab('challenges')}
           className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'challenges' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
-          <Trophy size={16} aria-hidden="true" /> Challenges
+          <Trophy size={16} aria-hidden="true" /> {labels.challengesTitle}
         </button>
         <button 
           role="tab"
@@ -231,7 +234,7 @@ export default function SpaceDashboard({
           onClick={() => setActiveTab('templates')}
           className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'templates' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
-          <Target size={16} aria-hidden="true" /> Shared Templates
+          <Target size={16} aria-hidden="true" /> {labels.templatesTitle}
         </button>
         <button 
           role="tab"
@@ -240,9 +243,9 @@ export default function SpaceDashboard({
           onClick={() => setActiveTab('members')}
           className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'members' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
-          <Users size={16} aria-hidden="true" /> Members
+          <Users size={16} aria-hidden="true" /> {labels.membersTitle}
         </button>
-        {(role === 'admin' || role === 'owner' || role === 'coach') && (
+        {(hasPermission(role, 'manageMembers') || hasPermission(role, 'createChallenges')) && (
           <button 
             role="tab"
             aria-selected={activeTab === 'coach'}
@@ -250,10 +253,10 @@ export default function SpaceDashboard({
             onClick={() => setActiveTab('coach')}
             className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'coach' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
           >
-            <BrainCircuit size={16} aria-hidden="true" /> Coach
+            <BrainCircuit size={16} aria-hidden="true" /> {labels.coachDashboardTitle}
           </button>
         )}
-        {(role === 'admin' || role === 'owner') && (
+        {hasPermission(role, 'viewAnalytics') && (
           <button 
             role="tab"
             aria-selected={activeTab === 'analytics'}
@@ -316,7 +319,7 @@ export default function SpaceDashboard({
         )}
 
         {activeTab === 'members' && (
-          <SpaceMembers space={space} />
+          <SpaceMembers space={space} currentUserRole={role} />
         )}
 
         {activeTab === 'analytics' && (

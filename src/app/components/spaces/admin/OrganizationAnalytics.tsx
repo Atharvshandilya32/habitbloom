@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Space, SpaceRole } from '../../../../../lib/spaceTypes';
+import { Space, CustomRole } from '../../../../../lib/spaceTypes';
 import { TrendingUp, Users, Activity, Target, BrainCircuit, HeartPulse, Loader2 } from 'lucide-react';
 import { generateSpaceWeeklyReport } from '../../../../../lib/spaceAiUtils';
+import { hasPermission } from '../../../../../lib/spacePermissions';
 
 interface OrganizationAnalyticsProps {
   space: Space;
-  role: SpaceRole;
+  role: CustomRole | null | undefined;
 }
 
 export default function OrganizationAnalytics({ space, role }: OrganizationAnalyticsProps) {
@@ -26,8 +27,8 @@ export default function OrganizationAnalytics({ space, role }: OrganizationAnaly
     fetchReport();
   }, [space.type, healthScore]);
 
-  // Only owners and admins can see this dashboard
-  if (role !== 'owner' && role !== 'admin') {
+  // Only roles with viewAnalytics can see this dashboard
+  if (!hasPermission(role, 'viewAnalytics')) {
     return (
       <div className="p-8 text-center bg-white rounded-3xl border border-slate-200">
         <h3 className="text-xl font-bold text-slate-800">Access Denied</h3>

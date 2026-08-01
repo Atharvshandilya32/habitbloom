@@ -1,6 +1,4 @@
-export type SpaceRole = 'owner' | 'admin' | 'coach' | 'moderator' | 'member';
-
-export type SpaceType = 'gym' | 'school' | 'company' | 'family' | 'community' | 'other';
+export type SpaceType = 'gym' | 'school' | 'college' | 'coaching_institute' | 'yoga_studio' | 'sports_academy' | 'company' | 'community' | 'family' | 'custom' | 'other';
 
 export interface SpaceBranding {
   logoUrl?: string;
@@ -11,6 +9,7 @@ export interface SpaceBranding {
 
 export interface Space {
   id: string;
+  schemaVersion?: number;
   name: string;
   description: string;
   type: SpaceType;
@@ -25,10 +24,38 @@ export interface Space {
   };
 }
 
+export interface SpacePermissions {
+  manageMembers: boolean;
+  inviteMembers: boolean;
+  approveJoinRequests: boolean;
+  createChallenges: boolean;
+  editChallenges: boolean;
+  deleteChallenges: boolean;
+  manageTemplates: boolean;
+  sendAnnouncements: boolean;
+  manageBranding: boolean;
+  manageRoles: boolean;
+  manageBilling: boolean;
+  viewAnalytics: boolean;
+  deleteSpace: boolean;
+}
+
+export interface CustomRole {
+  id: string; // unique role ID, e.g. 'role-admin-123'
+  spaceId: string;
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+  permissions: SpacePermissions;
+  order: number; // For UI sorting
+}
+
 export interface SpaceMember {
   spaceId: string;
   userId: string;
-  role: SpaceRole;
+  roleId: string;
+  role?: string; // Legacy string role, optional for backward compatibility during migration
   joinedAt: string; // ISO timestamp
 }
 

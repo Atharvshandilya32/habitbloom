@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { SpaceHabitTemplate, SpaceRole } from '../../../../lib/spaceTypes';
+import { SpaceHabitTemplate, CustomRole } from '../../../../lib/spaceTypes';
+import { hasPermission } from '../../../../lib/spacePermissions';
 import { Habit } from '../../../../lib/habitTypes';
 import { Target, Plus, CheckCircle2, BrainCircuit, Loader2 } from 'lucide-react';
 import { generateSpaceHabitTemplates } from '../../../../lib/spaceAiUtils';
 
 interface SpaceHabitTemplatesProps {
   templates: SpaceHabitTemplate[];
-  role: SpaceRole;
+  role: CustomRole | null | undefined;
   personalHabits: Habit[];
   spaceType: import('../../../../lib/spaceTypes').SpaceType;
   onCreateTemplate: (name: string, emoji: string, category: string, description: string) => void;
@@ -67,7 +68,7 @@ export default function SpaceHabitTemplates({
             1-Click install these habits into your Personal Workspace. Your progress remains private to you.
           </p>
         </div>
-        {role === 'admin' && !showForm && (
+        {hasPermission(role, 'manageTemplates') && !showForm && (
           <div className="flex gap-2">
             <button 
               onClick={handleGenerateAI}
@@ -121,7 +122,7 @@ export default function SpaceHabitTemplates({
         </div>
       )}
 
-      {role === 'admin' && showForm && (
+      {hasPermission(role, 'manageTemplates') && showForm && (
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm animate-in slide-in-from-top-2">
           <h4 className="font-bold text-slate-800 mb-4">Create Organization Template</h4>
           
@@ -198,7 +199,7 @@ export default function SpaceHabitTemplates({
             <p className="text-slate-500 font-medium max-w-md mx-auto mb-8 leading-relaxed">
               Shared templates allow members to 1-click install habits curated by your organization directly into their personal trackers.
             </p>
-            {role === 'admin' ? (
+            {hasPermission(role, 'manageTemplates') ? (
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button 
                   onClick={handleGenerateAI}

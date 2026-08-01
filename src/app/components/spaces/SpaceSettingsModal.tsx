@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Settings, Image as ImageIcon, Palette, Save, QrCode, Download, Copy } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Space, SpaceBranding } from '../../../../lib/spaceTypes';
+import { Space, SpaceBranding, SpaceInvite } from '../../../../lib/spaceTypes';
 import { database } from '../../../../lib/firebase';
 import { ref, set, get, child } from 'firebase/database';
 import { generateSpaceInvite } from '../../../../lib/spaceUtils';
@@ -39,8 +39,8 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
       get(child(ref(database), 'spaceInvites')).then(snap => {
         if (snap.exists()) {
           const invites = snap.val();
-          const existing = Object.values(invites).find((inv: any) => inv.spaceId === space.id);
-          if (existing) setInviteCode((existing as any).code);
+          const existing = Object.values(invites).find((inv: unknown) => (inv as SpaceInvite).spaceId === space.id);
+          if (existing) setInviteCode((existing as SpaceInvite).code);
         }
       });
     }
@@ -268,7 +268,7 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
                               try {
                                 document.execCommand('copy');
                                 alert('Copied to clipboard!');
-                              } catch (e) {
+                              } catch {
                                 alert('Unable to copy automatically. Please select and copy manually.');
                               }
                             }

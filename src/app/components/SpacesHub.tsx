@@ -196,7 +196,7 @@ export default function SpacesHub({
               })}
             {publicSpaces.filter(space => space.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
               <div className="col-span-full text-center py-12 bg-slate-100/50 rounded-3xl border border-slate-200">
-                <p className="text-slate-500 font-medium">No organizations found matching "{searchQuery}"</p>
+                <p className="text-slate-500 font-medium">No organizations found matching &quot;{searchQuery}&quot;</p>
               </div>
             )}
           </div>

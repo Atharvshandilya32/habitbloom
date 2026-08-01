@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Users, Search, Plus, Compass } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Users, Search, Plus, Compass, LogIn } from 'lucide-react';
 import { Space, SpaceInvite } from '../../../lib/spaceTypes';
 
 interface SpacesHubProps {
   userSpaces: Space[];
+  publicSpaces?: Space[];
   pendingInvites: SpaceInvite[];
   onCreateSpaceClick: () => void;
   onEnterSpace: (spaceId: string) => void;
@@ -12,12 +14,21 @@ interface SpacesHubProps {
 
 export default function SpacesHub({
   userSpaces,
+  publicSpaces = [],
   pendingInvites,
   onCreateSpaceClick,
   onEnterSpace,
   onAcceptInvite
 }: SpacesHubProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const router = useRouter();
+
+  const handleJoin = () => {
+    if (joinCode.trim()) {
+      router.push(`/invite/${joinCode.trim()}`);
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in zoom-in-95 duration-300">
@@ -34,13 +45,32 @@ export default function SpacesHub({
             Your personal habits always remain private.
           </p>
         </div>
-        <button 
-          onClick={onCreateSpaceClick}
-          className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm"
-        >
-          <Plus size={18} />
-          Create Space
-        </button>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+          <div className="relative w-full sm:w-auto">
+            <input 
+              type="text" 
+              placeholder="Enter invite code"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
+              className="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
+            />
+            <button 
+              onClick={handleJoin}
+              disabled={!joinCode.trim()}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 disabled:opacity-50 transition-colors"
+            >
+              <LogIn size={18} />
+            </button>
+          </div>
+          <button 
+            onClick={onCreateSpaceClick}
+            className="flex items-center justify-center gap-2 w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm whitespace-nowrap"
+          >
+            <Plus size={18} />
+            Create Space
+          </button>
+        </div>
       </div>
 
       {/* Pending Invites */}
@@ -116,9 +146,61 @@ export default function SpacesHub({
           </div>
         </div>
         
-        <div className="text-center py-12 bg-slate-100/50 rounded-3xl border border-slate-200">
-          <p className="text-slate-500 font-medium">Use the search bar to find public organizations.</p>
-        </div>
+        {searchQuery.trim() === '' ? (
+          <div className="text-center py-12 bg-slate-100/50 rounded-3xl border border-slate-200">
+            <p className="text-slate-500 font-medium">Use the search bar to find public organizations.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {publicSpaces
+              .filter(space => 
+                space.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                space.description.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map(space => {
+                const isMember = userSpaces.some(us => us.id === space.id);
+                return (
+                  <div 
+                    key={space.id} 
+                    className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all group"
+                  >
+                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <Users size={24} />
+                    </div>
+                    <h4 className="text-xl font-bold text-slate-800 mb-1">{space.name}</h4>
+                    <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase rounded-lg mb-3">
+                      {space.type}
+                    </span>
+                    <p className="text-sm text-slate-500 line-clamp-2 mb-4">{space.description}</p>
+                    {isMember ? (
+                      <button 
+                        onClick={() => onEnterSpace(space.id)}
+                        className="w-full py-2 bg-indigo-50 text-indigo-700 font-bold rounded-xl transition-colors"
+                      >
+                        Enter Space
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => {
+                          // For a public space, we could auto-join or prompt for an invite code.
+                          // Usually public spaces don't need invites, but since joining isn't hooked up for public spaces directly yet:
+                          alert('Joining public spaces directly will be available soon! For now, please use an invite code.');
+                        }}
+                        className="w-full py-2 bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-xl transition-colors"
+                      >
+                        Join Organization
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            {publicSpaces.filter(space => space.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+              <div className="col-span-full text-center py-12 bg-slate-100/50 rounded-3xl border border-slate-200">
+                <p className="text-slate-500 font-medium">No organizations found matching "{searchQuery}"</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
     </div>

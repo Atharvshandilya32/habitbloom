@@ -38,6 +38,7 @@ export default function SpaceDashboard({
 }: SpaceDashboardProps) {
   const [activeTab, setActiveTab] = useState<SpaceTab>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'general' | 'branding' | 'invites'>('general');
   
   // Mock Data for UI demonstration -> Now Firebase Connected
   const [announcements, setAnnouncements] = useState<SpaceAnnouncement[]>([]);
@@ -130,14 +131,20 @@ export default function SpaceDashboard({
           {role === 'admin' && (
             <>
               <button 
-                onClick={() => setSettingsOpen(true)}
+                onClick={() => {
+                  setSettingsInitialTab('general');
+                  setSettingsOpen(true);
+                }}
                 className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm transition-colors"
               >
                 <Settings size={16} />
                 Settings
               </button>
               <button 
-                onClick={onGenerateInvite}
+                onClick={() => {
+                  setSettingsInitialTab('invites');
+                  setSettingsOpen(true);
+                }}
                 className={`flex items-center gap-2 text-sm font-bold text-white ${themeColorClass} hover:opacity-90 px-4 py-2 rounded-xl shadow-sm transition-colors`}
               >
                 <LinkIcon size={16} />
@@ -333,10 +340,13 @@ export default function SpaceDashboard({
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         space={space}
+        initialTab={settingsInitialTab}
         onSave={(updates) => {
           if (database) {
-            const updatedSpace = { ...space, ...updates };
-            set(ref(database, `spaces/${space.id}`), updatedSpace);
+            set(ref(database, `spaces/${space.id}`), {
+              ...space,
+              ...updates
+            });
           }
         }}
       />

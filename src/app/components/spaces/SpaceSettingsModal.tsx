@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { X, Settings, Image as ImageIcon, Palette, Save, QrCode, Download } from 'lucide-react';
+import { X, Settings, Image as ImageIcon, Palette, Save, QrCode, Download, Copy } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Space, SpaceBranding } from '../../../../lib/spaceTypes';
+import { database } from '../../../../lib/firebase';
+import { ref, set, get, child } from 'firebase/database';
+import { generateSpaceInvite } from '../../../../lib/spaceUtils';
 
 interface SpaceSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   space: Space;
+  initialTab?: 'general' | 'branding' | 'invites';
   onSave: (updates: Partial<Space>) => void;
 }
 
@@ -14,7 +18,7 @@ const THEME_COLORS = [
   'indigo-600', 'blue-600', 'emerald-600', 'rose-600', 'amber-500', 'slate-900'
 ];
 
-export default function SpaceSettingsModal({ isOpen, onClose, space, onSave }: SpaceSettingsModalProps) {
+export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab = 'general', onSave }: SpaceSettingsModalProps) {
   const [name, setName] = useState(space.name);
   const [description, setDescription] = useState(space.description);
   
@@ -23,7 +27,24 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, onSave }: S
   const [welcomeMessage, setWelcomeMessage] = useState(initialBranding.welcomeMessage || '');
   const [coverUrl, setCoverUrl] = useState(initialBranding.coverUrl || '');
 
-  const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'invites'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'invites'>(initialTab);
+
+  React.useEffect(() => {
+    if (isOpen) setActiveTab(initialTab);
+  }, [isOpen, initialTab]);
+  const [inviteCode, setInviteCode] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (activeTab === 'invites' && database && !inviteCode) {
+      get(child(ref(database), 'spaceInvites')).then(snap => {
+        if (snap.exists()) {
+          const invites = snap.val();
+          const existing = Object.values(invites).find((inv: any) => inv.spaceId === space.id);
+          if (existing) setInviteCode((existing as any).code);
+        }
+      });
+    }
+  }, [activeTab, space.id, inviteCode]);
 
   if (!isOpen) return null;
 
@@ -38,9 +59,17 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, onSave }: S
     onClose();
   };
 
-  const inviteUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/invite/${space.id}` 
-    : `https://habitbloom.in/invite/${space.id}`;
+  const handleGenerateInvite = () => {
+    const invite = generateSpaceInvite(space.id, space.createdBy);
+    if (database) {
+      set(ref(database, `spaceInvites/${invite.code}`), invite);
+      setInviteCode(invite.code);
+    }
+  };
+
+  const inviteUrl = inviteCode 
+    ? (typeof window !== 'undefined' ? `${window.location.origin}/invite/${inviteCode}` : `https://habitbloom.in/invite/${inviteCode}`)
+    : '';
 
   const handleDownloadQR = () => {
     const svg = document.getElementById('space-qr-code');
@@ -198,27 +227,74 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, onSave }: S
                 </h3>
                 
                 <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 text-center">
-                  <div className="w-32 h-32 bg-white rounded-2xl mx-auto border border-slate-200 flex items-center justify-center mb-5 shadow-sm overflow-hidden p-2">
-                    <QRCodeSVG 
-                      id="space-qr-code"
-                      value={inviteUrl} 
-                      size={110} 
-                      level="H"
-                      includeMargin={false}
-                      fgColor="#0f172a"
-                    />
-                  </div>
-                  <h4 className="text-lg font-bold text-slate-900 mb-2">Space QR Code</h4>
-                  <p className="text-sm text-slate-500 mb-6 max-w-sm mx-auto">
-                    Members can scan this code to instantly join your space. Perfect for printing at physical locations like gyms, offices, or studios.
-                  </p>
-                  <button 
-                    onClick={handleDownloadQR}
-                    className="flex items-center gap-2 mx-auto px-5 py-2.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 font-bold rounded-xl transition-colors"
-                  >
-                    <Download size={16} />
-                    Download QR Code
-                  </button>
+                  {!inviteCode ? (
+                    <div className="py-8">
+                      <p className="text-slate-500 mb-4 font-medium">No active invite link for this space.</p>
+                      <button 
+                        onClick={handleGenerateInvite}
+                        className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-sm hover:bg-indigo-700 transition-colors"
+                      >
+                        Generate Invite Link
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-32 h-32 bg-white rounded-2xl mx-auto border border-slate-200 flex items-center justify-center mb-5 shadow-sm overflow-hidden p-2">
+                        <QRCodeSVG 
+                          id="space-qr-code"
+                          value={inviteUrl} 
+                          size={110} 
+                          level="H"
+                          includeMargin={false}
+                          fgColor="#0f172a"
+                        />
+                      </div>
+                      <h4 className="text-lg font-bold text-slate-900 mb-2">Space Invite & QR Code</h4>
+                      <p className="text-sm text-slate-500 mb-6 max-w-sm mx-auto">
+                        Members can scan this code to instantly join your space. Perfect for printing at physical locations like gyms, offices, or studios.
+                      </p>
+                      
+                      <div className="flex items-center gap-2 max-w-sm mx-auto mb-6 bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                        <input id="invite-url-input" type="text" readOnly value={inviteUrl} className="flex-1 text-xs text-slate-500 bg-transparent outline-none px-2 font-medium" />
+                        <button onClick={() => {
+                          if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(inviteUrl);
+                            alert('Copied to clipboard!');
+                          } else {
+                            const input = document.getElementById('invite-url-input') as HTMLInputElement;
+                            if (input) {
+                              input.select();
+                              input.setSelectionRange(0, 99999); // For mobile devices
+                              try {
+                                document.execCommand('copy');
+                                alert('Copied to clipboard!');
+                              } catch (e) {
+                                alert('Unable to copy automatically. Please select and copy manually.');
+                              }
+                            }
+                          }
+                        }} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors" title="Copy Link">
+                          <Copy size={16} />
+                        </button>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <button 
+                          onClick={handleDownloadQR}
+                          className="w-full sm:w-auto flex justify-center items-center gap-2 px-5 py-2.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 font-bold rounded-xl transition-colors"
+                        >
+                          <Download size={16} />
+                          Download QR
+                        </button>
+                        <button 
+                          onClick={handleGenerateInvite}
+                          className="w-full sm:w-auto px-5 py-2.5 bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 font-bold rounded-xl transition-colors"
+                        >
+                          Regenerate Link
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}

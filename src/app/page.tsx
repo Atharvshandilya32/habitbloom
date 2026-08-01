@@ -28,7 +28,7 @@ import SpacesHub from './components/SpacesHub';
 import SpaceDashboard from './components/SpaceDashboard';
 import CreateSpaceModal from './components/CreateSpaceModal';
 import { Space, SpaceInvite } from '../../lib/spaceTypes';
-import { createNewSpace } from '../../lib/spaceUtils';
+import { createNewSpace, generateSpaceInvite } from '../../lib/spaceUtils';
 
 import { Habit, HabitLog, Goal as GoalType, Challenge, JournalEntry } from '../../lib/habitTypes';
 import { makeLogKey, getMonthKeyPrefix } from '../../lib/habitUtils';
@@ -55,7 +55,8 @@ export default function Page() {
 
   // Spaces State
   const [userSpaces, setUserSpaces] = useState<Space[]>([]);
-  const [pendingInvites] = useState<SpaceInvite[]>([]);
+  const [publicSpaces, setPublicSpaces] = useState<Space[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<SpaceInvite[]>([]);
   const [activeSpaceId, setActiveSpaceId] = useState<string | null>(null);
   const [createSpaceOpen, setCreateSpaceOpen] = useState(false);
 
@@ -238,6 +239,64 @@ export default function Page() {
 
     return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+  // 5. Real-time Firebase Sync for Spaces
+  useEffect(() => {
+    if (!database || !currentUser) return;
+
+    const membersRef = ref(database, 'spaceMembers');
+    const spacesRef = ref(database, 'spaces');
+
+    const unsubscribeMembers = onValue(
+      membersRef,
+      (snapshot) => {
+        if (!snapshot.exists()) {
+          setUserSpaces([]);
+          return;
+        }
+        
+        const allMembers = snapshot.val();
+        const mySpaceIds: string[] = [];
+        
+        // Find spaces the user belongs to
+        Object.keys(allMembers).forEach(key => {
+          if (allMembers[key].userId === currentUser.uid) {
+            mySpaceIds.push(allMembers[key].spaceId);
+          }
+        });
+
+        if (mySpaceIds.length === 0) {
+          setUserSpaces([]);
+          return;
+        }
+
+        // Fetch actual space details
+        onValue(
+          spacesRef,
+          (spaceSnapshot) => {
+            if (spaceSnapshot.exists()) {
+              const allSpaces = spaceSnapshot.val();
+              const mySpaces = mySpaceIds.map(id => allSpaces[id]).filter(Boolean);
+              setUserSpaces(mySpaces);
+              
+              // Also store all spaces for public search (if no privacy settings yet, assume all are public)
+              const allSpacesList = Object.values(allSpaces) as Space[];
+              // For a real app we might filter out spaces the user is already in, or keep them.
+              setPublicSpaces(allSpacesList);
+            } else {
+              setPublicSpaces([]);
+            }
+          },
+          { onlyOnce: true } // Read spaces once per member update
+        );
+      },
+      (error) => {
+        console.error('Firebase space sync error:', error);
+      }
+    );
+
+    return () => unsubscribeMembers();
   }, [currentUser]);
 
   const daysInMonth = getDaysInMonth(year, month);
@@ -567,9 +626,10 @@ export default function Page() {
 
           {activeTab === 'spaces' && (
             <div className="space-y-6">
-              {!activeSpaceId ? (
+              {!activeSpaceId || !userSpaces.find(s => s.id === activeSpaceId) ? (
                 <SpacesHub
                   userSpaces={userSpaces}
+                  publicSpaces={publicSpaces}
                   pendingInvites={pendingInvites}
                   onCreateSpaceClick={() => setCreateSpaceOpen(true)}
                   onEnterSpace={setActiveSpaceId}
@@ -585,7 +645,23 @@ export default function Page() {
                   personalHabits={habits}
                   onBack={() => setActiveSpaceId(null)}
                   onGenerateInvite={() => {
-                     showToast('Invite link copied to clipboard.');
+                     if (!currentUser) return;
+                     const invite = generateSpaceInvite(activeSpaceId, currentUser.uid);
+                     if (database) {
+                       set(ref(database, `spaceInvites/${invite.code}`), invite);
+                     }
+                     // Copy link to clipboard
+                     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://habitbloom.in';
+                     const inviteUrl = `${baseUrl}/invite/${invite.code}`;
+                     
+                     if (navigator.clipboard && navigator.clipboard.writeText) {
+                       navigator.clipboard.writeText(inviteUrl)
+                         .then(() => showToast('Invite link copied to clipboard.'))
+                         .catch(() => showToast(`Invite code: ${invite.code}`));
+                     } else {
+                       // Fallback if clipboard API is unavailable
+                       showToast(`Invite code: ${invite.code}`);
+                     }
                   }}
                   onInstallTemplate={(template) => {
                      const newHabit = {
@@ -606,8 +682,15 @@ export default function Page() {
                 onClose={() => setCreateSpaceOpen(false)}
                 onCreate={(name, desc, type) => {
                    if (!currentUser) return;
-                   const { space } = createNewSpace(name, desc, type, currentUser.uid);
-                   setUserSpaces(prev => [...prev, space]);
+                   const { space, member } = createNewSpace(name, desc, type, currentUser.uid);
+                   
+                   // Write space to database
+                   if (database) {
+                     set(ref(database, `spaces/${space.id}`), space);
+                     set(ref(database, `spaceMembers/${space.id}_${currentUser.uid}`), member);
+                   }
+
+                   // Note: setUserSpaces is now handled by the real-time listener!
                    setActiveSpaceId(space.id);
                    setCreateSpaceOpen(false);
                    showToast(`Space '${name}' created successfully.`);

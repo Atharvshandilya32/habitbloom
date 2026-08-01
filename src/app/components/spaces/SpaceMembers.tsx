@@ -26,8 +26,7 @@ export default function SpaceMembers({ space }: SpaceMembersProps) {
       setLoading(false);
       return;
     }
-
-    const membersRef = ref(database, 'members');
+    const membersRef = ref(database, 'spaceMembers');
     
     const handleData = (snapshot: DataSnapshot) => {
       const data = snapshot.val();

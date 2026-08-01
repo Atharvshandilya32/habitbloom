@@ -1,0 +1,30 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "spaces": {
+      "$spaceId": {
+        ".read": "auth != null && data.child('members').child(auth.uid).exists()",
+        ".write": "auth != null && (!data.exists() || data.child('roles').child(auth.uid).val() == 'admin' || data.child('roles').child(auth.uid).val() == 'owner')",
+        "announcements": {
+          ".read": "auth != null && root.child('spaces').child($spaceId).child('members').child(auth.uid).exists()",
+          ".write": "auth != null && (root.child('spaces').child($spaceId).child('roles').child(auth.uid).val() == 'admin' || root.child('spaces').child($spaceId).child('roles').child(auth.uid).val() == 'owner' || root.child('spaces').child($spaceId).child('roles').child(auth.uid).val() == 'coach')"
+        },
+        "challenges": {
+          ".read": "auth != null && root.child('spaces').child($spaceId).child('members').child(auth.uid).exists()",
+          ".write": "auth != null && (root.child('spaces').child($spaceId).child('roles').child(auth.uid).val() == 'admin' || root.child('spaces').child($spaceId).child('roles').child(auth.uid).val() == 'owner')"
+        },
+        "templates": {
+          ".read": "auth != null && root.child('spaces').child($spaceId).child('members').child(auth.uid).exists()",
+          ".write": "auth != null && (root.child('spaces').child($spaceId).child('roles').child(auth.uid).val() == 'admin' || root.child('spaces').child($spaceId).child('roles').child(auth.uid).val() == 'owner')"
+        }
+      }
+    }
+  }
+}

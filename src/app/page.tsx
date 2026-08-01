@@ -512,9 +512,22 @@ export default function Page() {
                 <SpaceDashboard
                   space={userSpaces.find(s => s.id === activeSpaceId)!}
                   role={'admin'}
+                  currentUserId={currentUser?.uid || ''}
+                  personalHabits={habits}
                   onBack={() => setActiveSpaceId(null)}
                   onGenerateInvite={() => {
                      showToast('Invite link generated! (Demo)');
+                  }}
+                  onInstallTemplate={(template) => {
+                     const newHabit = {
+                        id: `habit-${Date.now()}`,
+                        name: template.name,
+                        emoji: template.emoji,
+                        goal: 1,
+                        category: template.category
+                     };
+                     setHabits(prev => [...prev, newHabit]);
+                     showToast(`${template.name} installed to your habits!`);
                   }}
                 />
               )}

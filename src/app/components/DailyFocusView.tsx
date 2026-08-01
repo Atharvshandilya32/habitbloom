@@ -165,7 +165,7 @@ export default function DailyFocusView({
                       onClick={(e) => {
                         e.stopPropagation();
                         // Open Journal modal logic here later
-                        console.log('Open journal for', habit.id);
+                        // Open journal logic here
                       }}
                     >
                       Add Note

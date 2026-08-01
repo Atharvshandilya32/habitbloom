@@ -28,7 +28,7 @@ import SpacesHub from './components/SpacesHub';
 import SpaceDashboard from './components/SpaceDashboard';
 import CreateSpaceModal from './components/CreateSpaceModal';
 import { Space, SpaceInvite } from '../../lib/spaceTypes';
-import { createNewSpace, generateSpaceInvite } from '../../lib/spaceUtils';
+import { createNewSpace } from '../../lib/spaceUtils';
 
 import { Habit, HabitLog, Goal as GoalType, Challenge, JournalEntry } from '../../lib/habitTypes';
 import { makeLogKey, getMonthKeyPrefix } from '../../lib/habitUtils';

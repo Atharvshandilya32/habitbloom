@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Space, SpaceMember, CustomRole } from '../../../../lib/spaceTypes';
 import { database } from '../../../../lib/firebase';
 import { ref, onValue, off, DataSnapshot, set } from 'firebase/database';
-import { Search, Shield, User, Filter, AlertCircle, ChevronDown, Edit2 } from 'lucide-react';
+import { Search, User, Filter, AlertCircle, Edit2 } from 'lucide-react';
 import { Skeleton } from '../ui/Skeleton';
 import { hasPermission } from '../../../../lib/spacePermissions';
 
@@ -15,6 +15,7 @@ interface MemberWithProfile extends SpaceMember {
   displayName: string;
   avatarUrl?: string;
   bio?: string;
+  dbKey: string;
 }
 
 export default function SpaceMembers({ space, currentUserRole }: SpaceMembersProps) {
@@ -52,8 +53,7 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
       }
 
       // Fetch all members for this space
-      const spaceMembers: SpaceMember[] = [];
-      const keys: string[] = [];
+      const spaceMembers: (SpaceMember & { dbKey: string })[] = [];
       Object.keys(data).forEach(key => {
         const member = data[key];
         if (member.spaceId === space.id) {
@@ -61,7 +61,7 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
         }
       });
 
-      const membersWithProfiles: MemberWithProfile[] = spaceMembers.map((m: any) => ({
+      const membersWithProfiles: MemberWithProfile[] = spaceMembers.map((m) => ({
         ...m,
         displayName: `User ${m.userId.substring(0, 5)}`, // Fallback display name
         bio: m.roleId ? 'Habit Builder' : 'Community Leader',
@@ -199,7 +199,7 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
                         autoFocus
                         onBlur={() => setEditingMemberId(null)}
                         value={member.roleId}
-                        onChange={(e) => handleChangeRole((member as any).dbKey, e.target.value)}
+                        onChange={(e) => handleChangeRole(member.dbKey, e.target.value)}
                         className="text-xs font-bold border border-slate-200 rounded px-1 py-1"
                       >
                         {availableRoles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}

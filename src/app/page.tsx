@@ -7,30 +7,32 @@ import GuideModal, { shouldShowGuide } from './components/GuideModal';
 import CalendarSettings from './components/CalendarSettings';
 
 
+import dynamic from 'next/dynamic';
+
 import DailyFocusView from './components/DailyFocusView';
 import DashboardView from './components/DashboardView';
-import WeeklyReviewView from './components/WeeklyReviewView';
-import AnalyticsView from './components/AnalyticsView';
-import PersonalRecordsView from './components/PersonalRecordsView';
-import SettingsView from './components/SettingsView';
 import GoalsView from './components/GoalsView';
 import ChallengesView from './components/ChallengesView';
-import TimelineView from './components/TimelineView';
 
+// Dynamic Lazy Loaded Sub-Views for optimal initial bundle performance
+const AnalyticsView = dynamic(() => import('./components/AnalyticsView'), { ssr: false });
+const WeeklyReviewView = dynamic(() => import('./components/WeeklyReviewView'), { ssr: false });
+const PersonalRecordsView = dynamic(() => import('./components/PersonalRecordsView'), { ssr: false });
+const TimelineView = dynamic(() => import('./components/TimelineView'), { ssr: false });
+const SettingsView = dynamic(() => import('./components/SettingsView'), { ssr: false });
 
-import CommandPalette from './components/CommandPalette';
-import Toast from './components/Toast';
+const CommandPalette = dynamic(() => import('./components/CommandPalette'), { ssr: false });
+const Toast = import('./components/Toast');
 import JournalModal from './components/JournalModal';
 import { useKeyboardShortcuts } from '../../lib/keyboardShortcuts';
 
-
 import SpacesHub from './components/SpacesHub';
-import SpaceDashboard from './components/SpaceDashboard';
+const SpaceDashboard = dynamic(() => import('./components/SpaceDashboard'), { ssr: false });
 import CreateSpaceModal from './components/CreateSpaceModal';
 import { Space, SpaceInvite } from '../../lib/spaceTypes';
 import { createNewSpace } from '../../lib/spaceUtils';
 import { ensureUserProfile, UserProfile } from '../../lib/userProfile';
-import IdentityModal from './components/identity/IdentityModal';
+const IdentityModal = dynamic(() => import('./components/identity/IdentityModal'), { ssr: false });
 
 import { Habit, HabitLog, Goal as GoalType, Challenge, JournalEntry } from '../../lib/habitTypes';
 import { makeLogKey, getMonthKeyPrefix } from '../../lib/habitUtils';

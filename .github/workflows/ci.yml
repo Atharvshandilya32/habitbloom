@@ -1,0 +1,39 @@
+name: HabitBloom Enterprise CI/CD Quality & Security Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  verify:
+    name: Type Check, Lint & Build Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: TypeScript Type Verification
+        run: npm run type-check
+
+      - name: ESLint Code Quality Inspection
+        run: npm run lint
+
+      - name: Production Bundle Verification
+        run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: "mock_api_key"
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "mock.firebaseapp.com"
+          NEXT_PUBLIC_FIREBASE_DATABASE_URL: "https://mock.firebaseio.com"
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: "mock-project"

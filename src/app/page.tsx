@@ -20,6 +20,7 @@ const WeeklyReviewView = dynamic(() => import('./components/WeeklyReviewView'), 
 const PersonalRecordsView = dynamic(() => import('./components/PersonalRecordsView'), { ssr: false });
 const TimelineView = dynamic(() => import('./components/TimelineView'), { ssr: false });
 const SettingsView = dynamic(() => import('./components/SettingsView'), { ssr: false });
+const SocialHubView = dynamic(() => import('./components/social/SocialHubView'), { ssr: false });
 
 const CommandPalette = dynamic(() => import('./components/CommandPalette'), { ssr: false });
 import Toast from './components/Toast';
@@ -667,6 +668,15 @@ export default function Page() {
               requestNotificationPermission={requestNotificationPermission}
               sendTestNotification={sendTestNotification}
               onClearData={handleClearLocalData}
+            />
+          )}
+
+          {activeTab === 'social' && (
+            <SocialHubView
+              currentUser={currentUser}
+              habits={habits}
+              logs={logs}
+              onShowToast={showToast}
             />
           )}
 

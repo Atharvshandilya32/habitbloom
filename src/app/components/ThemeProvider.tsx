@@ -37,13 +37,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('habitbloom_theme', themeMode);
 
     const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
+    root.classList.remove('dark');
+    root.classList.add('light');
 
-    if (themeMode === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(themeMode);
+    if (themeMode === 'dark') {
+      root.classList.remove('light');
+      root.classList.add('dark');
     }
   }, [themeMode, mounted]);
 

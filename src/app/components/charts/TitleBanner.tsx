@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+
 import {
   LogOut,
   BookOpen,
@@ -21,7 +23,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../../../../lib/firebase';
 import { User as FirebaseUser } from 'firebase/auth';
 
-export type NavTab = 'focus' | 'dashboard' | 'analytics' | 'records' | 'goals' | 'challenges' | 'timeline' | 'settings' | 'spaces';
+export type NavTab = 'focus' | 'dashboard' | 'analytics' | 'records' | 'goals' | 'challenges' | 'timeline' | 'settings' | 'spaces' | 'social';
 
 interface NavbarProps {
   user: FirebaseUser | null;
@@ -79,72 +81,78 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
         </button>
 
         {/* Center Nav Links (Desktop) */}
-        <div className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60 overflow-x-auto hide-scrollbar">
+        <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700/80 overflow-x-auto hide-scrollbar">
+          {[
+            { id: 'focus' as NavTab, label: 'Daily Focus', icon: Activity },
+            { id: 'goals' as NavTab, label: 'Goals', icon: Target },
+            { id: 'challenges' as NavTab, label: 'Challenges', icon: Trophy },
+            { id: 'timeline' as NavTab, label: 'Timeline', icon: Clock },
+            { id: 'dashboard' as NavTab, label: 'Grid', icon: LayoutDashboard },
+            { id: 'analytics' as NavTab, label: 'Analytics', icon: Activity },
+          ].map((tabItem) => {
+            const IconComponent = tabItem.icon;
+            const isActive = activeTab === tabItem.id;
+            return (
+              <button
+                key={tabItem.id}
+                onClick={() => handleNavClick(tabItem.id)}
+                className={`relative flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
+                  isActive ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTabBadge"
+                    className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm"
+                    transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <IconComponent size={13} />
+                  {tabItem.label}
+                </span>
+              </button>
+            );
+          })}
+          <div className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-1"></div>
           <button
-            onClick={() => handleNavClick('focus')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
-              activeTab === 'focus' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            onClick={() => handleNavClick('social')}
+            className={`relative flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
+              activeTab === 'social' ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
-            <Activity size={13} />
-            Daily Focus
+            {activeTab === 'social' && (
+              <motion.div
+                layoutId="activeTabBadge"
+                className="absolute inset-0 bg-emerald-50 dark:bg-emerald-950/80 rounded-lg shadow-sm border border-emerald-200/50"
+                transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-1.5">
+              <Users size={13} className="text-emerald-600" />
+              Social Network
+            </span>
           </button>
-          <button
-            onClick={() => handleNavClick('goals')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
-              activeTab === 'goals' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Target size={13} />
-            Goals
-          </button>
-          <button
-            onClick={() => handleNavClick('challenges')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
-              activeTab === 'challenges' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Trophy size={13} />
-            Challenges
-          </button>
-          <button
-            onClick={() => handleNavClick('timeline')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
-              activeTab === 'timeline' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Clock size={13} />
-            Timeline
-          </button>
-          <button
-            onClick={() => handleNavClick('dashboard')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
-              activeTab === 'dashboard' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <LayoutDashboard size={13} />
-            Grid
-          </button>
-          <button
-            onClick={() => handleNavClick('analytics')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
-              activeTab === 'analytics' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Activity size={13} />
-            Analytics
-          </button>
-          <div className="w-px h-4 bg-slate-300 mx-1"></div>
           <button
             onClick={() => handleNavClick('spaces')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
-              activeTab === 'spaces' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            className={`relative flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
+              activeTab === 'spaces' ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
-            <Users size={13} />
-            Spaces
+            {activeTab === 'spaces' && (
+              <motion.div
+                layoutId="activeTabBadge"
+                className="absolute inset-0 bg-indigo-50 dark:bg-indigo-950/80 rounded-lg shadow-sm border border-indigo-200/50"
+                transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-1.5">
+              <Users size={13} />
+              Spaces
+            </span>
           </button>
         </div>
+
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
@@ -233,6 +241,15 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
           >
             <Activity size={15} />
             Daily Focus
+          </button>
+          <button
+            onClick={() => handleNavClick('social')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
+              activeTab === 'social' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <Users size={15} className="text-emerald-600" />
+            Social Network
           </button>
           <button
             onClick={() => handleNavClick('goals')}

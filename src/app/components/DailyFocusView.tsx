@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+
 import { Habit, HabitLog } from '../../../lib/habitTypes';
-import { makeLogKey } from '../../../lib/habitUtils';
+import { makeLogKey, getCurrentStreak } from '../../../lib/habitUtils';
+
 import { generateSmartInsights } from '../../../lib/insightUtils';
-import { Check, Zap } from 'lucide-react';
+import { Check, Zap, Sun, Trophy } from 'lucide-react';
 import { NavTab } from './charts/TitleBanner';
+import MotionPageWrapper from './motion/MotionPageWrapper';
+import MotionCounter from './motion/MotionCounter';
+
 
 interface DailyFocusViewProps {
   habits: Habit[];
@@ -62,10 +68,38 @@ export default function DailyFocusView({
   const dashOffset = dashArray - (dashArray * progressPercent) / 100;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-300">
-      
+    <MotionPageWrapper className="max-w-3xl mx-auto space-y-6">
+      {/* Morning Briefing Banner */}
+      <div className="bg-gradient-to-r from-emerald-500 to-teal-600 border border-emerald-400 text-white rounded-3xl p-5 shadow-md flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-sm flex-shrink-0">
+            <Sun size={22} className="text-amber-300" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/20 text-white border border-white/30">
+                Morning Briefing
+              </span>
+              <span className="text-xs font-extrabold text-emerald-100">Streak Shield Active 🛡️</span>
+            </div>
+            <p className="text-xs sm:text-sm font-bold text-white mt-1">
+              {progressPercent === 100 
+                ? "All daily focus habits completed! High performance day." 
+                : `Focus on your ${remainingCount} top ${remainingCount === 1 ? 'habit' : 'habits'} to keep your momentum strong today.`}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => onNavigateTab('goals')}
+          className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-emerald-50 text-slate-900 text-xs font-black rounded-xl shadow-sm transition-all flex-shrink-0"
+        >
+          <Trophy size={14} className="text-amber-500" />
+          <span>View Goals</span>
+        </button>
+      </div>
+
       {/* Header section with Progress Ring */}
-      <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center gap-8 justify-between relative overflow-hidden">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 flex flex-col md:flex-row items-center gap-8 justify-between relative overflow-hidden">
         {showCelebration && (
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[200%] h-[200%] bg-[url('/confetti.svg')] bg-cover opacity-50 animate-pulse"></div>
@@ -73,19 +107,19 @@ export default function DailyFocusView({
           </div>
         )}
         
-        <div className="flex-1 space-y-4 text-center md:text-left z-10">
-          <h2 className="text-3xl font-black tracking-tight text-slate-800">
+        <div className="flex-1 space-y-3 text-center md:text-left z-10">
+          <h2 className="text-3xl font-black tracking-tight text-slate-900">
             {progressPercent === 100 ? "You're all done! 🎉" : "Today's Focus"}
           </h2>
-          <p className="text-slate-500 font-medium">
+          <p className="text-slate-600 font-bold text-sm">
             {progressPercent === 100 
               ? "Great job completing all your habits today. Take some time to relax!" 
               : `You have ${remainingCount} ${remainingCount === 1 ? 'habit' : 'habits'} left to complete today.`}
           </p>
           
           {insights.length > 0 && (
-            <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-medium border border-indigo-100">
-              <Zap size={16} className="text-indigo-500" />
+            <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-900 px-3.5 py-2 rounded-xl text-xs font-extrabold border border-indigo-200/80 shadow-xs">
+              <Zap size={16} className="text-indigo-600" />
               <span>{insights[0]}</span>
             </div>
           )}
@@ -94,7 +128,7 @@ export default function DailyFocusView({
         <div className="relative flex-shrink-0 z-10">
           <svg width={sqSize} height={sqSize} viewBox={viewBox} className="transform -rotate-90">
             <circle
-              className="text-slate-100"
+              className="text-slate-200"
               strokeWidth={strokeWidth}
               stroke="currentColor"
               fill="none"
@@ -102,11 +136,12 @@ export default function DailyFocusView({
               cy={sqSize / 2}
               r={radius}
             />
-            <circle
-              className="text-emerald-500 transition-all duration-1000 ease-out"
+            <motion.circle
+              className="text-emerald-500"
               strokeWidth={strokeWidth}
               strokeDasharray={dashArray}
-              strokeDashoffset={dashOffset}
+              animate={{ strokeDashoffset: dashOffset }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               strokeLinecap="round"
               stroke="currentColor"
               fill="none"
@@ -116,7 +151,7 @@ export default function DailyFocusView({
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-black text-slate-800">{progressPercent}%</span>
+            <MotionCounter value={progressPercent} suffix="%" className="text-3xl font-black text-slate-900" />
           </div>
         </div>
       </div>
@@ -124,46 +159,59 @@ export default function DailyFocusView({
       {/* Habits List */}
       <div className="space-y-4">
         {activeHabits.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-3xl border border-slate-200 border-dashed">
-            <p className="text-slate-500 font-medium mb-4">You don&apos;t have any habits yet.</p>
+          <div className="text-center py-12 bg-white rounded-3xl border border-slate-200/80 border-dashed">
+            <p className="text-slate-500 font-medium mb-4">You don&apos;t have any active habits yet.</p>
             <button 
               onClick={() => onNavigateTab('dashboard')}
-              className="px-6 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors"
+              className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-sm"
             >
-              Add a Habit
+              + Create Your First Habit
             </button>
           </div>
         ) : (
           activeHabits.map((habit) => {
             const key = makeLogKey(habit.id, year, month, day);
-            const isCompleted = logs[key];
+            const isCompleted = !!logs[key];
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const streak = getCurrentStreak(habit, logs, year, month, daysInMonth);
             
             return (
               <div 
                 key={habit.id}
                 className={`group flex items-center p-4 rounded-2xl border transition-all duration-300 cursor-pointer ${
                   isCompleted 
-                    ? 'bg-slate-50 border-slate-200 opacity-60' 
-                    : 'bg-white border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-200'
+                    ? 'bg-slate-50 border-slate-200/80 shadow-xs' 
+                    : 'bg-white border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-300'
                 }`}
                 onClick={() => onToggleCell(habit.id, day)}
               >
-                <div className="w-12 h-12 flex items-center justify-center text-2xl rounded-xl bg-slate-100 mr-4 group-hover:scale-110 transition-transform">
+                <div className={`w-12 h-12 flex items-center justify-center text-2xl rounded-2xl mr-4 group-hover:scale-105 transition-transform flex-shrink-0 ${
+                  isCompleted ? 'bg-slate-200/70' : 'bg-slate-100'
+                }`}>
                   {habit.emoji}
                 </div>
-                <div className="flex-1">
-                  <h3 className={`font-bold text-lg ${isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}>
-                    {habit.name}
-                  </h3>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className={`font-extrabold text-base sm:text-lg truncate ${
+                      isCompleted ? 'text-slate-500 line-through decoration-emerald-500 decoration-2' : 'text-slate-900'
+                    }`}>
+                      {habit.name}
+                    </h3>
+                    {streak > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+                        🔥 {streak}d
+                      </span>
+                    )}
+                  </div>
                   {habit.category && (
-                    <span className="text-xs font-medium text-slate-400">{habit.category}</span>
+                    <span className="text-xs font-bold text-slate-500 mt-0.5 block">{habit.category}</span>
                   )}
                 </div>
                 
                 <div className="flex items-center gap-3">
                   {isCompleted && (
                     <button 
-                      className="text-xs text-slate-400 hover:text-slate-600 font-medium px-2 py-1 rounded-lg hover:bg-slate-200 transition-colors"
+                      className="hidden sm:inline-flex items-center gap-1.5 text-xs text-slate-700 hover:text-emerald-700 font-extrabold px-3 py-1 rounded-xl bg-slate-200/80 hover:bg-emerald-100 transition-colors shadow-xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onOpenJournal) {
@@ -171,13 +219,13 @@ export default function DailyFocusView({
                         }
                       }}
                     >
-                      Add Note
+                      <span>Reflection</span> ✍️
                     </button>
                   )}
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
                     isCompleted 
-                      ? 'bg-emerald-500 text-white scale-100' 
-                      : 'bg-slate-100 text-slate-300 group-hover:bg-emerald-100 group-hover:text-emerald-500 scale-95 group-hover:scale-100'
+                      ? 'bg-emerald-500 text-white scale-100 shadow-sm' 
+                      : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 scale-95 group-hover:scale-100'
                   }`}>
                     <Check strokeWidth={isCompleted ? 3 : 2} size={20} />
                   </div>
@@ -187,6 +235,8 @@ export default function DailyFocusView({
           })
         )}
       </div>
-    </div>
+    </MotionPageWrapper>
   );
 }
+
+

@@ -2,6 +2,8 @@ import { formatHbId } from '../lib/identityUtils';
 import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
 import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
+import { getCurrentStreak } from '../lib/habitUtils';
+
 
 /**
  * HabitBloom Domain Unit & Security Test Suite
@@ -52,6 +54,15 @@ function runTests() {
   const gymRoles = getTemplateForType('gym');
   assert(gymRoles.some(r => r.name.toLowerCase().includes('trainer')), 'Gym template generates Trainer role');
 
+  // 6. Habit Analytics & Streak Engine Tests
+  const mockHabit = { id: 'h1', name: 'Exercise', emoji: '🏃', goal: 30, category: 'Health' };
+  const mockLogs = {
+    'h1_2026_8_1': true,
+    'h1_2026_8_2': true,
+  };
+  const streak = getCurrentStreak(mockHabit, mockLogs, 2026, 8, 31, true);
+  assert(typeof streak === 'number' && streak >= 0, 'Streak engine computes valid numeric streak count');
+
   console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed.`);
   if (failed > 0) {
     process.exit(1);
@@ -59,3 +70,4 @@ function runTests() {
 }
 
 runTests();
+

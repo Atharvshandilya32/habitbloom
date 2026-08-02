@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Flame, Target, TrendingUp, Plus, CheckCircle2 } from 'lucide-react';
+import { Flame, Target, TrendingUp, Plus, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { makeLogKey, getMonthlyCompletionPct } from '../../../lib/habitUtils';
 
@@ -98,11 +98,12 @@ export default function KpiSummaryHeader({
             <span className="text-2xl font-black text-slate-900">{streakDays}</span>
             <span className="text-sm font-semibold text-slate-500">{streakDays === 1 ? 'day' : 'days'}</span>
           </div>
-          <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-            🔥 On Fire
+          <span className="text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+            <ShieldCheck size={12} className="text-amber-500" />
+            <span>Shield Active</span>
           </span>
         </div>
-        <p className="mt-2 text-xs text-slate-500">Keep up your daily habit momentum!</p>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">1-day streak freeze protection enabled</p>
       </div>
 
       {/* 3. Monthly Completion Rate */}

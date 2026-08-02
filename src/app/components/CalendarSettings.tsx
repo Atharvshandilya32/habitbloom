@@ -25,20 +25,20 @@ export default function CalendarSettings({ year, month, onYearChange, onMonthCha
   };
 
   return (
-    <div className="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
       {/* Title */}
-      <div className="flex items-center gap-2 text-slate-900 font-bold">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+      <div className="flex items-center gap-2 text-slate-900 font-extrabold">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
           <CalendarDays size={18} />
         </div>
-        <span className="text-sm tracking-tight">Calendar Controls</span>
+        <span className="text-sm tracking-tight font-black">Calendar Controls</span>
       </div>
 
       {/* Controls Container */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Year */}
-        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-sm">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Year</label>
+        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 shadow-xs">
+          <label className="text-xs font-black text-slate-600 uppercase tracking-wider">Year</label>
           <input
             type="number"
             value={year}
@@ -48,24 +48,25 @@ export default function CalendarSettings({ year, month, onYearChange, onMonthCha
               const v = parseInt(e.target.value, 10);
               if (!isNaN(v) && v >= 2020 && v <= 2035) onYearChange(v);
             }}
-            className="w-16 bg-transparent text-sm font-bold text-slate-900 focus:outline-none"
+            className="w-16 bg-transparent text-sm font-black text-slate-900 focus:outline-none"
           />
         </div>
 
         {/* Month */}
-        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-sm relative">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Month</label>
+        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 shadow-xs relative">
+          <label className="text-xs font-black text-slate-600 uppercase tracking-wider">Month</label>
           <select
             value={month}
             onChange={e => onMonthChange(parseInt(e.target.value, 10))}
-            className="appearance-none bg-transparent pr-5 text-sm font-bold text-slate-900 cursor-pointer focus:outline-none"
+            className="appearance-none bg-transparent pr-5 text-sm font-black text-slate-900 cursor-pointer focus:outline-none"
           >
             {MONTHS.map((m, i) => (
-              <option key={`month-${i + 1}`} value={i + 1}>{m}</option>
+              <option key={`month-${i + 1}`} value={i + 1} className="bg-white text-slate-900 font-bold">{m}</option>
             ))}
           </select>
-          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
+          <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500" />
         </div>
+
 
         {/* Current month badge */}
         <div className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-extrabold shadow-sm">

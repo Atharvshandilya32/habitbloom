@@ -80,6 +80,7 @@ export function getCurrentStreak(
   year: number,
   month: number,
   daysInMonth: number,
+  allowFreeze: boolean = true,
 ): number {
   const today = new Date();
   const endDay =
@@ -87,11 +88,18 @@ export function getCurrentStreak(
       ? Math.min(today.getDate(), daysInMonth)
       : daysInMonth;
   let streak = 0;
+  let freezesUsed = 0;
 
   for (let day = endDay; day >= 1; day--) {
     const key = makeLogKey(habit.id, year, month, day);
-    if (logs[key]) streak += 1;
-    else break;
+    if (logs[key]) {
+      streak += 1;
+    } else if (allowFreeze && freezesUsed < 1 && day < endDay) {
+      // 1-Day Streak Shield Freeze protection
+      freezesUsed += 1;
+    } else {
+      break;
+    }
   }
 
   return streak;

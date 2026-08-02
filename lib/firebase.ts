@@ -18,16 +18,23 @@ const firebaseConfig = {
   databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || '',
 };
 
+const isValidDatabaseUrl = (url?: string) => Boolean(url && (url.startsWith('https://') || url.startsWith('http://')));
+
 let app: ReturnType<typeof initializeApp> | undefined;
 let database: Database | undefined;
 let auth: Auth | undefined;
 
-try {
-  app = initializeApp(firebaseConfig);
-  database = getDatabase(app);
-  auth = getAuth(app);
-} catch (error) {
-  console.warn('Firebase not configured yet. Configure your .env.local file.', error);
+if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+  try {
+    app = initializeApp(firebaseConfig);
+    if (isValidDatabaseUrl(firebaseConfig.databaseURL)) {
+      database = getDatabase(app);
+    }
+    auth = getAuth(app);
+  } catch (error) {
+    console.info('Firebase initialization deferred. App running in offline local mode.', error);
+  }
 }
 
 export { database, auth, app };
+

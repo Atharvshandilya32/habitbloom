@@ -20,6 +20,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "date-fns": "^4.4.0",
     "firebase": "^12.16.0",
+    "framer-motion": "^12.43.0",
     "lucide-react": "^1.24.0",
     "next": "15.5.18",
     "qrcode.react": "^4.2.0",

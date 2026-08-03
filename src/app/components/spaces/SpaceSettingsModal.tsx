@@ -182,47 +182,47 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
           </button>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
           {/* Sidebar */}
-          <div className="w-48 bg-slate-50 border-r border-slate-100 p-4 space-y-2">
+          <div className="w-full md:w-48 md:shrink-0 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-4 flex md:flex-col gap-2 overflow-x-auto no-scrollbar">
             <button 
               onClick={() => setActiveTab('general')}
-              className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors ${activeTab === 'general' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
+              className={`w-auto md:w-full whitespace-nowrap text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors ${activeTab === 'general' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               General
             </button>
             <button 
               onClick={() => setActiveTab('branding')}
-              className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors ${activeTab === 'branding' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
+              className={`w-auto md:w-full whitespace-nowrap text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors ${activeTab === 'branding' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               Branding
             </button>
             <button 
               onClick={() => setActiveTab('invites')}
-              className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors ${activeTab === 'invites' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
+              className={`w-auto md:w-full whitespace-nowrap text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors ${activeTab === 'invites' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               Invites & QR
             </button>
             <button 
               onClick={() => setActiveTab('roles')}
-              className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-between ${activeTab === 'roles' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
+              className={`w-auto md:w-full whitespace-nowrap text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2 justify-between ${activeTab === 'roles' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               <span>Community Roles</span>
-              <Shield size={14} className="text-slate-400" />
+              <Shield size={14} className="text-slate-400 hidden md:block" />
             </button>
             <button 
               onClick={() => setActiveTab('roster')}
-              className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-between ${activeTab === 'roster' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
+              className={`w-auto md:w-full whitespace-nowrap text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2 justify-between ${activeTab === 'roster' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               <span>Roster & Verification</span>
-              <FileSpreadsheet size={14} className="text-slate-400" />
+              <FileSpreadsheet size={14} className="text-slate-400 hidden md:block" />
             </button>
             <button 
               onClick={() => setActiveTab('audit')}
-              className={`w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-between ${activeTab === 'audit' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
+              className={`w-auto md:w-full whitespace-nowrap text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center gap-2 justify-between ${activeTab === 'audit' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               <span>Audit Logs</span>
-              <History size={14} className="text-slate-400" />
+              <History size={14} className="text-slate-400 hidden md:block" />
             </button>
           </div>
 

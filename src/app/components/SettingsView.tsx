@@ -80,9 +80,9 @@ export default function SettingsView({
       </div>
 
       {/* Main Container with Left Sidebar Navigation */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+      <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
         {/* Sidebar Nav */}
-        <div className="bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+        <div className="w-full md:col-span-3 lg:col-span-3 bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
           {navItems.map(item => (
             <button
               key={item.id}
@@ -100,7 +100,7 @@ export default function SettingsView({
         </div>
 
         {/* Tab Content Panel */}
-        <div className="md:col-span-3 bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm min-h-[400px]">
+        <div className="w-full md:col-span-9 lg:col-span-9 bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm min-h-[400px]">
           {/* Profile Tab */}
           {activeTab === 'profile' && user && (
             <div className="space-y-6">

@@ -101,7 +101,7 @@ export default function RosterUploadModal({
             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           />
           <FileText size={32} className="mx-auto text-indigo-500 mb-2" />
-          <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate px-2">
             {fileName || 'Click or drag CSV file here'}
           </p>
           <p className="text-[10px] text-slate-400 mt-1">
@@ -112,8 +112,8 @@ export default function RosterUploadModal({
         {parsedInfo && (
           <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 p-3 rounded-xl flex items-center gap-2 mb-4">
             <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <div className="text-xs text-emerald-800 dark:text-emerald-300 font-medium">
-              Ready to import <strong>{parsedInfo.count} entries</strong> (e.g. {parsedInfo.sampleName}).
+            <div className="text-xs text-emerald-800 dark:text-emerald-300 font-medium flex-1 min-w-0">
+              Ready to import <strong>{parsedInfo.count} entries</strong> <span className="block truncate mt-0.5 text-[10px] opacity-80">(e.g. {parsedInfo.sampleName})</span>
             </div>
           </div>
         )}

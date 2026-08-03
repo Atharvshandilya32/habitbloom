@@ -175,20 +175,20 @@ export default function SpaceDashboard({
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20"></div>
         
         <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
-          <div className="flex items-end gap-5">
-            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-4xl shadow-lg">
+          <div className="flex items-end gap-5 flex-1 min-w-0">
+            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-4xl shadow-lg shrink-0">
               {space.type === 'gym' ? '🏋️' : space.type === 'school' ? '🎓' : space.type === 'company' ? '🏢' : '🚀'}
             </div>
-            <div className="pb-1 text-white">
+            <div className="pb-1 text-white flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-1">
                 <span className="px-2.5 py-0.5 rounded-lg bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider">
                   {space.type}
                 </span>
-                <span className="px-2.5 py-0.5 rounded-lg bg-white/30 backdrop-blur-md text-xs font-bold capitalize text-white">
+                <span className="px-2.5 py-0.5 rounded-lg bg-white/30 backdrop-blur-md text-xs font-bold capitalize text-white truncate max-w-[120px]">
                   Role: {role?.name || 'Member'}
                 </span>
               </div>
-              <h1 className="text-3xl font-black drop-shadow-md">{space.name}</h1>
+              <h1 className="text-3xl font-black drop-shadow-md truncate">{space.name}</h1>
             </div>
           </div>
         </div>

@@ -13,6 +13,12 @@ import DailyFocusView from './components/DailyFocusView';
 import DashboardView from './components/DashboardView';
 import GoalsView from './components/GoalsView';
 import ChallengesView from './components/ChallengesView';
+import { HabitDnaView } from './components/HabitDnaView';
+import { HabitGardenView } from './components/HabitGardenView';
+import { FutureProjectionView } from './components/FutureProjectionView';
+import { WeeklyReflectionView } from './components/WeeklyReflectionView';
+import { HabitWrappedModal } from './components/HabitWrappedModal';
+import { OnboardingGuide } from './components/OnboardingGuide';
 
 // Dynamic Lazy Loaded Sub-Views for optimal initial bundle performance
 const AnalyticsView = dynamic(() => import('./components/AnalyticsView'), { ssr: false });
@@ -77,6 +83,7 @@ export default function Page() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [identityModalOpen, setIdentityModalOpen] = useState(false);
+  const [wrappedOpen, setWrappedOpen] = useState(false);
   const [userProfileData, setUserProfileData] = useState<UserProfile | null>(null);
   const [toastMsg, setToastMsg] = useState('');
   const [toastOpen, setToastOpen] = useState(false);
@@ -346,8 +353,13 @@ export default function Page() {
     const key = makeLogKey(habitId, year, month, day);
     const dateTimestamp = new Date(year, month - 1, day).getTime();
 
-    const isNowCompleted = !logs[key];
-    const updatedLogs = { ...logs, [key]: isNowCompleted };
+    const isCurrentlyDone = !!logs[key];
+    const updatedLogs = { ...logs };
+    if (isCurrentlyDone) {
+      delete updatedLogs[key];
+    } else {
+      updatedLogs[key] = true;
+    }
     
     setLogs(updatedLogs);
     syncToFirebase('logs', updatedLogs);
@@ -363,7 +375,7 @@ export default function Page() {
     setHabitLogsArray(updatedLogsArray);
     syncToFirebase('habitLogsArray', updatedLogsArray);
 
-    if (isNowCompleted) {
+    if (!isCurrentlyDone) {
       showToast('Habit completed! Keep it up.');
     }
   };
@@ -484,7 +496,15 @@ export default function Page() {
     showToast('Journal entry deleted.');
   };
 
-  if (isLoadingFirebase) {
+  // Safety fallback: Unblock loading screen after 1.2s max if Firebase is slow
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoadingFirebase(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoadingFirebase && habits.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-600 gap-3">
         <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -546,6 +566,7 @@ export default function Page() {
         onOpenGuide={() => setGuideOpen(true)}
         onOpenSearch={() => setCmdOpen(true)}
         onOpenIdentityModal={() => setIdentityModalOpen(true)}
+        onOpenWrapped={() => setWrappedOpen(true)}
       />
 
       <main className="min-h-screen bg-slate-50/70 p-4 sm:p-6 text-slate-950 pb-20">
@@ -583,6 +604,45 @@ export default function Page() {
                   setJournalModalOpen(true);
                 }
               }}
+            />
+          )}
+
+          {activeTab === 'dna' && (
+            <HabitDnaView
+              habits={habits}
+              logsObj={logs}
+              year={year}
+              month={month}
+            />
+          )}
+
+          {activeTab === 'garden' && (
+            <HabitGardenView
+              habits={habits}
+              logsObj={logs}
+              year={year}
+              month={month}
+              onToggleHabit={handleToggleCell}
+            />
+          )}
+
+          {activeTab === 'projection' && (
+            <FutureProjectionView
+              habits={habits}
+              logsObj={logs}
+              year={year}
+              month={month}
+            />
+          )}
+
+          {activeTab === 'reflection' && (
+            <WeeklyReflectionView
+              habits={habits}
+              logsObj={logs}
+              journals={journals}
+              year={year}
+              month={month}
+              onSaveJournal={handleSaveJournal}
             />
           )}
 
@@ -737,6 +797,19 @@ export default function Page() {
           )}
         </div>
       </main>
+
+      {/* Habit Wrapped Retrospective Modal */}
+      <HabitWrappedModal
+        isOpen={wrappedOpen}
+        onClose={() => setWrappedOpen(false)}
+        habits={habits}
+        logsObj={logs}
+        year={year}
+        month={month}
+      />
+
+      {/* Intelligent Progressive Onboarding */}
+      <OnboardingGuide />
 
       {/* Floating Action Button (Optional) */}
       <button 

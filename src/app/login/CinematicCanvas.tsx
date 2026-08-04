@@ -24,7 +24,16 @@ export default function CinematicCanvas() {
     };
     window.addEventListener('resize', handleResize);
 
-    const particles: any[] = [];
+    type Particle = {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      radius: number;
+      color: string;
+    };
+    
+    const particles: Particle[] = [];
     // Adjust density based on screen size
     const numParticles = Math.floor((width * height) / 15000); 
 

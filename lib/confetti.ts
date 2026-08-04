@@ -1,13 +1,8 @@
 import confetti from 'canvas-confetti';
 
-export function fireConfetti(options?: confetti.Options) {
-  if (typeof window !== 'undefined') {
-    try {
-      confetti(options);
-    } catch (e) {
-      console.warn('Confetti trigger ignored:', e);
-    }
-  }
+export function fireConfetti(_options?: confetti.Options) {
+  // Animations disabled for normal experience
+  return;
 }
 
 export default fireConfetti;

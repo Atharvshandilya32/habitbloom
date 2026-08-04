@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
 import Navbar, { NavTab } from './components/charts/TitleBanner';
 import RequireAuth from './auth/RequireAuth';
 import GuideModal, { shouldShowGuide } from './components/GuideModal';
@@ -516,7 +517,8 @@ export default function Page() {
   const todayDateStr = `${year}-${String(month).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
 
   return (
-    <RequireAuth>
+    <MotionConfig reducedMotion="always">
+      <RequireAuth>
       <CommandPalette 
         isOpen={cmdOpen} 
         onClose={() => setCmdOpen(false)}
@@ -819,6 +821,7 @@ export default function Page() {
       >
         <span className="text-xl leading-none">✍️</span>
       </button>
-    </RequireAuth>
+      </RequireAuth>
+    </MotionConfig>
   );
 }

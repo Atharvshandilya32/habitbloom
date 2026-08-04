@@ -25,7 +25,6 @@ import {
   Menu,
 } from 'lucide-react';
 import CinematicCanvas from './CinematicCanvas';
-import CinematicLoader from './CinematicLoader';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -38,10 +37,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // Asset preloader & frame states
-  const [loadProgress, setLoadProgress] = useState(0);
-  const [isAssetsReady, setIsAssetsReady] = useState(false);
-  const [currentFrame, setCurrentFrame] = useState(0);
+  // UI mount state for graceful fade-in
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const provider = useMemo(() => new GoogleAuthProvider(), []);
 
@@ -125,32 +126,17 @@ export default function LoginPage() {
     }
   };
 
-  // Synchronized overlay reveal factor based on 220-frame canvas progress:
-  // Hidden during early seed/growth phase (frames 0-100), smoothly fades in during crystallization (frames 100-215)
-  const uiOpacity = isAssetsReady
-    ? currentFrame >= 215
-      ? 1
-      : Math.min(1, Math.max(0, (currentFrame - 100) / 115))
-    : 0;
+  // Smoothly fade in the main interface once mounted
+  const uiOpacity = mounted ? 1 : 0;
 
   return (
     <div className="relative min-h-screen w-full bg-slate-950 flex items-center justify-center font-sans antialiased select-none p-4 sm:p-6 lg:p-10 overflow-x-hidden overflow-y-auto">
-      {/* Premium Asset Preloader */}
-      <CinematicLoader
-        progress={loadProgress}
-        isReady={isAssetsReady}
-      />
-
-      {/* 60fps Dynamic Canvas Background (Holding at Frame 220) */}
+      {/* 60fps Dynamic Procedural Canvas Background */}
       <div className="fixed inset-0 z-0">
-        <CinematicCanvas
-          onProgress={(pct) => setLoadProgress(pct)}
-          onReady={() => setIsAssetsReady(true)}
-          onFrame={(idx) => setCurrentFrame(idx)}
-        />
+        <CinematicCanvas />
       </div>
 
-      {/* Main SaaS Interface Overlay matching Frame 220 Pristine Scene */}
+      {/* Main SaaS Interface Overlay */}
       <main
         className="relative z-20 w-full max-w-7xl my-auto transition-opacity duration-700 ease-out"
         style={{ opacity: uiOpacity }}

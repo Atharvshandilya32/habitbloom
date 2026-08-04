@@ -1,168 +1,115 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
-interface CinematicCanvasProps {
-  onProgress?: (progress: number) => void;
-  onReady?: () => void;
-  onFrame?: (frameIndex: number, totalFrames: number) => void;
-}
+export default function CinematicCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-const TOTAL_FRAMES = 220;
-const FRAME_DIRECTORY = '/assets/frames';
-
-export default function CinematicCanvas({ onProgress, onReady, onFrame }: CinematicCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const imagesRef = useRef<HTMLImageElement[]>([]);
-  const animationFrameId = useRef<number | null>(null);
-
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-
-  // Preload all 300 frames from local assets
   useEffect(() => {
-    let count = 0;
-    const loadedImages: HTMLImageElement[] = new Array(TOTAL_FRAMES);
-
-    for (let i = 1; i <= TOTAL_FRAMES; i++) {
-      const img = new Image();
-      const frameNum = String(i).padStart(3, '0');
-      img.src = `${FRAME_DIRECTORY}/ezgif-frame-${frameNum}.jpg`;
-
-      img.onload = () => {
-        count++;
-        const pct = (count / TOTAL_FRAMES) * 100;
-        if (onProgress) onProgress(pct);
-
-        if (count === TOTAL_FRAMES) {
-          imagesRef.current = loadedImages;
-          setIsLoaded(true);
-          if (onReady) onReady();
-        }
-      };
-
-      img.onerror = () => {
-        count++;
-        const pct = (count / TOTAL_FRAMES) * 100;
-        if (onProgress) onProgress(pct);
-        if (count === TOTAL_FRAMES) {
-          imagesRef.current = loadedImages;
-          setIsLoaded(true);
-          if (onReady) onReady();
-        }
-      };
-
-      loadedImages[i - 1] = img;
-    }
-  }, [onProgress, onReady]);
-
-  // Helper to draw image onto canvas with cover scaling
-  const drawFrame = (frameIdx: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const img = imagesRef.current[frameIdx];
-    if (!img || !img.complete) return;
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
 
-    const cw = canvas.width;
-    const ch = canvas.height;
-    const iw = img.naturalWidth || 1920;
-    const ih = img.naturalHeight || 1080;
+    const handleResize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    };
+    window.addEventListener('resize', handleResize);
 
-    const canvasAspect = cw / ch;
-    const imgAspect = iw / ih;
+    const particles: any[] = [];
+    // Adjust density based on screen size
+    const numParticles = Math.floor((width * height) / 15000); 
 
-    let renderW: number, renderH: number, offsetX: number, offsetY: number;
-
-    if (canvasAspect > imgAspect) {
-      renderW = cw;
-      renderH = cw / imgAspect;
-      offsetX = 0;
-      offsetY = (ch - renderH) / 2;
-    } else {
-      renderH = ch;
-      renderW = ch * imgAspect;
-      offsetX = (cw - renderW) / 2;
-      offsetY = 0;
+    for (let i = 0; i < numParticles; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: (Math.random() - 0.5) * 0.6,
+        radius: Math.random() * 2 + 0.5,
+        color: Math.random() > 0.5 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(45, 212, 191, 0.7)' // emerald and teal
+      });
     }
 
-    ctx.clearRect(0, 0, cw, ch);
-    ctx.drawImage(img, offsetX, offsetY, renderW, renderH);
-  };
+    let animationId: number;
+    let time = 0;
 
-  // Canvas size adjustment handler
-  useEffect(() => {
-    const updateCanvasSize = () => {
-      if (canvasRef.current) {
-        canvasRef.current.width = window.innerWidth;
-        canvasRef.current.height = window.innerHeight;
-        drawFrame(currentFrameIndex);
-      }
-    };
+    const draw = () => {
+      time += 0.005;
+      ctx.clearRect(0, 0, width, height);
 
-    updateCanvasSize();
-    window.addEventListener('resize', updateCanvasSize);
-    return () => window.removeEventListener('resize', updateCanvasSize);
-  }, [currentFrameIndex, isLoaded]);
+      // Dynamic ambient gradient background
+      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      gradient.addColorStop(0, '#020617'); // slate-950 base
+      
+      // Calculate a subtle pulsing offset for the gradient
+      const pulse = Math.sin(time) * 0.5 + 0.5;
+      const r = Math.floor(2 + pulse * 4); // 2 to 6
+      const g = Math.floor(40 + pulse * 30); // 40 to 70
+      const b = Math.floor(30 + pulse * 20); // 30 to 50
+      gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.8)`); 
 
-  // Animation Loop (targeting smooth 30 FPS playback across ~10 seconds)
-  useEffect(() => {
-    if (!isLoaded || !isPlaying) return;
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
 
-    let lastTime = performance.now();
-    const fpsInterval = 1000 / 30; // 33.3ms per frame
+      // Update and draw particles
+      particles.forEach((p, index) => {
+        p.x += p.vx;
+        p.y += p.vy;
 
-    const renderLoop = (now: number) => {
-      const delta = now - lastTime;
+        // Bounce off edges
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
 
-      if (delta >= fpsInterval) {
-        lastTime = now - (delta % fpsInterval);
-
-        setCurrentFrameIndex((prevIdx) => {
-          if (prevIdx >= TOTAL_FRAMES - 1) {
-            setIsPlaying(false);
-            return TOTAL_FRAMES - 1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        
+        // Draw mesh connections
+        for (let j = index + 1; j < numParticles; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+          if (dist < 150) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            const opacity = 1 - dist / 150;
+            // Draw connections in a faint emerald tint
+            ctx.strokeStyle = `rgba(16, 185, 129, ${opacity * 0.4})`;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
           }
-          return prevIdx + 1;
-        });
-      }
+        }
+      });
 
-      animationFrameId.current = requestAnimationFrame(renderLoop);
+      animationId = requestAnimationFrame(draw);
     };
 
-    animationFrameId.current = requestAnimationFrame(renderLoop);
+    draw();
 
     return () => {
-      if (animationFrameId.current) {
-        cancelAnimationFrame(animationFrameId.current);
-      }
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationId);
     };
-  }, [isLoaded, isPlaying]);
-
-  // Redraw canvas and notify parent on frame change
-  useEffect(() => {
-    if (isLoaded) {
-      drawFrame(currentFrameIndex);
-      if (onFrame) {
-        onFrame(currentFrameIndex, TOTAL_FRAMES);
-      }
-    }
-  }, [currentFrameIndex, isLoaded, onFrame]);
+  }, []);
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-slate-950">
-      {/* HTML5 Canvas Background */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+        className="absolute inset-0 w-full h-full pointer-events-none"
       />
-
-      {/* Soft gradient overlay to ensure contrast and depth */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-slate-950/40 pointer-events-none" />
+      {/* Heavy vignette overlay to keep text readable */}
+      <div className="absolute inset-0 bg-slate-950/60 pointer-events-none" />
     </div>
   );
 }
-

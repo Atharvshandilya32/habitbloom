@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Play, Pause, RotateCcw, Sparkles } from 'lucide-react';
+
 
 interface CinematicCanvasProps {
   onProgress?: (progress: number) => void;
@@ -147,19 +147,6 @@ export default function CinematicCanvas({ onProgress, onReady }: CinematicCanvas
     }
   }, [currentFrameIndex, isLoaded]);
 
-  const handleReplay = () => {
-    setCurrentFrameIndex(0);
-    setIsPlaying(true);
-  };
-
-  const togglePlay = () => {
-    if (currentFrameIndex >= TOTAL_FRAMES - 1) {
-      handleReplay();
-    } else {
-      setIsPlaying(!isPlaying);
-    }
-  };
-
   return (
     <div className="relative w-full h-full overflow-hidden bg-slate-950">
       {/* HTML5 Canvas Background */}
@@ -170,36 +157,6 @@ export default function CinematicCanvas({ onProgress, onReady }: CinematicCanvas
 
       {/* Subtle overlay gradient to ensure text readability */}
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-slate-950/50 pointer-events-none" />
-
-      {/* Floating Canvas Controls (Discreet Bottom-Left) */}
-      {isLoaded && (
-        <div className="absolute bottom-6 left-6 z-30 flex items-center gap-2 bg-slate-900/60 backdrop-blur-xl border border-white/10 px-3 py-1.5 rounded-2xl shadow-xl text-xs text-white">
-          <button
-            type="button"
-            onClick={togglePlay}
-            className="p-1.5 rounded-xl hover:bg-white/10 transition-colors text-emerald-400"
-            title={isPlaying ? 'Pause Animation' : 'Play Animation'}
-          >
-            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-          </button>
-          
-          <button
-            type="button"
-            onClick={handleReplay}
-            className="p-1.5 rounded-xl hover:bg-white/10 transition-colors text-slate-300 hover:text-white"
-            title="Replay Sprouting Animation"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
-
-          <div className="h-3 w-px bg-white/15 mx-1" />
-
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-300 font-mono">
-            <Sparkles className="w-3 h-3 text-cyan-400" />
-            <span>Frame {currentFrameIndex + 1}/{TOTAL_FRAMES}</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -2,16 +2,16 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-
 interface CinematicCanvasProps {
   onProgress?: (progress: number) => void;
   onReady?: () => void;
+  onFrame?: (frameIndex: number, totalFrames: number) => void;
 }
 
-const TOTAL_FRAMES = 300;
+const TOTAL_FRAMES = 220;
 const FRAME_DIRECTORY = '/assets/frames';
 
-export default function CinematicCanvas({ onProgress, onReady }: CinematicCanvasProps) {
+export default function CinematicCanvas({ onProgress, onReady, onFrame }: CinematicCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const animationFrameId = useRef<number | null>(null);
@@ -43,15 +43,21 @@ export default function CinematicCanvas({ onProgress, onReady }: CinematicCanvas
       };
 
       img.onerror = () => {
-        // Fallback progress if an image fails
         count++;
+        const pct = (count / TOTAL_FRAMES) * 100;
+        if (onProgress) onProgress(pct);
+        if (count === TOTAL_FRAMES) {
+          imagesRef.current = loadedImages;
+          setIsLoaded(true);
+          if (onReady) onReady();
+        }
       };
 
       loadedImages[i - 1] = img;
     }
   }, [onProgress, onReady]);
 
-  // Helper to draw image onto canvas with aspect cover scaling
+  // Helper to draw image onto canvas with cover scaling
   const drawFrame = (frameIdx: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -102,12 +108,12 @@ export default function CinematicCanvas({ onProgress, onReady }: CinematicCanvas
     return () => window.removeEventListener('resize', updateCanvasSize);
   }, [currentFrameIndex, isLoaded]);
 
-  // Animation Loop (30 FPS targeting)
+  // Animation Loop (targeting smooth 30 FPS playback across ~10 seconds)
   useEffect(() => {
     if (!isLoaded || !isPlaying) return;
 
     let lastTime = performance.now();
-    const fpsInterval = 1000 / 30; // ~33ms per frame
+    const fpsInterval = 1000 / 30; // 33.3ms per frame
 
     const renderLoop = (now: number) => {
       const delta = now - lastTime;
@@ -117,14 +123,10 @@ export default function CinematicCanvas({ onProgress, onReady }: CinematicCanvas
 
         setCurrentFrameIndex((prevIdx) => {
           if (prevIdx >= TOTAL_FRAMES - 1) {
-            // Reached final frame (Blooming tree + glass crystal card)
-            // Pause on final frame to allow user interaction
             setIsPlaying(false);
             return TOTAL_FRAMES - 1;
           }
-          const nextIdx = prevIdx + 1;
-          drawFrame(nextIdx);
-          return nextIdx;
+          return prevIdx + 1;
         });
       }
 
@@ -140,12 +142,15 @@ export default function CinematicCanvas({ onProgress, onReady }: CinematicCanvas
     };
   }, [isLoaded, isPlaying]);
 
-  // Redraw when currentFrameIndex changes manually
+  // Redraw canvas and notify parent on frame change
   useEffect(() => {
     if (isLoaded) {
       drawFrame(currentFrameIndex);
+      if (onFrame) {
+        onFrame(currentFrameIndex, TOTAL_FRAMES);
+      }
     }
-  }, [currentFrameIndex, isLoaded]);
+  }, [currentFrameIndex, isLoaded, onFrame]);
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-slate-950">
@@ -155,8 +160,9 @@ export default function CinematicCanvas({ onProgress, onReady }: CinematicCanvas
         className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
       />
 
-      {/* Subtle overlay gradient to ensure text readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-slate-950/50 pointer-events-none" />
+      {/* Soft gradient overlay to ensure contrast and depth */}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-slate-950/40 pointer-events-none" />
     </div>
   );
 }
+

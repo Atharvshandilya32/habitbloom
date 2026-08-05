@@ -6,7 +6,8 @@ export interface OfflineMutation {
   timestamp: number;
   type: 'set' | 'update';
   path: string;
-  data: unknown;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any;
 }
 
 const QUEUE_KEY = 'habitbloom_offline_queue';
@@ -31,7 +32,8 @@ function saveQueue(queue: OfflineMutation[]) {
  * If the user is online, it will try to send it immediately.
  * If it fails (offline), it stays in the queue until `replayMutations` succeeds.
  */
-export async function queueMutation(type: 'set' | 'update', path: string, data: unknown) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function queueMutation(type: 'set' | 'update', path: string, data: any) {
   const queue = getQueue();
   const mutation: OfflineMutation = {
     id: `mut_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,

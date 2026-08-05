@@ -11,6 +11,8 @@ export interface UserProfile {
   createdAt: string;
   updatedAt: string;
   hbId?: string | null; // Reserved for future Universal HabitBloom ID
+  experiencePoints?: number;
+  currentLevel?: number;
   metadata?: Record<string, unknown>;
 }
 
@@ -33,6 +35,8 @@ export async function ensureUserProfile(user: User): Promise<UserProfile | null>
         createdAt: now,
         updatedAt: now,
         hbId,
+        experiencePoints: 0,
+        currentLevel: 1,
       };
 
       await set(profileRef, newProfile);

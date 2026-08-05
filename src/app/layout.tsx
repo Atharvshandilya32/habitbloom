@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { ThemeProvider } from './components/ThemeProvider';
+import { FeatureFlagProvider } from '../../lib/FeatureFlagContext';
 
 export const metadata: Metadata = {
   title: 'HabitBloom – Daily Discipline & Micro-Progress Tracker',
@@ -21,7 +22,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ThemeProvider>
-          {children}
+          <FeatureFlagProvider>
+            {children}
+          </FeatureFlagProvider>
         </ThemeProvider>
       </body>
     </html>

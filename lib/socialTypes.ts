@@ -117,7 +117,7 @@ export interface UserNotification {
 }
 
 export type ChallengeType = 'daily' | 'weekly' | 'monthly' | 'custom';
-export type ChallengeMode = 'individual' | 'friends_only' | 'public' | 'invite_only' | 'private';
+export type ChallengeMode = 'individual' | 'friends_only' | 'public' | 'invite_only' | 'private' | 'team';
 
 export interface ChallengeParticipant {
   uid: string;
@@ -141,6 +141,8 @@ export interface SocialChallenge {
   targetDays: number;
   minCompletionPerDay: number;
   requiredStreak: number;
+  targetXP?: number;       // For 'team' mode challenges
+  currentTeamXP?: number;  // Pooled total XP
   startDate: string;
   endDate: string;
   winnerUid?: string | null;

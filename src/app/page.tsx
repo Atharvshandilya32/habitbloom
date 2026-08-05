@@ -38,6 +38,8 @@ import SpacesHub from './components/SpacesHub';
 const SpaceDashboard = dynamic(() => import('./components/SpaceDashboard'), { ssr: false });
 import CreateSpaceModal from './components/CreateSpaceModal';
 import { Space, SpaceInvite } from '../../lib/spaceTypes';
+import { XP_CONSTANTS, getLevelFromXp } from '../../lib/xpEngine';
+import { initOfflineSync, queueMutation } from '../../lib/offlineSyncEngine';
 import { createNewSpace } from '../../lib/spaceUtils';
 import { ensureUserProfile, UserProfile } from '../../lib/userProfile';
 const IdentityModal = dynamic(() => import('./components/identity/IdentityModal'), { ssr: false });
@@ -88,7 +90,7 @@ export default function Page() {
   const [userProfileData, setUserProfileData] = useState<UserProfile | null>(null);
   const [toastMsg, setToastMsg] = useState('');
   const [toastOpen, setToastOpen] = useState(false);
-  
+
   // Journal Modal State
   const [journalModalOpen, setJournalModalOpen] = useState(false);
   const [selectedHabitForJournal, setSelectedHabitForJournal] = useState<Habit | undefined>(undefined);
@@ -121,15 +123,20 @@ export default function Page() {
     setToastOpen(true);
   };
 
+  // Initialize offline sync listeners
+  useEffect(() => {
+    initOfflineSync();
+  }, []);
+
   // Open guide on first visit
   useEffect(() => {
     if (shouldShowGuide()) setGuideOpen(true);
   }, []);
 
-  // Helper function to sync individual paths to Firebase
+  // Helper function to sync individual paths to Firebase via offline queue
   const syncToFirebase = (key: string, value: unknown) => {
-    if (database && currentUser) {
-      set(ref(database, `users/${currentUser.uid}/${key}`), value);
+    if (currentUser) {
+      queueMutation('set', `users/${currentUser.uid}/${key}`, value);
     }
   };
 
@@ -276,11 +283,11 @@ export default function Page() {
           setUserSpaces([]);
           return;
         }
-        
+
         const allMembers = snapshot.val();
         const mySpaceIds: string[] = [];
         const myRoleMappings: Record<string, string> = {}; // spaceId -> roleId
-        
+
         // Find spaces the user belongs to
         Object.keys(allMembers).forEach(key => {
           if (allMembers[key].userId === currentUser.uid) {
@@ -301,32 +308,32 @@ export default function Page() {
             if (spaceSnapshot.exists()) {
               const allSpaces = spaceSnapshot.val();
               const mySpaces = mySpaceIds.map(id => allSpaces[id]).filter(Boolean);
-              
+
               // Run silent migrations if necessary
               mySpaces.forEach(space => {
                 if (space.schemaVersion !== 2) {
                   import('../../lib/migrateSpace').then(({ migrateLegacySpace }) => migrateLegacySpace(space));
                 }
               });
-              
+
               setUserSpaces(mySpaces);
-              
+
               // Also store all spaces for public search (if no privacy settings yet, assume all are public)
               const allSpacesList = Object.values(allSpaces) as Space[];
               // For a real app we might filter out spaces the user is already in, or keep them.
               setPublicSpaces(allSpacesList);
-              
+
               // Fetch roles for the spaces we belong to
               get(rolesRef).then(rolesSnapshot => {
                 if (rolesSnapshot.exists()) {
                   const allSpaceRoles = rolesSnapshot.val();
                   const resolvedRoles: Record<string, import('../../lib/spaceTypes').CustomRole> = {};
-                  
+
                   mySpaceIds.forEach(spaceId => {
-                     const roleId = myRoleMappings[spaceId];
-                     if (roleId && allSpaceRoles[spaceId] && allSpaceRoles[spaceId][roleId]) {
-                       resolvedRoles[spaceId] = allSpaceRoles[spaceId][roleId];
-                     }
+                    const roleId = myRoleMappings[spaceId];
+                    if (roleId && allSpaceRoles[spaceId] && allSpaceRoles[spaceId][roleId]) {
+                      resolvedRoles[spaceId] = allSpaceRoles[spaceId][roleId];
+                    }
                   });
                   setUserRoles(resolvedRoles);
                 }
@@ -361,9 +368,9 @@ export default function Page() {
     } else {
       updatedLogs[key] = true;
     }
-    
+
     setLogs(updatedLogs);
-    syncToFirebase('logs', updatedLogs);
+    queueMutation('set', `users/${currentUser?.uid}/logs`, updatedLogs);
 
     const logsArray = habitLogsArray[habitId] || [];
     const index = logsArray.indexOf(dateTimestamp);
@@ -377,6 +384,18 @@ export default function Page() {
     syncToFirebase('habitLogsArray', updatedLogsArray);
 
     if (!isCurrentlyDone) {
+      if (userProfileData && currentUser) {
+        const newXp = (userProfileData.experiencePoints || 0) + XP_CONSTANTS.HABIT_COMPLETION;
+        const newLevel = getLevelFromXp(newXp);
+        
+        const updatedProfile = { 
+          ...userProfileData, 
+          experiencePoints: newXp, 
+          currentLevel: newLevel 
+        };
+        setUserProfileData(updatedProfile);
+        queueMutation('set', `users/${currentUser.uid}/profile`, updatedProfile);
+      }
       showToast('Habit completed! Keep it up.');
     }
   };
@@ -519,308 +538,308 @@ export default function Page() {
   return (
     <MotionConfig reducedMotion="always">
       <RequireAuth>
-      <CommandPalette 
-        isOpen={cmdOpen} 
-        onClose={() => setCmdOpen(false)}
-        habits={habits}
-        goals={goals}
-        challenges={challenges}
-        onNavigate={setActiveTab}
-      />
-      <Toast message={toastMsg} isVisible={toastOpen} onClose={() => setToastOpen(false)} />
-      <IdentityModal
-        isOpen={identityModalOpen}
-        onClose={() => setIdentityModalOpen(false)}
-        profile={userProfileData}
-        userSpaces={userSpaces}
-      />
-      <JournalModal 
-        isOpen={journalModalOpen} 
-        onClose={() => { 
-          setJournalModalOpen(false); 
-          setSelectedHabitForJournal(undefined); 
-          setSelectedJournalEntry(undefined);
-        }}
-        habit={selectedHabitForJournal}
-        dateStr={selectedJournalEntry ? selectedJournalEntry.date : todayDateStr}
-        existingEntry={selectedJournalEntry}
-        onSave={(entry) => {
-          handleSaveJournal(entry);
-          setJournalModalOpen(false);
-          setSelectedHabitForJournal(undefined);
-          setSelectedJournalEntry(undefined);
-        }}
-        onDelete={(id) => {
-          handleDeleteJournal(id);
-          setJournalModalOpen(false);
-          setSelectedHabitForJournal(undefined);
-          setSelectedJournalEntry(undefined);
-        }}
-      />
+        <CommandPalette
+          isOpen={cmdOpen}
+          onClose={() => setCmdOpen(false)}
+          habits={habits}
+          goals={goals}
+          challenges={challenges}
+          onNavigate={setActiveTab}
+        />
+        <Toast message={toastMsg} isVisible={toastOpen} onClose={() => setToastOpen(false)} />
+        <IdentityModal
+          isOpen={identityModalOpen}
+          onClose={() => setIdentityModalOpen(false)}
+          profile={userProfileData}
+          userSpaces={userSpaces}
+        />
+        <JournalModal
+          isOpen={journalModalOpen}
+          onClose={() => {
+            setJournalModalOpen(false);
+            setSelectedHabitForJournal(undefined);
+            setSelectedJournalEntry(undefined);
+          }}
+          habit={selectedHabitForJournal}
+          dateStr={selectedJournalEntry ? selectedJournalEntry.date : todayDateStr}
+          existingEntry={selectedJournalEntry}
+          onSave={(entry) => {
+            handleSaveJournal(entry);
+            setJournalModalOpen(false);
+            setSelectedHabitForJournal(undefined);
+            setSelectedJournalEntry(undefined);
+          }}
+          onDelete={(id) => {
+            handleDeleteJournal(id);
+            setJournalModalOpen(false);
+            setSelectedHabitForJournal(undefined);
+            setSelectedJournalEntry(undefined);
+          }}
+        />
 
-      <GuideModal isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
+        <GuideModal isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
 
-      {/* Sticky Navbar */}
-      <Navbar
-        user={currentUser}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onOpenGuide={() => setGuideOpen(true)}
-        onOpenSearch={() => setCmdOpen(true)}
-        onOpenIdentityModal={() => setIdentityModalOpen(true)}
-        onOpenWrapped={() => setWrappedOpen(true)}
-      />
+        {/* Sticky Navbar */}
+        <Navbar
+          user={currentUser}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onOpenGuide={() => setGuideOpen(true)}
+          onOpenSearch={() => setCmdOpen(true)}
+          onOpenIdentityModal={() => setIdentityModalOpen(true)}
+          onOpenWrapped={() => setWrappedOpen(true)}
+        />
 
-      <main className="min-h-screen bg-slate-50/70 p-4 sm:p-6 text-slate-950 pb-20">
-        <h1 className="sr-only">HabitBloom – SaaS Habit Tracker & Productivity Operating System</h1>
+        <main className="min-h-screen bg-slate-50/70 p-4 sm:p-6 text-slate-950 pb-20">
+          <h1 className="sr-only">HabitBloom – SaaS Habit Tracker & Productivity Operating System</h1>
 
-        <div className="mx-auto max-w-7xl space-y-6">
-          
-          {/* Calendar Selector Bar */}
-          {(activeTab === 'dashboard' || activeTab === 'analytics' || activeTab === 'focus') && (
-            <CalendarSettings
-              year={year}
-              month={month}
-              onYearChange={setYear}
-              onMonthChange={setMonth}
-              onResetMonth={handleResetMonth}
-            />
-          )}
+          <div className="mx-auto max-w-7xl space-y-6">
 
-          {/* Tab Views */}
-          {activeTab === 'focus' && (
-            <DailyFocusView
-              habits={habits}
-              logs={logs}
-              year={year}
-              month={month}
-              day={new Date().getDate()} // Focus today
-              onToggleCell={(habitId, day) => {
-                handleToggleCell(habitId, day);
-              }}
-              onNavigateTab={setActiveTab}
-              onOpenJournal={(habitId) => {
-                const habit = habits.find(h => h.id === habitId);
-                if (habit) {
-                  setSelectedHabitForJournal(habit);
-                  setJournalModalOpen(true);
-                }
-              }}
-            />
-          )}
+            {/* Calendar Selector Bar */}
+            {(activeTab === 'dashboard' || activeTab === 'analytics' || activeTab === 'focus') && (
+              <CalendarSettings
+                year={year}
+                month={month}
+                onYearChange={setYear}
+                onMonthChange={setMonth}
+                onResetMonth={handleResetMonth}
+              />
+            )}
 
-          {activeTab === 'dna' && (
-            <HabitDnaView
-              habits={habits}
-              logsObj={logs}
-              year={year}
-              month={month}
-            />
-          )}
-
-          {activeTab === 'garden' && (
-            <HabitGardenView
-              habits={habits}
-              logsObj={logs}
-              year={year}
-              month={month}
-              onToggleHabit={handleToggleCell}
-            />
-          )}
-
-          {activeTab === 'projection' && (
-            <FutureProjectionView
-              habits={habits}
-              logsObj={logs}
-              year={year}
-              month={month}
-            />
-          )}
-
-          {activeTab === 'reflection' && (
-            <WeeklyReflectionView
-              habits={habits}
-              logsObj={logs}
-              journals={journals}
-              year={year}
-              month={month}
-              onSaveJournal={handleSaveJournal}
-            />
-          )}
-
-          {activeTab === 'goals' && (
-            <GoalsView
-              goals={goals}
-              onAddGoal={handleAddGoal}
-              onUpdateGoal={handleUpdateGoal}
-            />
-          )}
-
-          {activeTab === 'challenges' && (
-            <ChallengesView
-              challenges={challenges}
-              onJoinChallenge={handleJoinChallenge}
-            />
-          )}
-
-          {activeTab === 'timeline' && (
-            <TimelineView 
-              journals={journals} 
-              habits={habits}
-              onEditJournal={(id) => {
-                const entry = journals.find(j => j.id === id);
-                if (entry) {
-                  setSelectedJournalEntry(entry);
-                  if (entry.habitId) {
-                    const habit = habits.find(h => h.id === entry.habitId);
+            {/* Tab Views */}
+            {activeTab === 'focus' && (
+              <DailyFocusView
+                habits={habits}
+                logs={logs}
+                year={year}
+                month={month}
+                day={new Date().getDate()} // Focus today
+                onToggleCell={(habitId, day) => {
+                  handleToggleCell(habitId, day);
+                }}
+                onNavigateTab={setActiveTab}
+                onOpenJournal={(habitId) => {
+                  const habit = habits.find(h => h.id === habitId);
+                  if (habit) {
                     setSelectedHabitForJournal(habit);
+                    setJournalModalOpen(true);
                   }
-                  setJournalModalOpen(true);
-                }
-              }}
-            />
-          )}
+                }}
+              />
+            )}
 
-          {activeTab === 'dashboard' && (
-            <DashboardView
-              user={currentUser}
-              habits={habits}
-              logs={logs}
-              year={year}
-              month={month}
-              daysInMonth={daysInMonth}
-              onToggleCell={handleToggleCell}
-              onAddHabit={handleAddHabit}
-              onDeleteHabit={handleDeleteHabit}
-              onUpdateHabit={handleUpdateHabit}
-              onNavigateTab={setActiveTab}
-            />
-          )}
+            {activeTab === 'dna' && (
+              <HabitDnaView
+                habits={habits}
+                logsObj={logs}
+                year={year}
+                month={month}
+              />
+            )}
 
-          {activeTab === 'analytics' && (
-            <div className="space-y-6">
-              <WeeklyReviewView
+            {activeTab === 'garden' && (
+              <HabitGardenView
+                habits={habits}
+                logsObj={logs}
+                year={year}
+                month={month}
+                onToggleHabit={handleToggleCell}
+              />
+            )}
+
+            {activeTab === 'projection' && (
+              <FutureProjectionView
+                habits={habits}
+                logsObj={logs}
+                year={year}
+                month={month}
+              />
+            )}
+
+            {activeTab === 'reflection' && (
+              <WeeklyReflectionView
+                habits={habits}
+                logsObj={logs}
+                journals={journals}
+                year={year}
+                month={month}
+                onSaveJournal={handleSaveJournal}
+              />
+            )}
+
+            {activeTab === 'goals' && (
+              <GoalsView
+                goals={goals}
+                onAddGoal={handleAddGoal}
+                onUpdateGoal={handleUpdateGoal}
+              />
+            )}
+
+            {activeTab === 'challenges' && (
+              <ChallengesView
+                challenges={challenges}
+                onJoinChallenge={handleJoinChallenge}
+              />
+            )}
+
+            {activeTab === 'timeline' && (
+              <TimelineView
+                journals={journals}
+                habits={habits}
+                onEditJournal={(id) => {
+                  const entry = journals.find(j => j.id === id);
+                  if (entry) {
+                    setSelectedJournalEntry(entry);
+                    if (entry.habitId) {
+                      const habit = habits.find(h => h.id === entry.habitId);
+                      setSelectedHabitForJournal(habit);
+                    }
+                    setJournalModalOpen(true);
+                  }
+                }}
+              />
+            )}
+
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                user={currentUser}
                 habits={habits}
                 logs={logs}
-                onGoToDashboard={() => setActiveTab('dashboard')}
+                year={year}
+                month={month}
+                daysInMonth={daysInMonth}
+                onToggleCell={handleToggleCell}
+                onAddHabit={handleAddHabit}
+                onDeleteHabit={handleDeleteHabit}
+                onUpdateHabit={handleUpdateHabit}
+                onNavigateTab={setActiveTab}
               />
-              <AnalyticsView
-                habits={habits}
-                logs={logs}
-                onGoToDashboard={() => setActiveTab('dashboard')}
-              />
-            </div>
-          )}
+            )}
 
-          {activeTab === 'records' && (
-            <PersonalRecordsView
-              habits={habits}
-              logs={logs}
-            />
-          )}
-
-          {activeTab === 'settings' && (
-            <SettingsView
-              user={currentUser}
-              habits={habits}
-              logs={logs}
-              reminderConfig={reminderConfig}
-              notificationPermission={notificationPermission}
-              updateReminderConfig={updateReminderConfig}
-              requestNotificationPermission={requestNotificationPermission}
-              sendTestNotification={sendTestNotification}
-              onClearData={handleClearLocalData}
-            />
-          )}
-
-          {activeTab === 'social' && (
-            <SocialHubView
-              currentUser={currentUser}
-              habits={habits}
-              logs={logs}
-              onShowToast={showToast}
-            />
-          )}
-
-          {activeTab === 'spaces' && (
-            <div className="space-y-6">
-              {!activeSpaceId || !userSpaces.find(s => s.id === activeSpaceId) ? (
-                <SpacesHub
-                  userSpaces={userSpaces}
-                  publicSpaces={publicSpaces}
-                  pendingInvites={pendingInvites}
-                  onCreateSpaceClick={() => setCreateSpaceOpen(true)}
-                  onEnterSpace={setActiveSpaceId}
-                  onAcceptInvite={() => {
-                     showToast('Welcome to the Space!');
-                  }}
+            {activeTab === 'analytics' && (
+              <div className="space-y-6">
+                <WeeklyReviewView
+                  habits={habits}
+                  logs={logs}
+                  onGoToDashboard={() => setActiveTab('dashboard')}
                 />
-              ) : (
-                <SpaceDashboard
-                  space={userSpaces.find(s => s.id === activeSpaceId)!}
-                  role={userRoles[activeSpaceId]}
-                  currentUserId={currentUser?.uid || ''}
-                  personalHabits={habits}
-                  onBack={() => setActiveSpaceId(null)}
-                  onInstallTemplate={(template) => {
-                     const newHabit = {
+                <AnalyticsView
+                  habits={habits}
+                  logs={logs}
+                  onGoToDashboard={() => setActiveTab('dashboard')}
+                />
+              </div>
+            )}
+
+            {activeTab === 'records' && (
+              <PersonalRecordsView
+                habits={habits}
+                logs={logs}
+              />
+            )}
+
+            {activeTab === 'settings' && (
+              <SettingsView
+                user={currentUser}
+                habits={habits}
+                logs={logs}
+                reminderConfig={reminderConfig}
+                notificationPermission={notificationPermission}
+                updateReminderConfig={updateReminderConfig}
+                requestNotificationPermission={requestNotificationPermission}
+                sendTestNotification={sendTestNotification}
+                onClearData={handleClearLocalData}
+              />
+            )}
+
+            {activeTab === 'social' && (
+              <SocialHubView
+                currentUser={currentUser}
+                habits={habits}
+                logs={logs}
+                onShowToast={showToast}
+              />
+            )}
+
+            {activeTab === 'spaces' && (
+              <div className="space-y-6">
+                {!activeSpaceId || !userSpaces.find(s => s.id === activeSpaceId) ? (
+                  <SpacesHub
+                    userSpaces={userSpaces}
+                    publicSpaces={publicSpaces}
+                    pendingInvites={pendingInvites}
+                    onCreateSpaceClick={() => setCreateSpaceOpen(true)}
+                    onEnterSpace={setActiveSpaceId}
+                    onAcceptInvite={() => {
+                      showToast('Welcome to the Space!');
+                    }}
+                  />
+                ) : (
+                  <SpaceDashboard
+                    space={userSpaces.find(s => s.id === activeSpaceId)!}
+                    role={userRoles[activeSpaceId]}
+                    currentUserId={currentUser?.uid || ''}
+                    personalHabits={habits}
+                    onBack={() => setActiveSpaceId(null)}
+                    onInstallTemplate={(template) => {
+                      const newHabit = {
                         id: `habit-${Date.now()}`,
                         name: template.name,
                         emoji: template.emoji,
                         goal: 1,
                         category: template.category
-                     };
-                     setHabits(prev => [...prev, newHabit]);
-                     showToast(`${template.name} added to your habits.`);
+                      };
+                      setHabits(prev => [...prev, newHabit]);
+                      showToast(`${template.name} added to your habits.`);
+                    }}
+                  />
+                )}
+
+                <CreateSpaceModal
+                  isOpen={createSpaceOpen}
+                  onClose={() => setCreateSpaceOpen(false)}
+                  onCreate={(name, desc, type) => {
+                    if (!currentUser) return;
+                    const { space, member } = createNewSpace(name, desc, type, currentUser.uid);
+
+                    // Write space to database
+                    if (database) {
+                      set(ref(database, `spaces/${space.id}`), space);
+                      set(ref(database, `spaceMembers/${space.id}_${currentUser.uid}`), member);
+                    }
+
+                    // Note: setUserSpaces is now handled by the real-time listener!
+                    setActiveSpaceId(space.id);
+                    setCreateSpaceOpen(false);
+                    showToast(`Space '${name}' created successfully.`);
                   }}
                 />
-              )}
-              
-              <CreateSpaceModal
-                isOpen={createSpaceOpen}
-                onClose={() => setCreateSpaceOpen(false)}
-                onCreate={(name, desc, type) => {
-                   if (!currentUser) return;
-                   const { space, member } = createNewSpace(name, desc, type, currentUser.uid);
-                   
-                   // Write space to database
-                   if (database) {
-                     set(ref(database, `spaces/${space.id}`), space);
-                     set(ref(database, `spaceMembers/${space.id}_${currentUser.uid}`), member);
-                   }
+              </div>
+            )}
+          </div>
+        </main>
 
-                   // Note: setUserSpaces is now handled by the real-time listener!
-                   setActiveSpaceId(space.id);
-                   setCreateSpaceOpen(false);
-                   showToast(`Space '${name}' created successfully.`);
-                }}
-              />
-            </div>
-          )}
-        </div>
-      </main>
+        {/* Habit Wrapped Retrospective Modal */}
+        <HabitWrappedModal
+          isOpen={wrappedOpen}
+          onClose={() => setWrappedOpen(false)}
+          habits={habits}
+          logsObj={logs}
+          year={year}
+          month={month}
+        />
 
-      {/* Habit Wrapped Retrospective Modal */}
-      <HabitWrappedModal
-        isOpen={wrappedOpen}
-        onClose={() => setWrappedOpen(false)}
-        habits={habits}
-        logsObj={logs}
-        year={year}
-        month={month}
-      />
+        {/* Intelligent Progressive Onboarding */}
+        <OnboardingGuide />
 
-      {/* Intelligent Progressive Onboarding */}
-      <OnboardingGuide />
-
-      {/* Floating Action Button (Optional) */}
-      <button 
-        onClick={() => setJournalModalOpen(true)}
-        className="fixed bottom-6 left-6 z-40 bg-white p-3 rounded-full shadow-lg border border-slate-200 text-slate-600 hover:text-emerald-600 hover:scale-105 transition-all"
-        title="Quick Journal (J)"
-      >
-        <span className="text-xl leading-none">✍️</span>
-      </button>
+        {/* Floating Action Button (Optional) */}
+        <button
+          onClick={() => setJournalModalOpen(true)}
+          className="fixed bottom-6 left-6 z-40 bg-white p-3 rounded-full shadow-lg border border-slate-200 text-slate-600 hover:text-emerald-600 hover:scale-105 transition-all"
+          title="Quick Journal (J)"
+        >
+          <span className="text-xl leading-none">✍️</span>
+        </button>
       </RequireAuth>
     </MotionConfig>
   );

@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar } from 'recharts';
 import EmptyState from './EmptyState';
+import InsightsPanel from './InsightsPanel';
+import { useFeatureFlags } from '../../../lib/FeatureFlagContext';
+import { Lock } from 'lucide-react';
 
 interface AnalyticsViewProps {
   habits: Habit[];
@@ -27,6 +30,8 @@ interface AnalyticsViewProps {
 }
 
 export default function AnalyticsView({ habits, logs, onGoToDashboard }: AnalyticsViewProps) {
+  const { flags } = useFeatureFlags();
+  
   const selectedMonth = new Date().getMonth() + 1;
   const selectedYear = new Date().getFullYear();
 
@@ -77,6 +82,21 @@ export default function AnalyticsView({ habits, logs, onGoToDashboard }: Analyti
           </p>
         </div>
       </div>
+
+      {/* Smart Insights Panel */}
+      {flags.isPremium ? (
+        <InsightsPanel habits={habits} logs={logs} />
+      ) : (
+        <div className="bg-slate-50 rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col items-center justify-center text-center space-y-3">
+          <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-2">
+            <Lock size={24} />
+          </div>
+          <h3 className="text-lg font-extrabold text-slate-800">Smart Insights Locked</h3>
+          <p className="text-sm font-medium text-slate-500 max-w-sm">
+            Upgrade to Premium to unlock AI-driven heuristics and personalized habit observations.
+          </p>
+        </div>
+      )}
 
       {/* 1. GitHub-Style Contribution Heatmap */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">

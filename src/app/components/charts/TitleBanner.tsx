@@ -91,11 +91,11 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
 
   const initials = user
     ? (user.displayName || user.email || '?')
-        .split(' ')
-        .map(w => w[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
+      .split(' ')
+      .map(w => w[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
     : '?';
 
   return (
@@ -118,7 +118,7 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
         {/* Center Nav Links (Desktop) */}
         <div className="hidden md:flex flex-1 min-w-0 max-w-[600px] items-center justify-center relative group px-6">
           {canScrollLeft && (
-            <button 
+            <button
               onClick={() => scrollByAmount(-200)}
               className="absolute left-0 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white border border-slate-200 shadow-sm text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all opacity-0 group-hover:opacity-100"
               aria-label="Scroll left"
@@ -127,7 +127,7 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
             </button>
           )}
 
-          <div 
+          <div
             ref={scrollRef}
             onScroll={checkScroll}
             className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto hide-scrollbar scroll-smooth w-full"
@@ -148,9 +148,8 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
                 <button
                   key={tabItem.id}
                   onClick={() => handleNavClick(tabItem.id)}
-                  className={`relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold rounded-lg transition-colors whitespace-nowrap shrink-0 ${
-                    isActive ? 'text-emerald-800 font-black' : 'text-slate-700 hover:text-slate-900'
-                  }`}
+                  className={`relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold rounded-lg transition-colors whitespace-nowrap shrink-0 ${isActive ? 'text-emerald-800 font-black' : 'text-slate-700 hover:text-slate-900'
+                    }`}
                 >
                   {isActive && (
                     <motion.div
@@ -169,9 +168,8 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
             <div className="w-px h-4 bg-slate-300 mx-1 shrink-0"></div>
             <button
               onClick={() => handleNavClick('social')}
-              className={`relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold rounded-lg transition-colors whitespace-nowrap shrink-0 ${
-                activeTab === 'social' ? 'text-emerald-800 font-black' : 'text-slate-700 hover:text-slate-900'
-              }`}
+              className={`relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold rounded-lg transition-colors whitespace-nowrap shrink-0 ${activeTab === 'social' ? 'text-emerald-800 font-black' : 'text-slate-700 hover:text-slate-900'
+                }`}
             >
               {activeTab === 'social' && (
                 <motion.div
@@ -188,7 +186,7 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
           </div>
 
           {canScrollRight && (
-            <button 
+            <button
               onClick={() => scrollByAmount(200)}
               className="absolute right-0 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white border border-slate-200 shadow-sm text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-all opacity-0 group-hover:opacity-100"
               aria-label="Scroll right"
@@ -289,126 +287,112 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
         <div className="md:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 space-y-1 shadow-lg max-h-[70vh] overflow-y-auto">
           <button
             onClick={() => handleNavClick('focus')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'focus' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'focus' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Activity size={15} />
             Daily Focus
           </button>
           <button
             onClick={() => handleNavClick('dna')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'dna' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'dna' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Activity size={15} />
             DNA
           </button>
           <button
             onClick={() => handleNavClick('garden')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'garden' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'garden' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Target size={15} />
             Garden
           </button>
           <button
             onClick={() => handleNavClick('projection')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'projection' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'projection' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Clock size={15} />
             Projection
           </button>
           <button
             onClick={() => handleNavClick('reflection')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'reflection' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'reflection' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <BookOpen size={15} />
             Reflection
           </button>
           <button
             onClick={() => handleNavClick('dashboard')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'dashboard' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <LayoutDashboard size={15} />
             Dashboard Grid
           </button>
           <button
             onClick={() => handleNavClick('analytics')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'analytics' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'analytics' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Activity size={15} />
             Analytics
           </button>
           <button
             onClick={() => handleNavClick('social')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'social' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'social' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Users size={15} className="text-emerald-600" />
             Social Network
           </button>
           <button
             onClick={() => handleNavClick('spaces')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'spaces' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'spaces' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Compass size={15} className="text-indigo-600" />
             Spaces
           </button>
           <button
             onClick={() => handleNavClick('goals')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'goals' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'goals' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Target size={15} />
             Goals
           </button>
           <button
             onClick={() => handleNavClick('challenges')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'challenges' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'challenges' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Trophy size={15} />
             Challenges
           </button>
           <button
             onClick={() => handleNavClick('timeline')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'timeline' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'timeline' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Clock size={15} />
             Timeline
           </button>
           <button
             onClick={() => handleNavClick('records')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'records' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'records' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Award size={15} />
             Personal Records
           </button>
           <button
             onClick={() => handleNavClick('settings')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'settings' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'settings' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <Settings size={15} />
             Settings

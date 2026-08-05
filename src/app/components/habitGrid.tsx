@@ -5,6 +5,7 @@ import { Plus, Trash2, Check, Pencil, X, Sparkles, Flame, Search, StickyNote } f
 import { toast } from 'sonner';
 import { Habit, HabitLog, HABIT_CATEGORIES } from '../../../lib/habitTypes';
 import { makeLogKey, getCurrentStreak, getHabitStats } from '../../../lib/habitUtils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -248,6 +249,7 @@ export default function HabitGrid({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
+            <AnimatePresence>
             {filteredHabits.map((habit, rowIdx) => {
               const isEditing = editingId === habit.id;
               const rowBg = rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30';
@@ -255,7 +257,15 @@ export default function HabitGrid({
               const stats = getHabitStats(habit, logs, daysInMonth, year, month);
 
               return (
-                <tr key={habit.id} className={`${rowBg} hover:bg-slate-50/80 transition-colors group`}>
+                <motion.tr 
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  key={habit.id} 
+                  className={`${rowBg} hover:bg-slate-50/80 transition-colors group`}
+                >
                   {/* Habit Name / Edit Cell */}
                   <td className={`sticky left-0 z-10 border-r border-slate-200/80 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.06)] px-4 py-3 ${rowBg} group-hover:bg-slate-50`}>
                     {isEditing ? (
@@ -432,9 +442,10 @@ export default function HabitGrid({
                       </button>
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               );
             })}
+            </AnimatePresence>
 
             {/* Empty State */}
             {filteredHabits.length === 0 && (

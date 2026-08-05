@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Search, Plus, Compass, LogIn } from 'lucide-react';
+import { Users, Search, Plus, Compass, LogIn, Trophy } from 'lucide-react';
 import { Space, SpaceInvite } from '../../../lib/spaceTypes';
 
 interface SpacesHubProps {
@@ -95,6 +95,30 @@ export default function SpacesHub({
           </div>
         </div>
       )}
+
+      {/* Global Leaderboard Snapshot */}
+      <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex items-center gap-3 border-b border-white/10 pb-4 mb-4">
+          <Trophy className="text-yellow-400" size={24} />
+          <h3 className="text-lg font-bold">Global Top Bloomers</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { name: 'Sarah M.', score: 980, rank: 1, color: 'text-yellow-400' },
+            { name: 'David K.', score: 850, rank: 2, color: 'text-slate-300' },
+            { name: 'Alex T.', score: 810, rank: 3, color: 'text-orange-400' }
+          ].map(user => (
+            <div key={user.rank} className="bg-white/10 rounded-2xl p-4 flex items-center justify-between border border-white/5 backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <span className={`font-black text-xl ${user.color}`}>#{user.rank}</span>
+                <span className="font-bold text-sm">{user.name}</span>
+              </div>
+              <span className="text-xs font-bold px-2 py-1 bg-white/20 rounded-lg">{user.score} XP</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* My Spaces */}
       <div className="space-y-4">

@@ -25,6 +25,7 @@ import {
   Target,
   ArrowRight,
 } from 'lucide-react';
+import BadgesView from './BadgesView';
 
 interface DashboardViewProps extends HabitGridProps {
   user: FirebaseUser | null;
@@ -241,7 +242,8 @@ export default function DashboardView({
           <OverviewPanel habits={habits} logs={logs} daysInMonth={daysInMonth} year={year} month={month} />
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Award size={18} className="text-amber-500" />
@@ -270,7 +272,14 @@ export default function DashboardView({
               <div className="text-xs font-medium text-slate-600">Highest Completion Week</div>
               <div className="text-sm font-extrabold text-blue-600">{records.highestCompletionWeek}%</div>
             </div>
+            </div>
           </div>
+          
+          <BadgesView 
+            longestStreak={records.longestStreak} 
+            totalActiveDays={records.totalActiveDays} 
+            totalCompleted={records.totalHabitsCompleted} 
+          />
         </div>
       </div>
     </div>

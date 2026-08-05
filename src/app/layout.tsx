@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: 'HabitBloom – Daily Discipline & Micro-Progress Tracker',
   description:
     'Turn long-term goals into daily habits. HabitBloom helps founders and high-performers track micro-progress and maintain daily discipline.',
+  manifest: '/manifest.json',
   alternates: {
     canonical: 'https://habitbloom.in/',
   },

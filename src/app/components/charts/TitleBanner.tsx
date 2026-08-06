@@ -133,13 +133,9 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
             className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto hide-scrollbar scroll-smooth w-full"
           >
             {[
-              { id: 'focus' as NavTab, label: 'Daily Focus', icon: Activity },
-              { id: 'dna' as NavTab, label: 'DNA', icon: Activity },
-              { id: 'garden' as NavTab, label: 'Garden', icon: Target },
-              { id: 'projection' as NavTab, label: 'Projection', icon: Clock },
-              { id: 'reflection' as NavTab, label: 'Reflection', icon: BookOpen },
-              { id: 'dashboard' as NavTab, label: 'Grid', icon: LayoutDashboard },
+              { id: 'dashboard' as NavTab, label: 'Dashboard', icon: LayoutDashboard },
               { id: 'analytics' as NavTab, label: 'Analytics', icon: Activity },
+              { id: 'goals' as NavTab, label: 'Goals', icon: Target },
               { id: 'spaces' as NavTab, label: 'Spaces', icon: Compass },
             ].map((tabItem) => {
               const IconComponent = tabItem.icon;
@@ -286,56 +282,16 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
       {mobileOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 space-y-1 shadow-lg max-h-[70vh] overflow-y-auto">
           <button
-            onClick={() => handleNavClick('focus')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'focus' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-              }`}
-          >
-            <Activity size={15} />
-            Daily Focus
-          </button>
-          <button
-            onClick={() => handleNavClick('dna')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'dna' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-              }`}
-          >
-            <Activity size={15} />
-            DNA
-          </button>
-          <button
-            onClick={() => handleNavClick('garden')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'garden' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-              }`}
-          >
-            <Target size={15} />
-            Garden
-          </button>
-          <button
-            onClick={() => handleNavClick('projection')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'projection' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-              }`}
-          >
-            <Clock size={15} />
-            Projection
-          </button>
-          <button
-            onClick={() => handleNavClick('reflection')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'reflection' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
-              }`}
-          >
-            <BookOpen size={15} />
-            Reflection
-          </button>
-          <button
             onClick={() => handleNavClick('dashboard')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-700 hover:bg-slate-50'
               }`}
           >
             <LayoutDashboard size={15} />
-            Dashboard Grid
+            Dashboard
           </button>
           <button
             onClick={() => handleNavClick('analytics')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'analytics' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'text-slate-700 hover:bg-slate-50'
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'analytics' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-700 hover:bg-slate-50'
               }`}
           >
             <Activity size={15} />

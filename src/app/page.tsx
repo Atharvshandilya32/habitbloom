@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { MotionConfig } from 'framer-motion';
 import Navbar, { NavTab } from './components/charts/TitleBanner';
 import RequireAuth from './auth/RequireAuth';
@@ -10,15 +10,15 @@ import CalendarSettings from './components/CalendarSettings';
 
 import dynamic from 'next/dynamic';
 
-import DailyFocusView from './components/DailyFocusView';
-import DashboardView from './components/DashboardView';
-import GoalsView from './components/GoalsView';
-import ChallengesView from './components/ChallengesView';
-import { HabitDnaView } from './components/HabitDnaView';
-import { HabitGardenView } from './components/HabitGardenView';
-import { FutureProjectionView } from './components/FutureProjectionView';
-import { WeeklyReflectionView } from './components/WeeklyReflectionView';
-import { HabitWrappedModal } from './components/HabitWrappedModal';
+const DailyFocusView = dynamic(() => import('./components/DailyFocusView'), { ssr: false });
+const DashboardView = dynamic(() => import('./components/DashboardView'), { ssr: false });
+const GoalsView = dynamic(() => import('./components/GoalsView'), { ssr: false });
+const ChallengesView = dynamic(() => import('./components/ChallengesView'), { ssr: false });
+const HabitDnaView = dynamic(() => import('./components/HabitDnaView').then(mod => mod.HabitDnaView), { ssr: false });
+const HabitGardenView = dynamic(() => import('./components/HabitGardenView').then(mod => mod.HabitGardenView), { ssr: false });
+const FutureProjectionView = dynamic(() => import('./components/FutureProjectionView').then(mod => mod.FutureProjectionView), { ssr: false });
+const WeeklyReflectionView = dynamic(() => import('./components/WeeklyReflectionView').then(mod => mod.WeeklyReflectionView), { ssr: false });
+const HabitWrappedModal = dynamic(() => import('./components/HabitWrappedModal').then(mod => mod.HabitWrappedModal), { ssr: false });
 import { OnboardingGuide } from './components/OnboardingGuide';
 
 // Dynamic Lazy Loaded Sub-Views for optimal initial bundle performance
@@ -134,11 +134,11 @@ export default function Page() {
   }, []);
 
   // Helper function to sync individual paths to Firebase via offline queue
-  const syncToFirebase = (key: string, value: unknown) => {
+  const syncToFirebase = useCallback((key: string, value: unknown) => {
     if (currentUser) {
       queueMutation('set', `users/${currentUser.uid}/${key}`, value);
     }
-  };
+  }, [currentUser]);
 
   // 1. Load from localStorage on mount (initial fallback)
   useEffect(() => {
@@ -357,73 +357,79 @@ export default function Page() {
   const daysInMonth = getDaysInMonth(year, month);
 
   // ── Toggle cell ────────────────────────────────────────────────────────
-  const handleToggleCell = (habitId: string, day: number) => {
+  const handleToggleCell = useCallback((habitId: string, day: number) => {
     const key = makeLogKey(habitId, year, month, day);
     const dateTimestamp = new Date(year, month - 1, day).getTime();
 
-    const isCurrentlyDone = !!logs[key];
-    const updatedLogs = { ...logs };
-    if (isCurrentlyDone) {
-      delete updatedLogs[key];
-    } else {
-      updatedLogs[key] = true;
-    }
-
-    setLogs(updatedLogs);
-    queueMutation('set', `users/${currentUser?.uid}/logs`, updatedLogs);
-
-    const logsArray = habitLogsArray[habitId] || [];
-    const index = logsArray.indexOf(dateTimestamp);
-    const updatedLogsArray = {
-      ...habitLogsArray,
-      [habitId]: index === -1
-        ? [...logsArray, dateTimestamp].sort()
-        : logsArray.filter((_, i) => i !== index),
-    };
-    setHabitLogsArray(updatedLogsArray);
-    syncToFirebase('habitLogsArray', updatedLogsArray);
-
-    if (!isCurrentlyDone) {
-      if (userProfileData && currentUser) {
-        const newXp = (userProfileData.experiencePoints || 0) + XP_CONSTANTS.HABIT_COMPLETION;
-        const newLevel = getLevelFromXp(newXp);
-        
-        const updatedProfile = { 
-          ...userProfileData, 
-          experiencePoints: newXp, 
-          currentLevel: newLevel 
-        };
-        setUserProfileData(updatedProfile);
-        queueMutation('set', `users/${currentUser.uid}/profile`, updatedProfile);
+    setLogs(prevLogs => {
+      const isCurrentlyDone = !!prevLogs[key];
+      const updatedLogs = { ...prevLogs };
+      if (isCurrentlyDone) {
+        delete updatedLogs[key];
+      } else {
+        updatedLogs[key] = true;
       }
-      showToast('Habit completed! Keep it up.');
-    }
-  };
+      queueMutation('set', `users/${currentUser?.uid}/logs`, updatedLogs);
+
+      if (!isCurrentlyDone) {
+        if (userProfileData && currentUser) {
+          const newXp = (userProfileData.experiencePoints || 0) + XP_CONSTANTS.HABIT_COMPLETION;
+          const newLevel = getLevelFromXp(newXp);
+          const updatedProfile = { 
+            ...userProfileData, 
+            experiencePoints: newXp, 
+            currentLevel: newLevel 
+          };
+          setUserProfileData(updatedProfile);
+          queueMutation('set', `users/${currentUser.uid}/profile`, updatedProfile);
+        }
+        showToast('Habit completed! Keep it up.');
+      }
+      return updatedLogs;
+    });
+
+    setHabitLogsArray(prevLogsArray => {
+      const logsArray = prevLogsArray[habitId] || [];
+      const index = logsArray.indexOf(dateTimestamp);
+      const updatedLogsArray = {
+        ...prevLogsArray,
+        [habitId]: index === -1
+          ? [...logsArray, dateTimestamp].sort()
+          : logsArray.filter((_, i) => i !== index),
+      };
+      syncToFirebase('habitLogsArray', updatedLogsArray);
+      return updatedLogsArray;
+    });
+  }, [year, month, currentUser, userProfileData, syncToFirebase]);
 
   // ── Reset current month ────────────────────────────────────────────────
-  const handleResetMonth = () => {
+  const handleResetMonth = useCallback(() => {
     const prefix = getMonthKeyPrefix(year, month);
-    const updatedLogs = Object.fromEntries(
-      Object.entries(logs).filter(([key]) => !key.includes(prefix))
-    );
-    setLogs(updatedLogs);
-    syncToFirebase('logs', updatedLogs);
+    setLogs(prev => {
+      const updatedLogs = Object.fromEntries(
+        Object.entries(prev).filter(([key]) => !key.includes(prefix))
+      );
+      syncToFirebase('logs', updatedLogs);
+      return updatedLogs;
+    });
 
     const monthStart = new Date(year, month - 1, 1).getTime();
     const monthEnd = new Date(year, month, 1).getTime();
-    const updatedLogsArray = Object.fromEntries(
-      Object.entries(habitLogsArray).map(([habitId, timestamps]) => [
-        habitId,
-        timestamps.filter(ts => ts < monthStart || ts >= monthEnd),
-      ])
-    );
-    setHabitLogsArray(updatedLogsArray);
-    syncToFirebase('habitLogsArray', updatedLogsArray);
+    setHabitLogsArray(prev => {
+      const updatedLogsArray = Object.fromEntries(
+        Object.entries(prev).map(([habitId, timestamps]) => [
+          habitId,
+          timestamps.filter(ts => ts < monthStart || ts >= monthEnd),
+        ])
+      );
+      syncToFirebase('habitLogsArray', updatedLogsArray);
+      return updatedLogsArray;
+    });
     showToast('Progress reset for the month.');
-  };
+  }, [year, month, syncToFirebase]);
 
   // ── Reset all local data ───────────────────────────────────────────────
-  const handleClearLocalData = () => {
+  const handleClearLocalData = useCallback(() => {
     setLogs({});
     setHabitLogsArray({});
     setJournals([]);
@@ -436,10 +442,10 @@ export default function Page() {
     syncToFirebase('goals', []);
     syncToFirebase('challenges', []);
     showToast('Local data cleared successfully.');
-  };
+  }, [syncToFirebase]);
 
   // ── Habits CRUD ──────────────────────────────────────────────────────────
-  const handleAddHabit = () => {
+  const handleAddHabit = useCallback(() => {
     const newHabit: Habit = {
       id: `habit-${Date.now()}`,
       name: 'New Habit',
@@ -448,73 +454,93 @@ export default function Page() {
       category: '🎯 Personal Growth',
       createdAt: new Date().toISOString(),
     };
-    const updated = [...habits, newHabit];
-    setHabits(updated);
-    syncToFirebase('habits', updated);
-    showToast('Habit created successfully.');
-  };
-
-  const handleDeleteHabit = (habitId: string) => {
-    const updatedHabits = habits.filter(h => h.id !== habitId);
-    setHabits(updatedHabits);
-    syncToFirebase('habits', updatedHabits);
-
-    const nextLogs = { ...logs };
-    Object.keys(nextLogs).forEach(key => {
-      if (key.startsWith(`${habitId}_`)) delete nextLogs[key];
+    setHabits(prev => {
+      const updated = [...prev, newHabit];
+      syncToFirebase('habits', updated);
+      return updated;
     });
-    setLogs(nextLogs);
-    syncToFirebase('logs', nextLogs);
+    showToast('Habit created successfully.');
+  }, [syncToFirebase]);
 
-    const nextLogsArray = { ...habitLogsArray };
-    if (nextLogsArray[habitId]) {
-      delete nextLogsArray[habitId];
-      setHabitLogsArray(nextLogsArray);
-      syncToFirebase('habitLogsArray', nextLogsArray);
-    }
+  const handleDeleteHabit = useCallback((habitId: string) => {
+    setHabits(prev => {
+      const updatedHabits = prev.filter(h => h.id !== habitId);
+      syncToFirebase('habits', updatedHabits);
+      return updatedHabits;
+    });
+
+    setLogs(prev => {
+      const nextLogs = { ...prev };
+      Object.keys(nextLogs).forEach(key => {
+        if (key.startsWith(`${habitId}_`)) delete nextLogs[key];
+      });
+      syncToFirebase('logs', nextLogs);
+      return nextLogs;
+    });
+
+    setHabitLogsArray(prev => {
+      const nextLogsArray = { ...prev };
+      if (nextLogsArray[habitId]) {
+        delete nextLogsArray[habitId];
+        syncToFirebase('habitLogsArray', nextLogsArray);
+      }
+      return nextLogsArray;
+    });
     showToast('Habit deleted successfully.');
-  };
+  }, [syncToFirebase]);
 
-  const handleUpdateHabit = (habitId: string, updates: Partial<Habit>) => {
-    const updated = habits.map(h => h.id === habitId ? { ...h, ...updates } : h);
-    setHabits(updated);
-    syncToFirebase('habits', updated);
-  };
+  const handleUpdateHabit = useCallback((habitId: string, updates: Partial<Habit>) => {
+    setHabits(prev => {
+      const updated = prev.map(h => h.id === habitId ? { ...h, ...updates } : h);
+      syncToFirebase('habits', updated);
+      return updated;
+    });
+  }, [syncToFirebase]);
 
   // ── CRUD Handlers ────────────────────────────────────────────────
-  const handleAddGoal = (goal: GoalType) => {
-    const updated = [...goals, goal];
-    setGoals(updated);
-    syncToFirebase('goals', updated);
+  const handleAddGoal = useCallback((goal: GoalType) => {
+    setGoals(prev => {
+      const updated = [...prev, goal];
+      syncToFirebase('goals', updated);
+      return updated;
+    });
     showToast('Goal set successfully.');
-  };
+  }, [syncToFirebase]);
 
-  const handleUpdateGoal = (goalId: string, updates: Partial<GoalType>) => {
-    const updated = goals.map(g => g.id === goalId ? { ...g, ...updates } : g);
-    setGoals(updated);
-    syncToFirebase('goals', updated);
-  };
+  const handleUpdateGoal = useCallback((goalId: string, updates: Partial<GoalType>) => {
+    setGoals(prev => {
+      const updated = prev.map(g => g.id === goalId ? { ...g, ...updates } : g);
+      syncToFirebase('goals', updated);
+      return updated;
+    });
+  }, [syncToFirebase]);
 
-  const handleJoinChallenge = (challenge: Challenge) => {
-    const updated = [...challenges, challenge];
-    setChallenges(updated);
-    syncToFirebase('challenges', updated);
+  const handleJoinChallenge = useCallback((challenge: Challenge) => {
+    setChallenges(prev => {
+      const updated = [...prev, challenge];
+      syncToFirebase('challenges', updated);
+      return updated;
+    });
     showToast(`Joined ${challenge.title} challenge.`);
-  };
+  }, [syncToFirebase]);
 
-  const handleSaveJournal = (entry: JournalEntry) => {
-    const updated = [...journals.filter(j => j.id !== entry.id), entry];
-    setJournals(updated);
-    syncToFirebase('journals', updated);
+  const handleSaveJournal = useCallback((entry: JournalEntry) => {
+    setJournals(prev => {
+      const updated = [...prev.filter(j => j.id !== entry.id), entry];
+      syncToFirebase('journals', updated);
+      return updated;
+    });
     showToast('Journal entry saved.');
-  };
+  }, [syncToFirebase]);
 
-  const handleDeleteJournal = (journalId: string) => {
-    const updated = journals.filter(j => j.id !== journalId);
-    setJournals(updated);
-    syncToFirebase('journals', updated);
+  const handleDeleteJournal = useCallback((journalId: string) => {
+    setJournals(prev => {
+      const updated = prev.filter(j => j.id !== journalId);
+      syncToFirebase('journals', updated);
+      return updated;
+    });
     showToast('Journal entry deleted.');
-  };
+  }, [syncToFirebase]);
 
   // Safety fallback: Unblock loading screen after 1.2s max if Firebase is slow
   useEffect(() => {

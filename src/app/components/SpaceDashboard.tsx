@@ -282,15 +282,31 @@ export default function SpaceDashboard({
               />
             </div>
             <div className="space-y-4">
-              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2"><Target size={16} className="text-slate-400"/> Active Templates</h3>
-                <p className="text-sm text-slate-500">{templates.length} templates shared.</p>
-                <button onClick={() => setActiveTab('templates')} className="mt-4 w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl transition-colors">View All</button>
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+                <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                  <Target size={16} className="text-indigo-500"/> Active Templates
+                </h3>
+                {templates.length > 0 ? (
+                  <p className="text-sm font-medium text-slate-600">{templates.length} templates shared by the community.</p>
+                ) : (
+                  <p className="text-sm text-slate-400">No templates yet. Create one to share your workflow!</p>
+                )}
+                <button onClick={() => setActiveTab('templates')} className="mt-4 w-full py-2 bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-bold text-sm rounded-xl transition-colors">
+                  {templates.length > 0 ? 'View All' : 'Create First Template'}
+                </button>
               </div>
-              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2"><Trophy size={16} className="text-slate-400"/> Active Challenges</h3>
-                <p className="text-sm text-slate-500">{challenges.length} active right now.</p>
-                <button onClick={() => setActiveTab('challenges')} className="mt-4 w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm rounded-xl transition-colors">View All</button>
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+                <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                  <Trophy size={16} className="text-amber-500"/> Active Challenges
+                </h3>
+                {challenges.length > 0 ? (
+                  <p className="text-sm font-medium text-slate-600">{challenges.length} challenges active right now.</p>
+                ) : (
+                  <p className="text-sm text-slate-400">No active challenges. Start one to build consistency together!</p>
+                )}
+                <button onClick={() => setActiveTab('challenges')} className="mt-4 w-full py-2 bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-700 font-bold text-sm rounded-xl transition-colors">
+                  {challenges.length > 0 ? 'View All' : 'Launch Challenge'}
+                </button>
               </div>
             </div>
           </div>

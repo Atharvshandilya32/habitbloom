@@ -15,7 +15,9 @@ interface FutureProjectionViewProps {
   month?: number;
 }
 
-export const FutureProjectionView: React.FC<FutureProjectionViewProps> = ({
+const EMPTY_LOGS = {};
+
+export const FutureProjectionView: React.FC<FutureProjectionViewProps> = React.memo(({
   habits,
   logs,
   logsObj,
@@ -23,11 +25,11 @@ export const FutureProjectionView: React.FC<FutureProjectionViewProps> = ({
   year = new Date().getFullYear(),
   month = new Date().getMonth() + 1,
 }) => {
-  const activeLogs = logs || logsObj || {};
+  const activeLogs = logs || logsObj || EMPTY_LOGS;
   const [timeframe, setTimeframe] = useState<ProjectionTimeframe>('90d');
   const [boostScenarioEnabled, setBoostScenarioEnabled] = useState<boolean>(false);
 
-  const projection = calculateFutureProjections(habits, activeLogs, timeframe, bloomScore, year, month);
+  const projection = React.useMemo(() => calculateFutureProjections(habits, activeLogs, timeframe, bloomScore, year, month), [habits, activeLogs, timeframe, bloomScore, year, month]);
 
   const timeframes: { id: ProjectionTimeframe; label: string }[] = [
     { id: '30d', label: '30 Days' },
@@ -68,7 +70,7 @@ export const FutureProjectionView: React.FC<FutureProjectionViewProps> = ({
               <button
                 key={tf.id}
                 onClick={() => setTimeframe(tf.id)}
-                className={`relative flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap ${
+                className={`relative flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none ${
                   timeframe === tf.id
                     ? 'text-slate-900 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -206,7 +208,9 @@ export const FutureProjectionView: React.FC<FutureProjectionViewProps> = ({
       </div>
     </div>
   );
-};
+});
+
+FutureProjectionView.displayName = 'FutureProjectionView';
 
 export default FutureProjectionView;
 

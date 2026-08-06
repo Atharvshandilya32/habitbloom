@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fireConfetti } from '../../../lib/confetti';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
@@ -18,19 +18,22 @@ interface HabitWrappedModalProps {
   month?: number;
 }
 
+const EMPTY_LOGS = {};
+
 export const HabitWrappedModal: React.FC<HabitWrappedModalProps> = ({
   isOpen,
   onClose,
   habits,
   logs,
   logsObj,
-  xp = 0,
   year = new Date().getFullYear(),
   month = new Date().getMonth() + 1,
 }) => {
-  const activeLogs = logs || logsObj || {};
+  const activeLogs = logs || logsObj || EMPTY_LOGS;
   const [currentSlideIdx, setCurrentSlideIdx] = useState<number>(0);
-  const wrapped = generateHabitWrapped(habits, activeLogs, xp, year, month);
+  const wrapped = useMemo(() => {
+    return generateHabitWrapped(habits, activeLogs, year, month);
+  }, [habits, activeLogs, year, month]);
   const slides = wrapped.slides;
 
   useEffect(() => {

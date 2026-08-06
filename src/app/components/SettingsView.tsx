@@ -40,7 +40,7 @@ interface SettingsViewProps {
   onClearData?: () => void;
 }
 
-type SettingsTab = 'profile' | 'appearance' | 'notifications' | 'habits' | 'data' | 'export' | 'privacy' | 'about' | 'premium';
+type SettingsTab = 'profile' | 'appearance' | 'notifications' | 'habits' | 'data' | 'export' | 'privacy' | 'about' | 'upcoming';
 
 export default function SettingsView({
   user,
@@ -66,7 +66,7 @@ export default function SettingsView({
     { id: 'habits', label: 'Habits', icon: <SlidersHorizontal size={16} /> },
     { id: 'data', label: 'Data', icon: <Database size={16} /> },
     { id: 'export', label: 'Export', icon: <Download size={16} /> },
-    { id: 'premium', label: 'Premium', icon: <Star size={16} /> },
+    { id: 'upcoming', label: 'Upcoming Features', icon: <Star size={16} /> },
     { id: 'privacy', label: 'Privacy', icon: <ShieldCheck size={16} /> },
     { id: 'about', label: 'About', icon: <Info size={16} /> },
   ];
@@ -266,10 +266,10 @@ export default function SettingsView({
             </div>
           )}
 
-          {/* Premium Tab */}
-          {activeTab === 'premium' && (
+          {/* Upcoming Features Tab */}
+          {activeTab === 'upcoming' && (
             <div className="space-y-6">
-              <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Premium Features</h2>
+              <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Upcoming Features</h2>
               <p className="text-xs text-slate-500">
                 Unlock advanced AI heuristics, Team Challenges, and personalized Habit Insights.
               </p>

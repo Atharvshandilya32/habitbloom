@@ -22,7 +22,7 @@ interface DailyFocusViewProps {
   onOpenJournal?: (habitId: string) => void;
 }
 
-export default function DailyFocusView({
+const DailyFocusView = React.memo(function DailyFocusView({
   habits,
   logs,
   year,
@@ -109,7 +109,7 @@ export default function DailyFocusView({
         
         <div className="flex-1 space-y-3 text-center md:text-left z-10">
           <h2 className="text-3xl font-black tracking-tight text-slate-900">
-            {progressPercent === 100 ? "You're all done! 🎉" : "Today's Focus"}
+            {progressPercent === 100 ? "You&apos;re all done! 🎉" : "Today&apos;s Focus"}
           </h2>
           <p className="text-slate-600 font-bold text-sm">
             {progressPercent === 100 
@@ -176,9 +176,10 @@ export default function DailyFocusView({
             const streak = getCurrentStreak(habit, logs, year, month, daysInMonth);
             
             return (
-              <div 
+              <button 
                 key={habit.id}
-                className={`group flex items-center p-4 rounded-2xl border transition-all duration-300 cursor-pointer ${
+                type="button"
+                className={`w-full text-left group flex items-center p-4 rounded-2xl border transition-all duration-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
                   isCompleted 
                     ? 'bg-slate-50 border-slate-200/80 shadow-xs' 
                     : 'bg-white border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-300'
@@ -210,7 +211,9 @@ export default function DailyFocusView({
                 
                 <div className="flex items-center gap-3">
                   {isCompleted && (
-                    <button 
+                    <div 
+                      role="button"
+                      tabIndex={0}
                       className="hidden sm:inline-flex items-center gap-1.5 text-xs text-slate-700 hover:text-emerald-700 font-extrabold px-3 py-1 rounded-xl bg-slate-200/80 hover:bg-emerald-100 transition-colors shadow-xs"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -218,9 +221,16 @@ export default function DailyFocusView({
                           onOpenJournal(habit.id);
                         }
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (onOpenJournal) onOpenJournal(habit.id);
+                        }
+                      }}
                     >
                       <span>Reflection</span> ✍️
-                    </button>
+                    </div>
                   )}
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
                     isCompleted 
@@ -230,13 +240,14 @@ export default function DailyFocusView({
                     <Check strokeWidth={isCompleted ? 3 : 2} size={20} />
                   </div>
                 </div>
-              </div>
+              </button>
             );
           })
         )}
       </div>
     </MotionPageWrapper>
   );
-}
+});
 
+export default DailyFocusView;
 

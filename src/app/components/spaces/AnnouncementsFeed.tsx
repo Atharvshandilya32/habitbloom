@@ -25,11 +25,15 @@ export default function AnnouncementsFeed({ announcements, role, onPostAnnouncem
     setShowPostForm(false);
   };
 
+  const [visibleCount, setVisibleCount] = useState(5);
+
   const sortedAnnouncements = [...announcements].sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
+
+  const visibleAnnouncements = sortedAnnouncements.slice(0, visibleCount);
 
   return (
     <div className="space-y-6">
@@ -124,39 +128,52 @@ export default function AnnouncementsFeed({ announcements, role, onPostAnnouncem
             )}
           </div>
         ) : (
-          sortedAnnouncements.map((announcement) => (
-            <div key={announcement.id} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm relative group">
-              {announcement.isPinned && (
-                <div className="absolute -top-3 -right-3 w-8 h-8 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shadow-sm border border-amber-200">
-                  <Pin size={14} fill="currentColor" />
-                </div>
-              )}
-              
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h4 className="text-xl font-bold text-slate-800">{announcement.title}</h4>
-                  <p className="text-xs text-slate-400 font-medium mt-1">
-                    {new Date(announcement.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </p>
-                </div>
-                {hasPermission(role, 'sendAnnouncements') && (
-                  <button 
-                    onClick={() => onDeleteAnnouncement(announcement.id)}
-                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete Announcement"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+          <>
+            {visibleAnnouncements.map((announcement) => (
+              <div key={announcement.id} className="bg-background rounded-3xl border border-border p-6 shadow-sm relative group hover:shadow-md transition-shadow">
+                {announcement.isPinned && (
+                  <div className="absolute -top-3 -right-3 w-8 h-8 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shadow-sm border border-amber-200">
+                    <Pin size={14} fill="currentColor" />
+                  </div>
                 )}
+                
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 className="text-xl font-bold text-foreground">{announcement.title}</h4>
+                    <p className="text-xs text-muted-foreground font-medium mt-1">
+                      {new Date(announcement.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+                  {hasPermission(role, 'sendAnnouncements') && (
+                    <button 
+                      onClick={() => onDeleteAnnouncement(announcement.id)}
+                      className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      title="Delete Announcement"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+                
+                <div className="prose prose-sm max-w-none text-muted-foreground">
+                  {announcement.content.split('\n').map((paragraph, i) => (
+                    <p key={i}>{paragraph}</p>
+                  ))}
+                </div>
               </div>
-              
-              <div className="prose prose-sm prose-slate max-w-none text-slate-600">
-                {announcement.content.split('\n').map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
-                ))}
+            ))}
+            
+            {visibleCount < sortedAnnouncements.length && (
+              <div className="flex justify-center pt-4">
+                <button 
+                  onClick={() => setVisibleCount(prev => prev + 5)}
+                  className="px-6 py-2.5 bg-muted hover:bg-muted/80 text-foreground font-bold rounded-xl transition-colors shadow-sm"
+                >
+                  Load More Announcements
+                </button>
               </div>
-            </div>
-          ))
+            )}
+          </>
         )}
       </div>
 

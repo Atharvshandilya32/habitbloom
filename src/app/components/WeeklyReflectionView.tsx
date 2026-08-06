@@ -190,7 +190,7 @@ export const WeeklyReflectionView: React.FC<WeeklyReflectionViewProps> = ({
                     key={opt.label}
                     type="button"
                     onClick={() => setMood(opt.label)}
-                    className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center sm:justify-start gap-1.5 transition-all border ${
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold flex items-center justify-center sm:justify-start gap-1.5 transition-all border focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none ${
                       mood === opt.label ? opt.color + ' ring-2 ring-blue-500' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
@@ -243,7 +243,7 @@ export const WeeklyReflectionView: React.FC<WeeklyReflectionViewProps> = ({
             <div className="pt-2">
               <button
                 onClick={handleSaveReflection}
-                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs transition-all shadow-xs"
+                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs transition-all shadow-xs focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 {isSaved ? '✓ Reflection Saved to Journal!' : 'Save Weekly Reflection'}
               </button>

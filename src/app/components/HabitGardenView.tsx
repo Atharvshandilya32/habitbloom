@@ -16,7 +16,9 @@ interface HabitGardenViewProps {
   month?: number;
 }
 
-export const HabitGardenView: React.FC<HabitGardenViewProps> = ({
+const EMPTY_LOGS = {};
+
+export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
   habits,
   logs,
   logsObj,
@@ -24,7 +26,7 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = ({
   year = new Date().getFullYear(),
   month = new Date().getMonth() + 1,
 }) => {
-  const activeLogs = logs || logsObj || {};
+  const activeLogs = logs || logsObj || EMPTY_LOGS;
   const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
   const daysInMonth = new Date(year, month, 0).getDate();
   const todayDate = new Date().getDate();
@@ -43,10 +45,11 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = ({
     }
   };
 
-  const gardenPlants = habits.map((habit) => {
-    const stats = getHabitStats(habit, activeLogs, daysInMonth, year, month);
-    const streak = getCurrentStreak(habit, activeLogs, year, month, daysInMonth);
-    const todayLogKey = makeLogKey(habit.id, year, month, todayDate);
+  const gardenPlants = React.useMemo(() => {
+    return habits.map((habit) => {
+      const stats = getHabitStats(habit, activeLogs, daysInMonth, year, month);
+      const streak = getCurrentStreak(habit, activeLogs, year, month, daysInMonth);
+      const todayLogKey = makeLogKey(habit.id, year, month, todayDate);
     const isDoneToday = !!activeLogs[todayLogKey];
 
     let stageLabel = 'Seedling';
@@ -76,7 +79,8 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = ({
       floraEmoji,
       growthScale,
     };
-  });
+    });
+  }, [habits, activeLogs, daysInMonth, year, month, todayDate]);
 
   const totalPlants = gardenPlants.length;
   const bloomingCount = gardenPlants.filter((p) => p.stageLabel !== 'Seedling' || p.stats.done > 0).length;
@@ -137,14 +141,15 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = ({
               const isSelected = selectedPlantId === plant.habit.id;
 
               return (
-                <motion.div
+                <motion.button
                   key={plant.habit.id}
                   layout
                   whileHover={{ y: -5, scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   transition={SpringConfigs.tactile}
                   onClick={() => setSelectedPlantId(plant.habit.id)}
-                  className={`relative cursor-pointer rounded-2xl p-5 flex flex-col items-center justify-between text-center transition-all bg-white border ${
+                  type="button"
+                  className={`relative cursor-pointer rounded-2xl p-5 flex flex-col items-center justify-between text-center transition-all bg-white border w-full focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
                     isSelected
                       ? 'border-2 border-emerald-500 shadow-md ring-4 ring-emerald-50'
                       : 'border-slate-200 hover:border-emerald-300 shadow-sm'
@@ -182,11 +187,20 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = ({
                   </div>
 
                   {/* Water / Check-in Quick Button */}
-                  <motion.button
+                  <motion.div
+                    role="button"
+                    tabIndex={0}
                     whileTap={{ scale: 0.92 }}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleWaterPlant(plant.habit.id, plant.isDoneToday);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleWaterPlant(plant.habit.id, plant.isDoneToday);
+                      }
                     }}
                     className={`mt-4 w-full py-2 px-3 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 ${
                       plant.isDoneToday
@@ -195,8 +209,8 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = ({
                     }`}
                   >
                     <span>{plant.isDoneToday ? '✓ Watered Today' : '💧 Water Plant'}</span>
-                  </motion.button>
-                </motion.div>
+                  </motion.div>
+                </motion.button>
               );
             })}
           </div>
@@ -210,7 +224,9 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = ({
       </div>
     </div>
   );
-};
+});
+
+HabitGardenView.displayName = 'HabitGardenView';
 
 export default HabitGardenView;
 

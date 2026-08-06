@@ -14,15 +14,17 @@ interface HabitDnaViewProps {
   month?: number;
 }
 
-export const HabitDnaView: React.FC<HabitDnaViewProps> = ({
+const EMPTY_LOGS = {};
+
+export const HabitDnaView: React.FC<HabitDnaViewProps> = React.memo(({
   habits,
   logs,
   logsObj,
   year = new Date().getFullYear(),
   month = new Date().getMonth() + 1,
 }) => {
-  const activeLogs = logs || logsObj || {};
-  const dna = calculateHabitDna(habits, activeLogs, year, month);
+  const activeLogs = logs || logsObj || EMPTY_LOGS;
+  const dna = React.useMemo(() => calculateHabitDna(habits, activeLogs, year, month), [habits, activeLogs, year, month]);
   const { persona, overallConsistency, categoryBalances, peakDays, strengths, growthAreas, diversityScore, dnaRecommendations, elapsedDaysUsed } = dna;
 
   return (
@@ -234,7 +236,9 @@ export const HabitDnaView: React.FC<HabitDnaViewProps> = ({
       )}
     </div>
   );
-};
+});
+
+HabitDnaView.displayName = 'HabitDnaView';
 
 export default HabitDnaView;
 

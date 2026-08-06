@@ -35,7 +35,6 @@ export interface HabitWrappedData {
 export function generateHabitWrapped(
   habits: Habit[],
   logs: HabitLog,
-  xp: number = 0,
   year: number = new Date().getFullYear(),
   month: number = new Date().getMonth() + 1
 ): HabitWrappedData {
@@ -48,7 +47,7 @@ export function generateHabitWrapped(
 
   if (!habits || habits.length === 0) {
     const dna = calculateHabitDna([], logs, year, month);
-    const bloom = calculateBloomScore([], logs, xp, year, month);
+    const bloom = calculateBloomScore([], logs, year, month);
     const shareText = `🌱 Just started my habit journey on HabitBloom for ${periodLabel}! #HabitBloom #SelfImprovement`;
     
     return {
@@ -101,7 +100,7 @@ export function generateHabitWrapped(
   });
 
   const dna = calculateHabitDna(habits, logs, year, month);
-  const bloom = calculateBloomScore(habits, logs, xp, year, month);
+  const bloom = calculateBloomScore(habits, logs, year, month);
 
   // Smart fallback for #1 Habit if 0 check-ins exist across all habits
   const topHabitTitle = topHabitCompletions > 0

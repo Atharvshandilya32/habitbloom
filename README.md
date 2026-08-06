@@ -1,22 +1,26 @@
-# HabitBloom 🌱
+# HabitBloom 3.0 🌱
 
-A modern habit tracking web application built with Next.js and React. Track your daily habits, visualize progress, and build better routines.
+HabitBloom is a premium, performance-optimized, and highly accessible habit tracking platform built with Next.js 15 and React 19. It goes beyond simple checkboxes, offering deep analytics, gamification, behavioral DNA insights, and social "Spaces".
 
-## Features
+## 🚀 What's New in 3.0?
 
-- 📊 **Habit Dashboard** - Track multiple habits in one place
-- 📈 **Progress Charts** - Visualize monthly trends and overall statistics
-- 📅 **Calendar View** - See your habit completion history at a glance
-- 📱 **Responsive Design** - Works on desktop, tablet, and mobile
-- ⚡ **Fast & Modern** - Built with Next.js 15 and React 19
+The 3.0 release represents a massive architectural and design consolidation:
+- **Unified Design System**: A cohesive visual language utilizing glassmorphism, tailored Tailwind gradients, and interactive Framer Motion micro-animations (`motionTokens`).
+- **Performance Optimizations**: Aggressive React memoization (`React.memo`, `useCallback`) and `next/dynamic` lazy-loading for complex statistical views.
+- **Accessibility First**: Full keyboard navigation support (`Tab`, `Enter`, `Space`) and ARIA semantics integrated into all custom interactive elements and grid cells.
+- **Deep Analytics Ecosystem**: 
+  - **Habit Garden**: Watch your habits literally bloom into beautiful flowers as you maintain streaks.
+  - **Behavioral DNA**: Get categorized into unique personas based on your consistency and diversity.
+  - **Future Projections**: See where your current trajectory will take you in 90 days or a year.
+- **Social Spaces**: Join shared habits, track real-time activity, and compete on leaderboards.
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: Tailwind CSS
-- **Charts**: Recharts
-- **UI Components**: Lucide React, Heroicons
-- **Notifications**: Sonner
+- **Frontend Core**: Next.js 15 (App Router), React 19, TypeScript
+- **State & Data**: Firebase Realtime Database with robust Offline Sync queueing (`offlineSyncEngine.ts`)
+- **Styling**: Tailwind CSS + Custom Design System (`designSystem.tsx`)
+- **Animations**: Framer Motion & Canvas Confetti
+- **UI Components**: Lucide React icons, Headless accessible components
 
 ## Getting Started
 
@@ -40,28 +44,21 @@ npm run dev
 
 Visit [http://localhost:4028](http://localhost:4028) to view the application.
 
-### Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm start` - Run production server
-- `npm run lint` - Run ESLint
-- `npm run format` - Format code with Prettier
-- `npm run type-check` - Check TypeScript types
-
-## Project Structure
+## Project Architecture
 
 ```
 src/
 ├── app/
-│   ├── components/        # React components
-│   ├── globals.css        # Global styles
+│   ├── components/        # React components (DashboardView, HabitGardenView, etc.)
+│   ├── auth/              # Firebase Authentication wrappers
 │   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Home page
-├── styles/                # Additional styles
-└── lib/
-    ├── habitTypes.ts      # TypeScript types
-    └── habitUtils.ts      # Utility functions
+│   └── page.tsx           # Central Hub (Dynamic view orchestrator)
+├── lib/
+│   ├── motion/            # Framer motion presets (motionTokens.ts)
+│   ├── designSystem.tsx   # Core design primitives
+│   ├── bloomScoreUtils.ts # Gamification logic
+│   ├── habitDnaUtils.ts   # Behavioral analytics engine
+│   └── offlineSyncEngine.ts # Optimistic Firebase writes
 ```
 
 ## Deployment
@@ -70,7 +67,7 @@ src/
 
 1. Push your code to GitHub.
 2. Go to [vercel.com](https://vercel.com) and import your GitHub repository.
-3. **Configure Environment Variables**: Before clicking Deploy, expand the **Environment Variables** section and add the following keys from your `.env.local` file:
+3. **Configure Environment Variables**: Before clicking Deploy, expand the **Environment Variables** section and add your Firebase credentials:
    - `NEXT_PUBLIC_FIREBASE_API_KEY`
    - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
    - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
@@ -82,7 +79,6 @@ src/
    > [!IMPORTANT]
    > Make sure the keys are named exactly as shown above (including the `NEXT_PUBLIC_` prefix) so they are exposed to the client-side browser runtime.
 4. Click **Deploy**.
-5. Your site will be live and connected to Firebase!
 
 ## License
 
@@ -94,4 +90,4 @@ MIT
 
 ---
 
-Built with ❤️ for better habit tracking
+Built with ❤️ for better, accessible habit tracking.

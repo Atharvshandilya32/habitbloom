@@ -1,6 +1,7 @@
 import { Habit, HabitLog } from './habitTypes';
 import { getCurrentStreak } from './habitUtils';
 import { calculateHabitDna } from './habitDnaUtils';
+import { calculateTotalXp, getLevelFromXp } from './xpEngine';
 
 export interface BloomScoreTier {
   name: string;
@@ -24,6 +25,8 @@ export interface BloomScoreBreakdown {
   progressToNextTier: number; // 0 - 100%
   pointsToNextTier: number;   // Points remaining until next tier
   elapsedDaysUsed: number;
+  level: number;
+  totalXp: number;
 }
 
 export const BLOOM_TIERS: BloomScoreTier[] = [
@@ -82,7 +85,6 @@ export const BLOOM_TIERS: BloomScoreTier[] = [
 export function calculateBloomScore(
   habits: Habit[],
   logs: HabitLog,
-  xp: number = 0,
   year: number = new Date().getFullYear(),
   month: number = new Date().getMonth() + 1
 ): BloomScoreBreakdown {
@@ -100,6 +102,8 @@ export function calculateBloomScore(
       progressToNextTier: 0,
       pointsToNextTier: BLOOM_TIERS[1].minScore,
       elapsedDaysUsed: 1,
+      level: 1,
+      totalXp: 0,
     };
   }
 
@@ -139,14 +143,10 @@ export function calculateBloomScore(
   const dna = calculateHabitDna(habits, logs, year, month);
   const diversityScore = Math.round((dna.diversityScore / 100) * 200);
 
-  // 4. XP Bonus Score (0 - 200 pts) with fallback to total log check-ins if XP not passed
-  let effectiveXp = xp;
-  if (effectiveXp === 0 && logs) {
-    // Count total logged check-ins as fallback XP (15 XP per check-in)
-    const logKeysCount = Object.keys(logs).filter((k) => logs[k] === true).length;
-    effectiveXp = logKeysCount * 15;
-  }
+  // 4. XP Bonus Score (0 - 200 pts) 
+  const effectiveXp = calculateTotalXp(habits, logs);
   const xpBonusScore = Math.min(200, Math.round(Math.sqrt(Math.max(0, effectiveXp)) * 3));
+  const level = getLevelFromXp(effectiveXp);
 
   // Total Bloom Score
   const totalBloomScore = Math.min(1000, consistencyScore + streakScore + diversityScore + xpBonusScore);
@@ -183,5 +183,7 @@ export function calculateBloomScore(
     progressToNextTier,
     pointsToNextTier,
     elapsedDaysUsed: elapsedDays,
+    level,
+    totalXp: effectiveXp
   };
 }

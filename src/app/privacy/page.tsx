@@ -23,12 +23,12 @@ export default function PrivacyPage() {
           </p>
           <ul className="list-disc pl-5 mt-4 space-y-2">
             <li><strong>As a Data Fiduciary:</strong> We act as a fiduciary for your account creation data (e.g., email, name) and our direct interactions with you. We determine the purpose and means of this processing.</li>
-            <li><strong>As a Data Processor:</strong> When you use HabitBloom "Spaces" via your organization or employer, we act as a Data Processor on their behalf. The organization remains the Data Fiduciary and holds the primary responsibility for securing your consent.</li>
+            <li><strong>As a Data Processor:</strong> When you use HabitBloom &quot;Spaces&quot; via your organization or employer, we act as a Data Processor on their behalf. The organization remains the Data Fiduciary and holds the primary responsibility for securing your consent.</li>
           </ul>
 
           <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">3. AI & Machine Learning Restrictions</h2>
           <p>
-            HabitBloom uses advanced heuristics and AI to provide personalized insights. However, we adhere to strict "Privacy by Design" principles. <strong>We absolutely do not use your personal habit data to train, fine-tune, or develop our AI models by default.</strong> If we introduce features requiring data for model training, we will request explicit, itemized consent ("Opt-In") prior to any data usage.
+            HabitBloom uses advanced heuristics and AI to provide personalized insights. However, we adhere to strict &quot;Privacy by Design&quot; principles. <strong>We absolutely do not use your personal habit data to train, fine-tune, or develop our AI models by default.</strong> If we introduce features requiring data for model training, we will request explicit, itemized consent (&quot;Opt-In&quot;) prior to any data usage.
           </p>
 
           <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">4. Sub-processors and Data Security</h2>
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
 
           <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">5. HabitBloom Spaces</h2>
           <p>
-            When you join a HabitBloom Space (e.g., a corporate team or fitness group), your progress for specific shared challenges becomes visible to that group. Space Admins may view aggregated, anonymized analytics (e.g., "75% of members completed the daily walk"), but they cannot access individual identifiable data without your explicit consent.
+            When you join a HabitBloom Space (e.g., a corporate team or fitness group), your progress for specific shared challenges becomes visible to that group. Space Admins may view aggregated, anonymized analytics (e.g., &quot;75% of members completed the daily walk&quot;), but they cannot access individual identifiable data without your explicit consent.
           </p>
         </div>
       </div>

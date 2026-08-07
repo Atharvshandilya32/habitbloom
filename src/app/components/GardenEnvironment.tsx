@@ -201,52 +201,52 @@ export const getEnvironmentClasses = (timeOfDay: TimeOfDay): { bg: string; text:
   switch (timeOfDay) {
     case 'morning':
       return {
-        bg: 'bg-gradient-to-br from-amber-50 via-sky-50 to-emerald-50 border-amber-100',
-        text: 'text-amber-900',
+        bg: 'bg-gradient-to-br from-amber-50/80 via-emerald-50/80 to-teal-50/80 border-emerald-100',
+        text: 'text-emerald-900',
         titleText: 'text-slate-900',
-        cardBg: 'bg-white/80 backdrop-blur-sm border-white/50',
-        plantBg: 'bg-white hover:border-amber-300',
-        plantBorder: 'border-slate-200',
+        cardBg: 'bg-white/80 backdrop-blur-sm border-emerald-100',
+        plantBg: 'bg-white/90 hover:border-emerald-300',
+        plantBorder: 'border-emerald-100',
         textMuted: 'text-slate-600'
       };
     case 'afternoon':
       return {
-        bg: 'bg-gradient-to-br from-sky-50 via-teal-50 to-emerald-50 border-emerald-100',
-        text: 'text-teal-900',
+        bg: 'bg-gradient-to-br from-emerald-50/80 to-teal-50/80 border-emerald-100',
+        text: 'text-emerald-900',
         titleText: 'text-slate-900',
-        cardBg: 'bg-white/90 backdrop-blur-sm border-white/60',
-        plantBg: 'bg-white hover:border-emerald-300',
-        plantBorder: 'border-slate-200',
+        cardBg: 'bg-white/80 backdrop-blur-sm border-emerald-100',
+        plantBg: 'bg-white/90 hover:border-emerald-300',
+        plantBorder: 'border-emerald-100',
         textMuted: 'text-slate-600'
       };
     case 'evening':
       return {
-        bg: 'bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 border-orange-100',
-        text: 'text-orange-900',
+        bg: 'bg-gradient-to-br from-rose-50/80 via-emerald-50/80 to-teal-50/80 border-emerald-100',
+        text: 'text-emerald-900',
         titleText: 'text-slate-900',
-        cardBg: 'bg-white/80 backdrop-blur-sm border-white/50',
-        plantBg: 'bg-white hover:border-orange-300',
-        plantBorder: 'border-slate-200',
+        cardBg: 'bg-white/80 backdrop-blur-sm border-emerald-100',
+        plantBg: 'bg-white/90 hover:border-emerald-300',
+        plantBorder: 'border-emerald-100',
         textMuted: 'text-slate-600'
       };
     case 'night':
       return {
-        bg: 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border-indigo-900',
-        text: 'text-indigo-200',
-        titleText: 'text-slate-100',
-        cardBg: 'bg-slate-800/60 backdrop-blur-md border-indigo-500/20',
-        plantBg: 'bg-slate-800/80 hover:border-indigo-400',
-        plantBorder: 'border-indigo-500/30',
-        textMuted: 'text-slate-400'
+        bg: 'bg-gradient-to-br from-sky-100/80 via-teal-100/80 to-emerald-50/80 border-teal-200',
+        text: 'text-teal-900',
+        titleText: 'text-slate-900',
+        cardBg: 'bg-white/80 backdrop-blur-sm border-teal-100',
+        plantBg: 'bg-white/90 hover:border-teal-300',
+        plantBorder: 'border-teal-200',
+        textMuted: 'text-slate-600'
       };
     default:
       return {
-        bg: 'bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white border-emerald-100',
-        text: 'text-slate-700',
+        bg: 'bg-gradient-to-br from-emerald-50/80 to-teal-50/80 border-emerald-100',
+        text: 'text-emerald-900',
         titleText: 'text-slate-900',
-        cardBg: 'bg-white',
-        plantBg: 'bg-white hover:border-emerald-300',
-        plantBorder: 'border-slate-200',
+        cardBg: 'bg-white/80 backdrop-blur-sm border-emerald-100',
+        plantBg: 'bg-white/90 hover:border-emerald-300',
+        plantBorder: 'border-emerald-100',
         textMuted: 'text-slate-600'
       };
   }

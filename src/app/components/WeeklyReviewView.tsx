@@ -60,7 +60,7 @@ export default function WeeklyReviewView({ habits, logs, onGoToDashboard }: Week
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8 animate-in fade-in duration-300">
       {/* Top Header & Week Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-emerald-100 shadow-sm">
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200/60 mb-2">
             <Calendar size={13} />
@@ -72,23 +72,23 @@ export default function WeeklyReviewView({ habits, logs, onGoToDashboard }: Week
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/60">
+        <div className="flex items-center gap-2 self-start sm:self-auto bg-emerald-50/80 p-1.5 rounded-xl border border-emerald-100/60">
           <button
             onClick={handlePrevWeek}
-            className="p-1.5 rounded-lg hover:bg-white text-slate-600 hover:text-slate-900 transition-all"
+            className="p-1.5 rounded-lg hover:bg-white text-emerald-600 hover:text-emerald-900 transition-all"
             title="Previous Week"
           >
             <ChevronLeft size={16} />
           </button>
           <button
             onClick={handleCurrentWeek}
-            className="px-3 py-1 text-xs font-bold rounded-lg bg-white text-slate-800 shadow-sm hover:text-emerald-600 transition-all"
+            className="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 transition-all"
           >
             This Week
           </button>
           <button
             onClick={handleNextWeek}
-            className="p-1.5 rounded-lg hover:bg-white text-slate-600 hover:text-slate-900 transition-all"
+            className="p-1.5 rounded-lg hover:bg-white text-emerald-600 hover:text-emerald-900 transition-all"
             title="Next Week"
           >
             <ChevronRight size={16} />
@@ -99,9 +99,9 @@ export default function WeeklyReviewView({ habits, logs, onGoToDashboard }: Week
       {/* Primary Key Statistics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Completion Rate */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-emerald-300 transition-all">
+        <div className="bg-white/80 backdrop-blur-sm p-5 rounded-2xl border border-emerald-50 shadow-sm relative overflow-hidden group hover:border-emerald-300 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Completion %</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600/70">Completion %</span>
             <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
               <Zap size={18} />
             </div>
@@ -117,9 +117,9 @@ export default function WeeklyReviewView({ habits, logs, onGoToDashboard }: Week
         </div>
 
         {/* Best Habit */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-amber-300 transition-all">
+        <div className="bg-white/80 backdrop-blur-sm p-5 rounded-2xl border border-emerald-50 shadow-sm relative overflow-hidden group hover:border-amber-300 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Best Habit</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600/70">Best Habit</span>
             <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
               <Award size={18} />
             </div>
@@ -134,9 +134,9 @@ export default function WeeklyReviewView({ habits, logs, onGoToDashboard }: Week
         </div>
 
         {/* Weakest Habit */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-rose-300 transition-all">
+        <div className="bg-white/80 backdrop-blur-sm p-5 rounded-2xl border border-emerald-50 shadow-sm relative overflow-hidden group hover:border-rose-300 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Weakest Habit</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600/70">Weakest Habit</span>
             <div className="p-2 rounded-xl bg-rose-50 text-rose-600">
               <AlertTriangle size={18} />
             </div>
@@ -151,9 +151,9 @@ export default function WeeklyReviewView({ habits, logs, onGoToDashboard }: Week
         </div>
 
         {/* Longest Streak */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden group hover:border-orange-300 transition-all">
+        <div className="bg-white/80 backdrop-blur-sm p-5 rounded-2xl border border-emerald-50 shadow-sm relative overflow-hidden group hover:border-orange-300 transition-all">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Longest Streak</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600/70">Longest Streak</span>
             <div className="p-2 rounded-xl bg-orange-50 text-orange-500">
               <Flame size={18} />
             </div>
@@ -169,7 +169,7 @@ export default function WeeklyReviewView({ habits, logs, onGoToDashboard }: Week
       {/* Secondary Metrics & Chart Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Daily Breakdown Chart */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+        <div className="lg:col-span-2 bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-emerald-50 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-bold text-slate-900">Daily Completion Breakdown</h2>
@@ -212,7 +212,7 @@ export default function WeeklyReviewView({ habits, logs, onGoToDashboard }: Week
         </div>
 
         {/* Productivity Highlights */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between space-y-6">
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-emerald-50 shadow-sm flex flex-col justify-between space-y-6">
           <div>
             <h2 className="text-base font-bold text-slate-900 mb-1">Productivity Insights</h2>
             <p className="text-xs text-slate-500 mb-4">Highlights based on your logging patterns</p>
@@ -226,8 +226,8 @@ export default function WeeklyReviewView({ habits, logs, onGoToDashboard }: Week
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
-                <XCircle className="w-5 h-5 text-slate-400 flex-shrink-0" />
+              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-50">
+                <XCircle className="w-5 h-5 text-emerald-600/50 flex-shrink-0" />
                 <div>
                   <div className="text-xs font-bold text-slate-900">Least Productive Day</div>
                   <div className="text-sm font-extrabold text-slate-600">{review.leastProductiveDay}</div>
@@ -235,21 +235,21 @@ export default function WeeklyReviewView({ habits, logs, onGoToDashboard }: Week
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-center">
-                  <div className="text-xs font-bold text-slate-400 uppercase">Completed</div>
+                <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-50 text-center">
+                  <div className="text-xs font-bold text-emerald-600/70 uppercase">Completed</div>
                   <div className="text-xl font-black text-slate-900 mt-0.5">{review.totalCompleted}</div>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-center">
-                  <div className="text-xs font-bold text-slate-400 uppercase">Missed</div>
+                <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-50 text-center">
+                  <div className="text-xs font-bold text-emerald-600/70 uppercase">Missed</div>
                   <div className="text-xl font-black text-rose-500 mt-0.5">{review.missedHabitsCount}</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900 text-white space-y-1 text-xs">
+          <div className="p-4 rounded-xl bg-emerald-900 text-white space-y-1 text-xs">
             <span className="font-bold text-emerald-400 uppercase tracking-wider text-[10px]">Weekly Tip</span>
-            <p className="text-slate-300 leading-relaxed">
+            <p className="text-emerald-50 leading-relaxed">
               Maintain consistency on {review.leastProductiveDay} to boost your overall completion score by at least 15% next week.
             </p>
           </div>

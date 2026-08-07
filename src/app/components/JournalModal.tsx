@@ -76,9 +76,9 @@ export default function JournalModal({
         onClick={onClose}
       />
       
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h2 className="text-xl font-bold text-slate-800">
+      <div className="relative w-full max-w-lg bg-white/95 backdrop-blur-md rounded-3xl shadow-xl border border-emerald-100 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-emerald-50">
+          <h2 className="text-xl font-bold text-emerald-900">
             {habit ? `${habit.emoji} ${habit.name} Journal` : 'Daily Journal'}
           </h2>
           <button 
@@ -92,7 +92,7 @@ export default function JournalModal({
         <div className="p-6 overflow-y-auto space-y-6">
           {/* Mood Selector */}
           <div className="space-y-3">
-            <label className="block text-sm font-semibold text-slate-700">How are you feeling?</label>
+            <label className="block text-sm font-semibold text-emerald-800">How are you feeling?</label>
             <div className="flex items-center justify-between gap-2">
               {MOODS.map(m => (
                 <button
@@ -101,7 +101,7 @@ export default function JournalModal({
                   className={`flex flex-col items-center p-3 rounded-2xl flex-1 transition-all ${
                     mood === m.type 
                       ? 'bg-emerald-50 border-2 border-emerald-500 shadow-sm' 
-                      : 'bg-slate-50 border-2 border-transparent hover:bg-slate-100 opacity-60 hover:opacity-100'
+                      : 'bg-emerald-50/50 border-2 border-transparent hover:bg-emerald-100 opacity-60 hover:opacity-100'
                   }`}
                 >
                   <span className="text-3xl mb-1">{m.emoji}</span>
@@ -113,7 +113,7 @@ export default function JournalModal({
 
           {/* Energy Level */}
           <div className="space-y-3">
-            <label className="flex justify-between text-sm font-semibold text-slate-700">
+            <label className="flex justify-between text-sm font-semibold text-emerald-800">
               <span>Energy Level</span>
               <span className="text-emerald-600">{energyLevel} / 5</span>
             </label>
@@ -129,9 +129,9 @@ export default function JournalModal({
 
           {/* Notes */}
           <div className="space-y-3">
-            <label className="block text-sm font-semibold text-slate-700">Notes & Reflections</label>
+            <label className="block text-sm font-semibold text-emerald-800">Notes & Reflections</label>
             <textarea
-              className="w-full h-24 p-3 bg-slate-50 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-700"
+              className="w-full h-24 p-3 bg-emerald-50/30 border border-emerald-100 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-700"
               placeholder="How did it go? Any thoughts?"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -141,20 +141,20 @@ export default function JournalModal({
           {/* Wins & Challenges */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-3">
-              <label className="block text-sm font-semibold text-slate-700">Wins</label>
+              <label className="block text-sm font-semibold text-emerald-800">Wins</label>
               <input
                 type="text"
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-700"
+                className="w-full p-3 bg-emerald-50/30 border border-emerald-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-700"
                 placeholder="Small victories..."
                 value={wins}
                 onChange={(e) => setWins(e.target.value)}
               />
             </div>
             <div className="space-y-3">
-              <label className="block text-sm font-semibold text-slate-700">Challenges</label>
+              <label className="block text-sm font-semibold text-emerald-800">Challenges</label>
               <input
                 type="text"
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-700"
+                className="w-full p-3 bg-emerald-50/30 border border-emerald-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-700"
                 placeholder="Obstacles faced..."
                 value={challenges}
                 onChange={(e) => setChallenges(e.target.value)}
@@ -163,7 +163,7 @@ export default function JournalModal({
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-between gap-3 rounded-b-3xl">
+        <div className="px-6 py-4 border-t border-emerald-100 bg-emerald-50/30 flex justify-between gap-3 rounded-b-3xl">
           <div className="flex gap-3">
             {existingEntry && onDelete && (
               <button 
@@ -183,7 +183,7 @@ export default function JournalModal({
           <button 
             onClick={handleSave}
             disabled={!notes.trim() && !wins.trim() && !challenges.trim() && !mood}
-            className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-sm hover:shadow hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <Save size={16} /> Save Entry
           </button>

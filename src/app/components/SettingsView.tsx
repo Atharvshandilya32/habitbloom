@@ -77,7 +77,7 @@ export default function SettingsView({
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8 animate-in fade-in duration-300">
       {/* Top Title Header */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-emerald-100 shadow-sm">
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Settings</h1>
         <p className="text-xs font-medium text-slate-500 mt-0.5">
           Manage your account, preferences, notifications, data export, and application configurations.
@@ -87,7 +87,7 @@ export default function SettingsView({
       {/* Main Container with Left Sidebar Navigation */}
       <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
         {/* Sidebar Nav */}
-        <div className="w-full md:col-span-3 lg:col-span-3 bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+        <div className="w-full md:col-span-3 lg:col-span-3 bg-white/80 backdrop-blur-sm p-2 rounded-2xl border border-emerald-100 shadow-sm space-y-1">
           {navItems.map(item => (
             <button
               key={item.id}
@@ -95,7 +95,7 @@ export default function SettingsView({
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all text-left ${
                 activeTab === item.id
                   ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  : 'text-slate-600 hover:text-emerald-900 hover:bg-emerald-50/50'
               }`}
             >
               {item.icon}
@@ -105,7 +105,7 @@ export default function SettingsView({
         </div>
 
         {/* Tab Content Panel */}
-        <div className="w-full md:col-span-9 lg:col-span-9 bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm min-h-[400px]">
+        <div className="w-full md:col-span-9 lg:col-span-9 bg-white/80 backdrop-blur-sm p-6 sm:p-8 rounded-2xl border border-emerald-100 shadow-sm min-h-[400px]">
           {/* Profile Tab */}
           {activeTab === 'profile' && user && (
             <div className="space-y-6">
@@ -134,7 +134,7 @@ export default function SettingsView({
                       className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
                         themeMode === 'light'
                           ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                          : 'border-emerald-100 text-slate-700 hover:bg-emerald-50/50 hover:border-emerald-300'
                       }`}
                     >
                       <Sun size={20} className="text-amber-500" />
@@ -149,7 +149,7 @@ export default function SettingsView({
                       className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
                         themeMode === 'dark'
                           ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                          : 'border-emerald-100 text-slate-700 hover:bg-emerald-50/50 hover:border-emerald-300'
                       }`}
                     >
                       <Moon size={20} className="text-indigo-500" />
@@ -161,7 +161,7 @@ export default function SettingsView({
                       className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
                         themeMode === 'system'
                           ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                          : 'border-emerald-100 text-slate-700 hover:bg-emerald-50/50 hover:border-emerald-300'
                       }`}
                     >
                       <Sparkles size={20} className="text-emerald-500" />
@@ -181,7 +181,7 @@ export default function SettingsView({
                       className={`p-4 rounded-xl border text-xs font-bold transition-all ${
                         sound === 'None' 
                           ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                          : 'border-emerald-100 text-slate-700 hover:bg-emerald-50/50 hover:border-emerald-300'
                       }`}
                     >
                       {sound}
@@ -220,9 +220,9 @@ export default function SettingsView({
               <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Habit Management</h2>
               <p className="text-xs text-slate-500">You currently have {habits.length} active habits configured.</p>
 
-              <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
+              <div className="divide-y divide-emerald-50 border border-emerald-100 rounded-xl overflow-hidden">
                 {habits.map(h => (
-                  <div key={h.id} className="flex items-center justify-between p-3.5 hover:bg-slate-50">
+                  <div key={h.id} className="flex items-center justify-between p-3.5 hover:bg-emerald-50/50 transition-colors">
                     <div className="flex items-center gap-2.5">
                       <span className="text-base">{h.emoji}</span>
                       <div>
@@ -247,7 +247,7 @@ export default function SettingsView({
                 HabitBloom seamlessly mirrors your data between local browser storage and your free Firebase Realtime Database.
               </p>
 
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="p-4 rounded-xl bg-emerald-50/30 border border-emerald-100 space-y-2">
                 <div className="text-xs font-bold text-slate-800">Storage Summary</div>
                 <div className="text-xs text-slate-600">Total Habits: <span className="font-bold">{habits.length}</span></div>
                 <div className="text-xs text-slate-600">Logged Entries: <span className="font-bold">{Object.keys(logs).length}</span></div>
@@ -282,7 +282,7 @@ export default function SettingsView({
 
               <button
                 onClick={() => setExportModalOpen(true)}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm hover:shadow transition-all"
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 hover:scale-105 text-white text-xs font-bold shadow-sm hover:shadow transition-all duration-300"
               >
                 <Download size={16} />
                 Open Data Export Center

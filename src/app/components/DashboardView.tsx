@@ -84,16 +84,16 @@ const DashboardView = React.memo(function DashboardView({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Welcome & Today's Progress Card */}
-        <Card className="lg:col-span-8 bg-gradient-to-br from-primary/10 via-background to-secondary/20 relative overflow-hidden flex flex-col justify-between border-primary/20">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <Card className="lg:col-span-8 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 relative overflow-hidden flex flex-col justify-between border-emerald-100 bg-white/80 backdrop-blur-md">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-400/20 rounded-full blur-3xl pointer-events-none" />
           
           <CardHeader className="relative z-10 pb-0">
             <div className="flex items-center justify-between">
-              <Badge variant="glass" className="text-primary border-primary/30">
+              <Badge variant="glass" className="text-emerald-700 border-emerald-200 bg-white/50 backdrop-blur-sm">
                 <Sparkles size={14} className="mr-1.5" />
                 Daily Overview
               </Badge>
-              <Button onClick={onAddHabit} variant="default" size="sm" className="font-extrabold">
+              <Button onClick={onAddHabit} size="sm" className="font-extrabold bg-emerald-500 hover:bg-emerald-600 text-white hover:scale-105 transition-all duration-300">
                 <Plus size={16} className="mr-1.5" /> Quick Add
               </Button>
             </div>
@@ -102,24 +102,24 @@ const DashboardView = React.memo(function DashboardView({
           <CardContent className="relative z-10 mt-4 space-y-6">
             <div>
               <h1 className="text-3xl font-black tracking-tight text-foreground">
-                Welcome back, <span className="text-primary">{userName}</span>! 👋
+                Welcome back, <span className="text-emerald-600">{userName}</span>! 👋
               </h1>
               <p className="text-sm text-muted-foreground mt-1.5 max-w-xl leading-relaxed">
-                You&apos;ve completed <span className="font-bold text-primary">{metrics.todayCompletedCount} of {habits.length}</span> habits today. Keep your momentum going!
+                You&apos;ve completed <span className="font-bold text-emerald-600">{metrics.todayCompletedCount} of {habits.length}</span> habits today. Keep your momentum going!
               </p>
             </div>
 
-            <div className="pt-4 border-t border-border/50 space-y-3">
+            <div className="pt-4 border-t border-emerald-100/50 space-y-3">
               <div className="flex items-center justify-between text-sm font-bold">
                 <span className="text-muted-foreground flex items-center gap-1.5">
-                  <Target size={16} className="text-primary" />
+                  <Target size={16} className="text-emerald-500" />
                   Today&apos;s Focus Rate
                 </span>
-                <span className="text-primary font-extrabold">{metrics.todayProgressPct}%</span>
+                <span className="text-emerald-600 font-extrabold">{metrics.todayProgressPct}%</span>
               </div>
-              <div className="w-full h-3 bg-muted rounded-full overflow-hidden p-0.5 border border-border">
+              <div className="w-full h-3 bg-emerald-100/50 rounded-full overflow-hidden p-0.5 border border-emerald-100">
                 <div
-                  className="h-full bg-primary rounded-full transition-all duration-500"
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                   style={{ width: `${metrics.todayProgressPct}%` }}
                 />
               </div>
@@ -128,11 +128,11 @@ const DashboardView = React.memo(function DashboardView({
         </Card>
 
         {/* Level & Bloom Score Card */}
-        <Card className="lg:col-span-4 flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
+        <Card className="lg:col-span-4 flex flex-col justify-between relative overflow-hidden group hover:border-emerald-300 transition-colors bg-white/80 backdrop-blur-sm border-emerald-50">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardDescription className="font-bold uppercase tracking-wider">Bloom Score</CardDescription>
-              <div className={`p-2 rounded-xl bg-primary/10 text-primary`}>
+              <CardDescription className="font-bold uppercase tracking-wider text-emerald-700/70">Bloom Score</CardDescription>
+              <div className={`p-2 rounded-xl bg-emerald-100 text-emerald-600`}>
                 <Star size={20} />
               </div>
             </div>
@@ -147,9 +147,9 @@ const DashboardView = React.memo(function DashboardView({
                 <span>Progress to Next Tier</span>
                 <span>{metrics.bloom.progressToNextTier}%</span>
               </div>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-emerald-100/50 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-primary rounded-full transition-all duration-500"
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                   style={{ width: `${metrics.bloom.progressToNextTier}%` }}
                 />
               </div>
@@ -199,23 +199,23 @@ const DashboardView = React.memo(function DashboardView({
         {/* Right Sidebar (Motivation, Space Activity) */}
         <div className="lg:col-span-4 space-y-6">
           
-          <Card className="bg-gradient-to-br from-secondary/40 to-background border-secondary/50">
+          <Card className="bg-gradient-to-br from-teal-50/50 to-emerald-50/50 border-teal-100 bg-white/80 backdrop-blur-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
-                <Quote size={16} className="text-primary" /> Daily Motivation
+                <Quote size={16} className="text-teal-600" /> Daily Motivation
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground font-medium italic leading-relaxed">
+              <p className="text-sm text-teal-800/80 font-medium italic leading-relaxed">
                 &quot;Small disciplines repeated with consistency every day lead to great achievements gained slowly over time.&quot;
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-emerald-50">
             <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
-                <Users size={16} className="text-blue-500" /> Space Activity
+                <Users size={16} className="text-emerald-500" /> Space Activity
               </CardTitle>
               <Badge variant="secondary" className="text-[10px]">Live</Badge>
             </CardHeader>

@@ -113,7 +113,7 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: EasingCurves.apple }}
-        className="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white border border-emerald-100 shadow-sm relative overflow-hidden"
+        className="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-emerald-50/80 to-teal-50/80 border border-emerald-100 shadow-sm relative overflow-hidden bg-white/50 backdrop-blur-sm"
       >
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2">
@@ -129,7 +129,7 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
           </div>
 
           {/* Quick Metrics */}
-          <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-4 bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-emerald-100 shadow-sm hover:shadow-md transition-all">
             <div className="text-center px-3">
               <span className="block text-2xl font-black text-emerald-600">{gardenHealthScore}%</span>
               <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Garden Health</span>
@@ -221,10 +221,10 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
                         handleWaterPlant(plant.habit.id, plant.isDoneToday);
                       }
                     }}
-                    className={`mt-4 w-full py-2 px-3 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 ${
+                    className={`mt-4 w-full py-2 px-3 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 ${
                       plant.isDoneToday
                         ? 'bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold shadow-emerald-200'
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                        : 'bg-emerald-400 hover:bg-emerald-500 text-white font-bold shadow-emerald-100'
                     }`}
                   >
                     <span>{plant.isDoneToday ? '✓ Watered Today' : '💧 Water Plant'}</span>

@@ -112,7 +112,7 @@ export default function SpaceDashboard({
   };
 
   const branding = space.branding || {};
-  const themeColorClass = branding.themeColor ? `bg-${branding.themeColor}` : 'bg-indigo-600';
+  const themeColorClass = branding.themeColor ? `bg-${branding.themeColor}` : 'bg-emerald-600';
   const labels = getSpaceUILabels(space.type);
 
   return (
@@ -214,7 +214,7 @@ export default function SpaceDashboard({
           aria-selected={activeTab === 'home'}
           aria-controls="tabpanel-home"
           onClick={() => setActiveTab('home')}
-          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'home' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'home' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           <Megaphone size={16} aria-hidden="true" /> {labels.announcementsTitle}
         </button>
@@ -223,7 +223,7 @@ export default function SpaceDashboard({
           aria-selected={activeTab === 'challenges'}
           aria-controls="tabpanel-challenges"
           onClick={() => setActiveTab('challenges')}
-          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'challenges' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'challenges' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           <Trophy size={16} aria-hidden="true" /> {labels.challengesTitle}
         </button>
@@ -232,7 +232,7 @@ export default function SpaceDashboard({
           aria-selected={activeTab === 'templates'}
           aria-controls="tabpanel-templates"
           onClick={() => setActiveTab('templates')}
-          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'templates' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'templates' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           <Target size={16} aria-hidden="true" /> {labels.templatesTitle}
         </button>
@@ -241,7 +241,7 @@ export default function SpaceDashboard({
           aria-selected={activeTab === 'members'}
           aria-controls="tabpanel-members"
           onClick={() => setActiveTab('members')}
-          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'members' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'members' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           <Users size={16} aria-hidden="true" /> {labels.membersTitle}
         </button>
@@ -262,7 +262,7 @@ export default function SpaceDashboard({
             aria-selected={activeTab === 'analytics'}
             aria-controls="tabpanel-analytics"
             onClick={() => setActiveTab('analytics')}
-            className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'analytics' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'analytics' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
           >
             <BarChart3 size={16} aria-hidden="true" /> Analytics
           </button>
@@ -282,29 +282,29 @@ export default function SpaceDashboard({
               />
             </div>
             <div className="space-y-4">
-              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border border-emerald-50 shadow-sm transition-all hover:shadow-md">
                 <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
-                  <Target size={16} className="text-indigo-500"/> Active Templates
+                  <Target size={16} className="text-emerald-500"/> Active Templates
                 </h3>
                 {templates.length > 0 ? (
                   <p className="text-sm font-medium text-slate-600">{templates.length} templates shared by the community.</p>
                 ) : (
                   <p className="text-sm text-slate-400">No templates yet. Create one to share your workflow!</p>
                 )}
-                <button onClick={() => setActiveTab('templates')} className="mt-4 w-full py-2 bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-bold text-sm rounded-xl transition-colors">
+                <button onClick={() => setActiveTab('templates')} className="mt-4 w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 hover:text-emerald-800 font-bold text-sm rounded-xl transition-colors">
                   {templates.length > 0 ? 'View All' : 'Create First Template'}
                 </button>
               </div>
-              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border border-emerald-50 shadow-sm transition-all hover:shadow-md">
                 <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
-                  <Trophy size={16} className="text-amber-500"/> Active Challenges
+                  <Trophy size={16} className="text-emerald-500"/> Active Challenges
                 </h3>
                 {challenges.length > 0 ? (
                   <p className="text-sm font-medium text-slate-600">{challenges.length} challenges active right now.</p>
                 ) : (
                   <p className="text-sm text-slate-400">No active challenges. Start one to build consistency together!</p>
                 )}
-                <button onClick={() => setActiveTab('challenges')} className="mt-4 w-full py-2 bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-700 font-bold text-sm rounded-xl transition-colors">
+                <button onClick={() => setActiveTab('challenges')} className="mt-4 w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 hover:text-emerald-800 font-bold text-sm rounded-xl transition-colors">
                   {challenges.length > 0 ? 'View All' : 'Launch Challenge'}
                 </button>
               </div>

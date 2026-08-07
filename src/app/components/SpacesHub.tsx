@@ -37,7 +37,7 @@ export default function SpacesHub({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-black text-slate-800 flex items-center gap-3">
-            <Users size={32} className="text-indigo-500" />
+            <Users size={32} className="text-emerald-500" />
             HabitBloom Spaces
           </h2>
           <p className="text-slate-500 font-medium mt-2 max-w-xl">
@@ -53,19 +53,19 @@ export default function SpacesHub({
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
-              className="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
+              className="w-full pl-4 pr-10 py-2.5 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium transition-all"
             />
             <button 
               onClick={handleJoin}
               disabled={!joinCode.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 disabled:opacity-50 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 disabled:opacity-50 transition-colors"
             >
               <LogIn size={18} />
             </button>
           </div>
           <button 
             onClick={onCreateSpaceClick}
-            className="flex items-center justify-center gap-2 w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm whitespace-nowrap"
+            className="flex items-center justify-center gap-2 w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold transition-all duration-300 hover:scale-105 shadow-sm whitespace-nowrap"
           >
             <Plus size={18} />
             Create Space
@@ -97,9 +97,9 @@ export default function SpacesHub({
       )}
 
       {/* Global Leaderboard Snapshot */}
-      <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="flex items-center gap-3 border-b border-white/10 pb-4 mb-4">
+      <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-sm">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex items-center gap-3 border-b border-emerald-400/30 pb-4 mb-4">
           <Trophy className="text-yellow-400" size={24} />
           <h3 className="text-lg font-bold">Global Top Bloomers</h3>
         </div>
@@ -138,13 +138,13 @@ export default function SpacesHub({
               <div 
                 key={space.id} 
                 onClick={() => onEnterSpace(space.id)}
-                className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group"
+                className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border border-emerald-50 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer group"
               >
-                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Users size={24} />
                 </div>
                 <h4 className="text-xl font-bold text-slate-800 mb-1">{space.name}</h4>
-                <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase rounded-lg mb-3">
+                <span className="inline-block px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase rounded-lg mb-3">
                   {space.type}
                 </span>
                 <p className="text-sm text-slate-500 line-clamp-2">{space.description}</p>
@@ -165,7 +165,7 @@ export default function SpacesHub({
               placeholder="Search organizations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="pl-9 pr-4 py-2 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
             />
           </div>
         </div>
@@ -186,20 +186,20 @@ export default function SpacesHub({
                 return (
                   <div 
                     key={space.id} 
-                    className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all group"
+                    className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border border-emerald-50 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all group"
                   >
-                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                       <Users size={24} />
                     </div>
                     <h4 className="text-xl font-bold text-slate-800 mb-1">{space.name}</h4>
-                    <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase rounded-lg mb-3">
+                    <span className="inline-block px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase rounded-lg mb-3">
                       {space.type}
                     </span>
                     <p className="text-sm text-slate-500 line-clamp-2 mb-4">{space.description}</p>
                     {isMember ? (
                       <button 
                         onClick={() => onEnterSpace(space.id)}
-                        className="w-full py-2 bg-indigo-50 text-indigo-700 font-bold rounded-xl transition-colors"
+                        className="w-full py-2 bg-emerald-100/50 text-emerald-700 hover:bg-emerald-100 font-bold rounded-xl transition-all"
                       >
                         Enter Space
                       </button>
@@ -210,7 +210,7 @@ export default function SpacesHub({
                           // Usually public spaces don't need invites, but since joining isn't hooked up for public spaces directly yet:
                           alert('Joining public spaces directly will be available soon! For now, please use an invite code.');
                         }}
-                        className="w-full py-2 bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-xl transition-colors"
+                        className="w-full py-2 bg-emerald-500 text-white hover:bg-emerald-600 font-bold rounded-xl transition-all duration-300 hover:scale-105"
                       >
                         Join Organization
                       </button>

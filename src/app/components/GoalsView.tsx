@@ -48,20 +48,20 @@ export default function GoalsView({ goals, onAddGoal, onUpdateGoal }: GoalsViewP
       {/* ─────────────────────────────────────────────────────────────
           1. HEADER & CONTROLS
       ───────────────────────────────────────────────────────────── */}
-      <Card className="bg-gradient-to-br from-primary/10 via-background to-secondary/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+      <Card className="bg-gradient-to-br from-emerald-50/50 to-teal-50/50 border border-emerald-100 bg-white/80 backdrop-blur-md relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-100/50 rounded-full blur-3xl pointer-events-none" />
         <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
           <div>
-            <Badge variant="glass" className="mb-2 text-primary border-primary/20">
+            <Badge variant="glass" className="mb-2 text-emerald-700 border-emerald-200 bg-white/50 backdrop-blur-sm">
               <Target size={14} className="mr-1.5" />
               Unified Goals Hub
             </Badge>
-            <h1 className="text-3xl font-black text-foreground tracking-tight">Macro Goals</h1>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Macro Goals</h1>
             <p className="text-sm font-medium text-muted-foreground mt-1 max-w-lg">
               Set long-term objectives and track your progress across multiple habits. Your overarching North Stars.
             </p>
           </div>
-          <Button onClick={() => setIsAdding(!isAdding)} variant="default" size="lg" className="font-extrabold shadow-sm">
+          <Button onClick={() => setIsAdding(!isAdding)} className="font-extrabold shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white hover:scale-105 transition-all duration-300">
             {isAdding ? 'Cancel' : <><Plus size={18} className="mr-1.5" /> New Goal</>}
           </Button>
         </CardContent>
@@ -71,7 +71,7 @@ export default function GoalsView({ goals, onAddGoal, onUpdateGoal }: GoalsViewP
           2. NEW GOAL FORM
       ───────────────────────────────────────────────────────────── */}
       {isAdding && (
-        <Card className="animate-in slide-in-from-top-4 duration-300 border-primary/50 shadow-md">
+        <Card className="animate-in slide-in-from-top-4 duration-300 border-emerald-200 bg-white/90 backdrop-blur-md shadow-md">
           <CardHeader>
             <CardTitle>Create a New Macro Goal</CardTitle>
             <CardDescription>Define the target metric you want to achieve.</CardDescription>
@@ -147,29 +147,29 @@ export default function GoalsView({ goals, onAddGoal, onUpdateGoal }: GoalsViewP
               const isCompleted = pct >= 100;
 
               return (
-                <Card key={goal.id} className={`group transition-all hover:shadow-md ${isCompleted ? 'border-primary bg-primary/5' : ''}`}>
+                <Card key={goal.id} className={`group transition-all hover:shadow-md bg-white/80 backdrop-blur-sm border-emerald-50 hover:border-emerald-200 ${isCompleted ? 'border-emerald-300 bg-emerald-50/30' : ''}`}>
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-6">
                       <div className="space-y-1">
                         {isCompleted && (
-                          <Badge variant="default" className="bg-primary hover:bg-primary text-white mb-2">
+                          <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-white mb-2 shadow-sm">
                             <Trophy size={12} className="mr-1" /> Goal Reached
                           </Badge>
                         )}
-                        <h3 className="font-bold text-xl text-foreground leading-tight pr-4">{goal.title}</h3>
-                        <div className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+                        <h3 className="font-bold text-xl text-slate-800 leading-tight pr-4">{goal.title}</h3>
+                        <div className="text-sm font-semibold text-slate-500 flex items-center gap-1.5">
                           <Target size={14} />
                           {goal.currentProgress} / {goal.targetCount} {goal.metric}
                         </div>
                       </div>
-                      <div className={`text-3xl font-black ${isCompleted ? 'text-primary' : 'text-foreground'}`}>
+                      <div className={`text-3xl font-black ${isCompleted ? 'text-emerald-600' : 'text-slate-800'}`}>
                         {pct}%
                       </div>
                     </div>
                     
-                    <div className="w-full h-3 bg-muted rounded-full overflow-hidden mb-6 p-0.5 border border-border">
+                    <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-6 p-0.5 border border-slate-200/50">
                       <div 
-                        className={`h-full rounded-full transition-all duration-1000 ${isCompleted ? 'bg-primary' : 'bg-foreground'}`}
+                        className={`h-full rounded-full transition-all duration-1000 ${isCompleted ? 'bg-emerald-500' : 'bg-slate-700'}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -184,7 +184,7 @@ export default function GoalsView({ goals, onAddGoal, onUpdateGoal }: GoalsViewP
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          className="h-8 text-xs font-bold text-primary hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-8 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => {
                             onUpdateGoal(goal.id, { currentProgress: goal.currentProgress + 1 });
                           }}
@@ -192,7 +192,7 @@ export default function GoalsView({ goals, onAddGoal, onUpdateGoal }: GoalsViewP
                           Log Progress <ChevronRight size={14} className="ml-1" />
                         </Button>
                       ) : (
-                        <div className="text-primary flex items-center gap-1 text-xs font-bold">
+                        <div className="text-emerald-600 flex items-center gap-1 text-xs font-bold">
                           <CheckCircle2 size={14} /> Completed
                         </div>
                       )}

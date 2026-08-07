@@ -93,22 +93,22 @@ export default function AnalyticsView({ habits, logs, onGoToDashboard }: Analyti
       {/* ─────────────────────────────────────────────────────────────
           1. HEADER & NAVIGATION
       ───────────────────────────────────────────────────────────── */}
-      <Card className="bg-gradient-to-br from-background via-background to-secondary/20">
+      <Card className="bg-gradient-to-br from-emerald-50/50 to-teal-50/50 border border-emerald-100 bg-white/80 backdrop-blur-md">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-              <Badge variant="glass" className="mb-2 text-primary border-primary/20">
+              <Badge variant="glass" className="mb-2 text-emerald-700 border-emerald-200 bg-white/50 backdrop-blur-sm">
                 <Activity size={14} className="mr-1.5" />
                 Unified Analytics Hub
               </Badge>
-              <h1 className="text-3xl font-black text-foreground tracking-tight">Performance Analytics</h1>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Performance Analytics</h1>
               <p className="text-sm font-medium text-muted-foreground mt-1">
                 Visualize your long-term consistency, habit trends, and deep performance insights.
               </p>
             </div>
 
             {/* Sub-navigation Tabs */}
-            <div className="flex overflow-x-auto hide-scrollbar gap-2 bg-muted p-1.5 rounded-xl border border-border w-full md:w-auto">
+            <div className="flex overflow-x-auto hide-scrollbar gap-2 bg-emerald-50/50 p-1.5 rounded-xl border border-emerald-100 w-full md:w-auto">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -117,7 +117,7 @@ export default function AnalyticsView({ habits, logs, onGoToDashboard }: Analyti
                     key={tab.id}
                     variant={isActive ? 'default' : 'ghost'}
                     size="sm"
-                    className={`gap-2 whitespace-nowrap ${isActive ? 'shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`gap-2 whitespace-nowrap transition-all duration-300 ${isActive ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm hover:scale-105' : 'text-slate-600 hover:text-emerald-900 hover:bg-emerald-100/50'}`}
                     onClick={() => setActiveTab(tab.id)}
                   >
                     <Icon size={14} />
@@ -137,10 +137,10 @@ export default function AnalyticsView({ habits, logs, onGoToDashboard }: Analyti
         {activeTab === 'overview' && (
           <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             {/* 1. GitHub-Style Contribution Heatmap */}
-            <Card>
+            <Card className="bg-white/80 backdrop-blur-sm border-emerald-50 hover:border-emerald-200 transition-colors">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Calendar size={18} className="text-primary" />
+                  <Calendar size={18} className="text-emerald-500" />
                   Annual Contribution Heatmap
                 </CardTitle>
                 <CardDescription>Activity grid over the last 52 weeks (364 days)</CardDescription>
@@ -175,10 +175,10 @@ export default function AnalyticsView({ habits, logs, onGoToDashboard }: Analyti
             {/* 2. Trends: 7-Day vs 30-Day */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* 7-Day Trend Chart */}
-              <Card>
+              <Card className="bg-white/80 backdrop-blur-sm border-emerald-50 hover:border-emerald-200 transition-colors">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <TrendingUp size={18} className="text-blue-500" />
+                    <TrendingUp size={18} className="text-teal-500" />
                     7-Day Completion Rate Trend
                   </CardTitle>
                   <CardDescription>Daily habit completion rate (%) over the past week</CardDescription>
@@ -195,7 +195,7 @@ export default function AnalyticsView({ habits, logs, onGoToDashboard }: Analyti
                             const data = payload[0].payload;
                             return (
                               <div className="bg-slate-900 text-white p-2.5 rounded-xl text-xs font-medium shadow-xl">
-                                <p className="font-bold text-blue-400">{data.day} ({data.date})</p>
+                                <p className="font-bold text-teal-400">{data.day} ({data.date})</p>
                                 <p className="mt-1">{data.completed} / {data.possible} completed ({data.rate}%)</p>
                               </div>
                             );
@@ -203,17 +203,17 @@ export default function AnalyticsView({ habits, logs, onGoToDashboard }: Analyti
                           return null;
                         }}
                       />
-                      <Bar dataKey="rate" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="rate" fill="#10b981" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
 
               {/* 30-Day Trend Chart */}
-              <Card>
+              <Card className="bg-white/80 backdrop-blur-sm border-emerald-50 hover:border-emerald-200 transition-colors">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <BarChart2 size={18} className="text-primary" />
+                    <BarChart2 size={18} className="text-emerald-500" />
                     30-Day Performance Line
                   </CardTitle>
                   <CardDescription>Moving 30-day consistency trajectory</CardDescription>
@@ -236,7 +236,7 @@ export default function AnalyticsView({ habits, logs, onGoToDashboard }: Analyti
                             const data = payload[0].payload;
                             return (
                               <div className="bg-slate-900 text-white p-2.5 rounded-xl text-xs font-medium shadow-xl">
-                                <p className="font-bold text-primary">{data.date}</p>
+                                <p className="font-bold text-emerald-400">{data.date}</p>
                                 <p className="mt-1">Completion: {data.rate}% ({data.completed} habits)</p>
                               </div>
                             );
@@ -252,18 +252,18 @@ export default function AnalyticsView({ habits, logs, onGoToDashboard }: Analyti
             </div>
 
             {/* 3. Detailed Habit History & Streak Breakdown */}
-            <Card>
+            <Card className="bg-white/80 backdrop-blur-sm border-emerald-50 hover:border-emerald-200 transition-colors">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Award size={18} className="text-purple-500" />
+                  <Award size={18} className="text-emerald-600" />
                   Habit History & Streak Timeline
                 </CardTitle>
                 <CardDescription>Individual habit metrics and consistency scores</CardDescription>
               </CardHeader>
-              <CardContent className="p-0 sm:p-0 border-t border-border mt-4">
+              <CardContent className="p-0 sm:p-0 border-t border-emerald-100 mt-4">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-muted-foreground">
-                    <thead className="bg-muted text-muted-foreground uppercase text-[10px] font-bold tracking-wider border-b border-border">
+                  <table className="w-full text-left text-xs text-slate-600">
+                    <thead className="bg-emerald-50/50 text-emerald-800 uppercase text-[10px] font-bold tracking-wider border-b border-emerald-100">
                       <tr>
                         <th className="py-3.5 px-6">Habit</th>
                         <th className="py-3.5 px-4">Category</th>
@@ -273,20 +273,20 @@ export default function AnalyticsView({ habits, logs, onGoToDashboard }: Analyti
                         <th className="py-3.5 px-6 text-right">Current Month %</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border font-medium bg-background">
+                    <tbody className="divide-y divide-emerald-50 font-medium bg-white/30">
                       {habits.map(habit => {
                         const stats = getHabitStats(habit, logs, daysInMonth, selectedYear, selectedMonth);
                         const currentStreak = getCurrentStreak(habit, logs, selectedYear, selectedMonth, daysInMonth);
                         const longestStreak = getHabitLongestStreak(habit, logs);
 
                         return (
-                          <tr key={habit.id} className="hover:bg-muted/50 transition-colors">
-                            <td className="py-4 px-6 font-bold text-foreground flex items-center gap-2.5">
+                          <tr key={habit.id} className="hover:bg-emerald-50/50 transition-colors">
+                            <td className="py-4 px-6 font-bold text-slate-800 flex items-center gap-2.5">
                               <span className="text-base">{habit.emoji}</span>
                               <span>{habit.name}</span>
                             </td>
                             <td className="py-4 px-4">
-                              <span className="inline-block px-2.5 py-1 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">
+                              <span className="inline-block px-2.5 py-1 rounded-full bg-emerald-100/50 text-emerald-800 text-[11px] font-bold">
                                 {habit.category || 'General'}
                               </span>
                             </td>

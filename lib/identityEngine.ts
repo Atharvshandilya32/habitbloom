@@ -34,6 +34,12 @@ export function generateUserIdentity(habits: Habit[], logs: HabitLog): Behaviora
   let weekendDone = 0;
   let weekendTotal = 0;
 
+  let eveningHabitsDone = 0;
+  let totalEveningHabits = 0;
+
+  let learningHabitsDone = 0;
+  let totalLearningHabits = 0;
+
   habits.forEach(habit => {
     // Basic stats
     const stats = getHabitStats(habit, logs, daysInMonth, year, month);
@@ -50,6 +56,20 @@ export function generateUserIdentity(habits: Habit[], logs: HabitLog): Behaviora
     if (isMorning) {
       totalMorningHabits++;
       if (stats.pct > 70) morningHabitsDone++;
+    }
+
+    // Evening Habits
+    const isEvening = habit.name.toLowerCase().includes('night') || habit.name.toLowerCase().includes('pm') || habit.name.toLowerCase().includes('sleep');
+    if (isEvening) {
+      totalEveningHabits++;
+      if (stats.pct > 70) eveningHabitsDone++;
+    }
+
+    // Learning Habits
+    const isLearning = habit.category?.includes('Learning') || habit.name.toLowerCase().includes('read') || habit.name.toLowerCase().includes('study');
+    if (isLearning) {
+      totalLearningHabits++;
+      if (stats.pct > 70) learningHabitsDone++;
     }
 
     // Weekends
@@ -102,7 +122,26 @@ export function generateUserIdentity(habits: Habit[], logs: HabitLog): Behaviora
     };
   }
 
+  if (totalLearningHabits > 0 && learningHabitsDone === totalLearningHabits && avgPct > 60) {
+    return {
+      id: 'focused-learner',
+      title: 'Focused Learner',
+      description: 'Your mind is a sponge. You prioritize knowledge and growth consistently.',
+      icon: '📚',
+      tier: 'gold'
+    };
+  }
+
   // Silver Tier
+  if (totalEveningHabits > 0 && eveningHabitsDone === totalEveningHabits) {
+    return {
+      id: 'night-owl',
+      title: 'Night Owl',
+      description: 'You find your peace in the quiet hours. Your evening routines are solid.',
+      icon: '🦉',
+      tier: 'silver'
+    };
+  }
   if (maxStreak >= 14) {
     return {
       id: 'momentum-master',

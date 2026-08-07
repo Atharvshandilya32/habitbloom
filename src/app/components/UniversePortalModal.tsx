@@ -192,7 +192,7 @@ export default function UniversePortalModal({
                         <div className="p-3 bg-slate-950/50 rounded-xl border border-white/5 flex gap-3 items-start">
                           <Sparkles className="text-amber-400 mt-0.5 shrink-0" size={16} />
                           <p className="text-xs font-medium text-slate-400 italic">
-                            "{tier.motivation}"
+                            &quot;{tier.motivation}&quot;
                           </p>
                         </div>
                       )}

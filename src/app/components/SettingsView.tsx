@@ -61,7 +61,7 @@ export default function SettingsView({
 
   const navItems: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: 'Profile', icon: <User size={16} /> },
-    { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
+    { id: 'appearance', label: 'Appearance & Audio', icon: <Palette size={16} /> },
     { id: 'notifications', label: 'Notifications', icon: <Bell size={16} /> },
     { id: 'habits', label: 'Habits', icon: <SlidersHorizontal size={16} /> },
     { id: 'data', label: 'Data', icon: <Database size={16} /> },
@@ -122,51 +122,75 @@ export default function SettingsView({
 
           {/* Appearance Tab */}
           {activeTab === 'appearance' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Appearance & Styling</h2>
+            <div className="space-y-8">
+              <div className="space-y-6">
+                <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Appearance & Styling</h2>
 
-              <div className="space-y-4">
-                <label className="text-xs font-bold text-slate-700 block">Theme Mode</label>
-                <div className="grid grid-cols-3 gap-3">
-                  <button
-                    onClick={() => setThemeMode('light')}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
-                      themeMode === 'light'
-                        ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Sun size={20} className="text-amber-500" />
-                    <span>Light Mode</span>
-                  </button>
+                <div className="space-y-4">
+                  <label className="text-xs font-bold text-slate-700 block">Theme Mode</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <button
+                      onClick={() => setThemeMode('light')}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
+                        themeMode === 'light'
+                          ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
+                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Sun size={20} className="text-amber-500" />
+                      <span>Light Mode</span>
+                    </button>
 
-                  <button
-                    onClick={() => {
-                      setThemeMode('dark');
-                      toast.info('Dark mode preset selected');
-                    }}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
-                      themeMode === 'dark'
-                        ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Moon size={20} className="text-indigo-500" />
-                    <span>Dark Mode</span>
-                  </button>
+                    <button
+                      onClick={() => {
+                        setThemeMode('dark');
+                        toast.info('Dark mode preset selected');
+                      }}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
+                        themeMode === 'dark'
+                          ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
+                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Moon size={20} className="text-indigo-500" />
+                      <span>Dark Mode</span>
+                    </button>
 
-                  <button
-                    onClick={() => setThemeMode('system')}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
-                      themeMode === 'system'
-                        ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Sparkles size={20} className="text-emerald-500" />
-                    <span>System Default</span>
-                  </button>
+                    <button
+                      onClick={() => setThemeMode('system')}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
+                        themeMode === 'system'
+                          ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
+                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Sparkles size={20} className="text-emerald-500" />
+                      <span>System Default</span>
+                    </button>
+                  </div>
                 </div>
+              </div>
+
+              <div className="space-y-6">
+                <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Ambient Soundscapes</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {['None', 'Rain', 'Forest', 'Ocean'].map(sound => (
+                    <button
+                      key={sound}
+                      onClick={() => toast.success(`${sound} ambient audio selected (coming soon)`)}
+                      className={`p-4 rounded-xl border text-xs font-bold transition-all ${
+                        sound === 'None' 
+                          ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
+                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      {sound}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] font-medium text-slate-500">
+                  Lightweight browser audio will play in the background when you are in the Habit Garden.
+                </p>
               </div>
             </div>
           )}

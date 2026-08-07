@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { User } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth';
-import { Pencil, Check, X, User as UserIcon, Mail, Calendar, Target, Flame, TrendingUp } from 'lucide-react';
+import { Pencil, Check, X, User as UserIcon, Mail, Calendar, Target, Flame, TrendingUp, Share2 } from 'lucide-react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { getLast6MonthsStats, getCurrentStreak } from '../../../lib/habitUtils';
 import { generateUserIdentity } from '../../../lib/identityEngine';
 import { calculateTotalXp, getLevelFromXp, getUniverseTitle } from '../../../lib/xpEngine';
 import UniversePortalModal from './UniversePortalModal';
+
+import { toast } from 'sonner';
 
 interface UserProfileProps {
   user: User;
@@ -75,6 +77,18 @@ export default function UserProfile({ user, habits, logs, currentYear, currentMo
     }
   };
 
+  const handleShareProfile = () => {
+    const text = `🌸 My HabitBloom Profile 🌸\n` +
+      `Identity: ${identity.icon} ${identity.title}\n` +
+      `Level: ${level} - ${universe.title}\n` +
+      `Best Streak: ${bestStreak} days\n` +
+      `Total Check-ins: ${totalDaysCompleted}\n` +
+      `#HabitBloom #Growth`;
+    
+    navigator.clipboard.writeText(text);
+    toast.success('Profile summary copied to clipboard!');
+  };
+
   return (
     <>
       <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
@@ -105,6 +119,14 @@ export default function UserProfile({ user, habits, logs, currentYear, currentMo
                 <div className="w-2 h-2 rounded-full bg-white" />
               </div>
             </div>
+            
+            <button
+              onClick={handleShareProfile}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/40 text-white text-xs font-bold transition-all shadow-sm"
+            >
+              <Share2 size={12} />
+              Share
+            </button>
           </div>
 
           {/* Name + email */}

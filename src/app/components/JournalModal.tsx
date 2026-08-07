@@ -182,7 +182,7 @@ export default function JournalModal({
           </div>
           <button 
             onClick={handleSave}
-            disabled={!notes.trim() && !wins.trim() && !challenges.trim()}
+            disabled={!notes.trim() && !wins.trim() && !challenges.trim() && !mood}
             className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save size={16} /> Save Entry

@@ -6,6 +6,23 @@ export function getXpToNextLevel(xp: number, currentLevel: number): number {
   return nextLevelXp - xp;
 }
 
+export function generateMilestoneMessage(streak: number, habitName: string): string {
+  switch (streak) {
+    case 1:
+      return "You planted your first seed.";
+    case 7:
+      return "One week of showing up.";
+    case 30:
+      return "Your habits are beginning to take root.";
+    case 100:
+      return "Consistency has become part of your identity.";
+    case 365:
+      return "You've cultivated something extraordinary.";
+    default:
+      return `You have reached an incredible milestone for ${habitName}.`;
+  }
+}
+
 export function generateDailyStory(habits: Habit[], logs: HabitLog, xp: number, level: number): string {
   if (habits.length === 0) {
     return "Small actions become remarkable lives.";
@@ -38,56 +55,38 @@ export function generateDailyStory(habits: Habit[], logs: HabitLog, xp: number, 
   // 2. Check for level proximity
   const remainingXp = getXpToNextLevel(xp, level);
   if (remainingXp > 0 && remainingXp <= 30) {
-    potentialStories.push(`You are only ${remainingXp} XP away from your next bloom.`);
+    potentialStories.push(`Only ${remainingXp} XP until your next level.`);
   }
 
-  // 3. Check for high consistency across all habits (avg > 80%)
-  let totalPct = 0;
+  // 3. Check for specific thriving habits
   habits.forEach(habit => {
-    totalPct += getHabitStats(habit, logs, daysInMonth, year, month).pct;
+    const stats = getHabitStats(habit, logs, daysInMonth, year, month);
+    if (stats.pct >= 90 && stats.done > 5) {
+      potentialStories.push(`Your ${habit.name} habit is thriving.`);
+    }
   });
-  const avgPct = totalPct / habits.length;
 
-  if (avgPct >= 80) {
-    potentialStories.push("Consistency is slowly becoming your identity.");
-  }
-
-  // 4. Check for a very high streak on at least one habit
+  // 4. Check for protecting longest streak
   let maxStreak = 0;
+  let maxStreakHabit = "";
   habits.forEach(habit => {
     const streak = getCurrentStreak(habit, logs, year, month, daysInMonth);
     if (streak > maxStreak) {
       maxStreak = streak;
+      maxStreakHabit = habit.name;
     }
   });
 
-  if (maxStreak >= 14) {
-    potentialStories.push("Your focus has never been stronger.");
-  }
-
-  // 5. Check for morning habits specifically
-  const morningHabits = habits.filter(h => h.name.toLowerCase().includes('morning') || h.name.toLowerCase().includes('wake') || h.name.toLowerCase().includes('am'));
-  if (morningHabits.length > 0) {
-    let allMorningDoneFor5Days = true;
-    for (let i = 1; i <= 5; i++) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const dy = d.getFullYear();
-      const dm = d.getMonth() + 1;
-      const dd = d.getDate();
-      
-      const allDoneThatDay = morningHabits.every(h => logs[makeLogKey(h.id, dy, dm, dd)]);
-      if (!allDoneThatDay) {
-        allMorningDoneFor5Days = false;
-        break;
-      }
-    }
-    if (allMorningDoneFor5Days) {
-      potentialStories.push("You have completed every morning habit for five days.");
+  if (maxStreak >= 10) {
+    const todayLog = logs[makeLogKey(habits.find(h => h.name === maxStreakHabit)!.id, year, month, now.getDate())];
+    if (!todayLog) {
+      potentialStories.push(`One more ${maxStreakHabit} protects your longest streak.`);
+    } else {
+      potentialStories.push("Your focus has never been stronger.");
     }
   }
 
-  // 6. Check weekly progress
+  // 5. Check weekly progress
   const weeklyStats = getWeeklyStats(habits, logs, year, month, daysInMonth);
   if (weeklyStats.length > 0) {
     const currentWeek = weeklyStats[weeklyStats.length - 1];
@@ -106,8 +105,6 @@ export function generateDailyStory(habits: Habit[], logs: HabitLog, xp: number, 
     return "Today is a blank canvas for your growth.";
   }
 
-  // Randomly pick one of the valid potential stories to keep it fresh
-  // Note: For consistency in a single session, we could hash the date to pick the index
-  const hash = year * 10000 + month * 100 + yDate; // pseudorandom based on yesterday's date
+  const hash = year * 10000 + month * 100 + yDate;
   return potentialStories[hash % potentialStories.length];
 }

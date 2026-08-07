@@ -47,9 +47,12 @@ export const BeautifulDayStart: React.FC<BeautifulDayStartProps> = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8, ease: EasingCurves.apple }}
-            className="space-y-4"
+            className="space-y-6"
           >
-            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight font-serif italic">
               {greeting}{userName ? `, ${userName}` : ''}.
             </h1>
             <p className="text-xl md:text-2xl font-medium text-slate-600 max-w-lg mx-auto leading-relaxed">
@@ -61,7 +64,7 @@ export const BeautifulDayStart: React.FC<BeautifulDayStartProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.9, ...SpringConfigs.gentle }}
-            className="flex items-center gap-8 py-6 px-10 rounded-3xl bg-white border border-slate-200/60 shadow-sm"
+            className="flex items-center gap-8 py-6 px-10 rounded-3xl bg-white border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
           >
             <div className="flex flex-col items-center">
               <span className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Level {level}</span>

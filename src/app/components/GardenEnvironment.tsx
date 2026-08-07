@@ -94,6 +94,68 @@ const Birds = () => {
   );
 };
 
+const FallingLeaves = () => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {[...Array(6)].map((_, i) => (
+        <motion.div
+          key={`leaf-${i}`}
+          className="absolute w-2 h-2 md:w-3 md:h-3 rounded-full opacity-60 bg-amber-500/30"
+          style={{
+            borderTopRightRadius: 0,
+            borderBottomLeftRadius: 0,
+          }}
+          initial={{ x: `${Math.random() * 100}vw`, y: '-5vh', rotate: 0 }}
+          animate={{
+            x: `${Math.random() * 100}vw`,
+            y: '105vh',
+            rotate: 360,
+          }}
+          transition={{
+            duration: Math.random() * 10 + 10,
+            repeat: Infinity,
+            ease: "linear",
+            delay: Math.random() * 5
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+const AmbientRays = () => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none bg-gradient-to-tr from-amber-500/5 to-transparent mix-blend-overlay" />
+  );
+};
+
+const Butterflies = () => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {[...Array(2)].map((_, i) => (
+        <motion.div
+          key={`butterfly-${i}`}
+          className="absolute text-rose-300"
+          initial={{ x: `${Math.random() * 100}vw`, y: `${70 + Math.random() * 30}vh` }}
+          animate={{ 
+            x: [`${Math.random() * 100}vw`, `${Math.random() * 100}vw`, `${Math.random() * 100}vw`], 
+            y: [`${70 + Math.random() * 30}vh`, `${30 + Math.random() * 30}vh`, `${70 + Math.random() * 30}vh`] 
+          }}
+          transition={{
+            duration: Math.random() * 10 + 15,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2c-.6 0-1 .4-1 1v18c0 .6.4 1 1 1s1-.4 1-1V3c0-.6-.4-1-1-1zM4 6c-1.1 0-2 .9-2 2 0 1.1.9 2 2 2 1.1 0 2-.9 2-2 0-1.1-.9-2-2-2zm0 8c-1.1 0-2 .9-2 2 0 1.1.9 2 2 2 1.1 0 2-.9 2-2 0-1.1-.9-2-2-2zm16-8c-1.1 0-2 .9-2 2 0 1.1.9 2 2 2 1.1 0 2-.9 2-2 0-1.1-.9-2-2-2zm0 8c-1.1 0-2 .9-2 2 0 1.1.9 2 2 2 1.1 0 2-.9 2-2 0-1.1-.9-2-2-2z"/>
+          </svg>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
 interface GardenEnvironmentProps {
   timeOfDay: TimeOfDay;
 }
@@ -106,7 +168,25 @@ export const GardenEnvironment: React.FC<GardenEnvironmentProps> = ({ timeOfDay 
       transition={{ duration: 1.5 }}
       className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-3xl"
     >
-      {timeOfDay === 'morning' && <Birds />}
+      {timeOfDay === 'morning' && (
+        <>
+          <AmbientRays />
+          <Birds />
+          <Butterflies />
+        </>
+      )}
+      {timeOfDay === 'afternoon' && (
+        <>
+          <FallingLeaves />
+          <Butterflies />
+        </>
+      )}
+      {timeOfDay === 'evening' && (
+        <>
+          <AmbientRays />
+          <FallingLeaves />
+        </>
+      )}
       {timeOfDay === 'night' && (
         <>
           <Stars />

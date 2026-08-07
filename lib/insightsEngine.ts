@@ -91,6 +91,28 @@ export function generateInsights(habits: Habit[], logs: HabitLog): Insight[] {
     }
   });
 
+  // 5. Habit Pairing Insight (Cross-habit heuristic)
+  const strongHabits = habits.filter(h => getHabitStats(h, logs, daysInMonth, year, month).pct >= 80);
+  const weakHabits = habits.filter(h => {
+    const pct = getHabitStats(h, logs, daysInMonth, year, month).pct;
+    return pct > 0 && pct <= 30; // struggling but not completely abandoned
+  });
+
+  if (strongHabits.length > 0 && weakHabits.length > 0) {
+    const strong = strongHabits[0];
+    const weak = weakHabits[0];
+    // Check if we don't already have an insight for the weak habit
+    if (!insights.find(i => i.id === `low-pct-${weak.id}`)) {
+      insights.push({
+        id: `pair-${strong.id}-${weak.id}`,
+        title: `Try Habit Stacking`,
+        description: `You are incredibly consistent at ${strong.name}. Try pairing it immediately with ${weak.name} to build momentum!`,
+        type: 'info',
+        icon: '🔗'
+      });
+    }
+  }
+
   return insights.sort((a, b) => {
     if (a.type === 'warning' && b.type !== 'warning') return -1;
     if (b.type === 'warning' && a.type !== 'warning') return 1;

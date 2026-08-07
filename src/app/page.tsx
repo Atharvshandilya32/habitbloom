@@ -41,7 +41,7 @@ import CreateSpaceModal from './components/CreateSpaceModal';
 import { Space, SpaceInvite } from '../../lib/spaceTypes';
 import { XP_CONSTANTS, getLevelFromXp, calculateTotalXp } from '../../lib/xpEngine';
 import BeautifulDayStart from './components/BeautifulDayStart';
-import { generateDailyStory } from '../../lib/storyEngine';
+import { generateDailyStory, generateMilestoneMessage } from '../../lib/storyEngine';
 import { calculateBloomScore } from '../../lib/bloomScoreUtils';
 import { initOfflineSync, queueMutation } from '../../lib/offlineSyncEngine';
 import { createNewSpace } from '../../lib/spaceUtils';
@@ -161,12 +161,12 @@ export default function Page() {
         }
       });
       
-      if (highestStreak === 30 || highestStreak === 100) {
+      if ([1, 7, 30, 100, 365].includes(highestStreak)) {
         setCelebration({
           isOpen: true,
           title: `${highestStreak}-Day Streak!`,
-          description: `You have reached an incredible milestone for ${habitName}.`,
-          icon: '🔥'
+          description: generateMilestoneMessage(highestStreak, habitName),
+          icon: highestStreak >= 30 ? '🔥' : '🌱'
         });
       } else if (currentCompleted === 10) {
         setCelebration({

@@ -5,7 +5,7 @@ import { calculateBloomScore } from './bloomScoreUtils';
 
 export interface WrappedSlide {
   id: string;
-  type: 'intro' | 'total_completions' | 'top_habit' | 'persona' | 'bloom_score' | 'share_card';
+  type: 'intro' | 'total_completions' | 'top_habit' | 'persona' | 'bloom_score' | 'share_card' | 'time_capsule';
   title: string;
   subtitle: string;
   statNumber?: string | number;
@@ -172,6 +172,20 @@ export function generateHabitWrapped(
         `Consistency Score: ${bloom.consistencyScore} / 400 pts`,
         `Streak Momentum: ${bloom.streakScore} / 200 pts`,
         `Diversity Index: ${bloom.diversityScore} / 200 pts`,
+      ],
+    },
+    {
+      id: 'time_capsule',
+      type: 'time_capsule',
+      title: 'Letter From Your Past Self',
+      subtitle: 'A monthly time capsule of your growth.',
+      statNumber: 'Time Capsule',
+      statLabel: `You started the month as a ${dna.persona.title} and blossomed.`,
+      emoji: '💌',
+      gradient: 'from-rose-500 via-pink-600 to-purple-600',
+      details: [
+        '“Small actions become remarkable lives.”',
+        `Your garden thrived with ${habits.length} active habits.`
       ],
     },
     {

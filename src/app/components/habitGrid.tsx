@@ -45,6 +45,8 @@ export default function HabitGrid({
   const [editNotes, setEditNotes] = useState<string>('');
   const [pulseCells, setPulseCells] = useState<Set<string>>(new Set());
 
+  const [isToggling, setIsToggling] = useState<Record<string, boolean>>({});
+
   // Filter & Search states
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -101,6 +103,9 @@ export default function HabitGrid({
 
   const handleToggle = (habitId: string, day: number) => {
     const cellKey = makeLogKey(habitId, year, month, day);
+    if (isToggling[cellKey]) return;
+    setIsToggling(prev => ({ ...prev, [cellKey]: true }));
+    
     const wasChecked = !!logs[cellKey];
 
     onToggleCell(habitId, day);
@@ -124,6 +129,10 @@ export default function HabitGrid({
         return next;
       });
     }, 250);
+
+    setTimeout(() => {
+      setIsToggling(prev => ({ ...prev, [cellKey]: false }));
+    }, 500);
   };
 
   const handleDelete = (habitId: string, habitName: string) => {
@@ -415,7 +424,8 @@ export default function HabitGrid({
                             checked
                               ? 'bg-emerald-600 text-white font-bold shadow-sm hover:bg-emerald-700'
                               : 'bg-slate-100/80 text-transparent hover:bg-slate-200/80 hover:text-slate-300'
-                          }`}
+                          } ${isToggling[cellKey] ? 'opacity-50 pointer-events-none cursor-wait' : ''}`}
+                          disabled={isToggling[cellKey]}
                         >
                           <Check className="h-3.5 w-3.5 stroke-[3]" />
                         </button>

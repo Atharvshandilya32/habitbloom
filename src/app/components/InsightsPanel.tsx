@@ -1,6 +1,6 @@
 import React from 'react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
-import { generateInsights } from '../../../lib/insightsEngine';
+import { generateInsights, generateNarrativeInsight } from '../../../lib/insightsEngine';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 
@@ -11,6 +11,7 @@ interface InsightsPanelProps {
 
 export default function InsightsPanel({ habits, logs }: InsightsPanelProps) {
   const insights = generateInsights(habits, logs);
+  const narrative = generateNarrativeInsight(habits, logs);
 
   if (insights.length === 0) {
     return null; // Don't show if there are no insights yet
@@ -18,13 +19,13 @@ export default function InsightsPanel({ habits, logs }: InsightsPanelProps) {
 
   return (
     <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm relative overflow-hidden">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl">
+      <div className="flex items-start gap-4 mb-6">
+        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-3 rounded-2xl shadow-md">
           <Sparkles size={24} />
         </div>
         <div>
-          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Smart Insights</h2>
-          <p className="text-sm font-medium text-slate-500">AI-driven observations on your habits</p>
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Narrative Insights</h2>
+          <p className="text-sm font-medium text-slate-600 mt-1 leading-relaxed max-w-2xl">{narrative}</p>
         </div>
       </div>
 

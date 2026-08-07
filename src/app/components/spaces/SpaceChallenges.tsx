@@ -207,7 +207,8 @@ export default function SpaceChallenges({
           </div>
         ) : (
           challenges.map(challenge => {
-            const hasJoined = challenge.participants.includes(currentUserId);
+            const participants = challenge.participants || [];
+            const hasJoined = participants.includes(currentUserId);
             return (
               <div key={challenge.id} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm relative group overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
@@ -221,7 +222,7 @@ export default function SpaceChallenges({
                     </span>
                     <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
                       <Users size={12} />
-                      {challenge.participants.length}
+                      {participants.length}
                     </span>
                   </div>
                 </div>

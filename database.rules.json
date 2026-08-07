@@ -1,22 +1,27 @@
 {
   "rules": {
-    "users": {
-      "$uid": {
-        ".read": "auth != null",
-        ".write": "$uid === auth.uid"
-      }
-    },
-    "hbIds": {
-      "$hbId": {
-        ".read": "auth != null",
-        ".write": "auth != null && (!data.exists() || data.val() === auth.uid)"
-      }
-    },
-    "socialProfiles": {
+    "activityFeed": {
       ".read": "auth != null",
+      "$activityId": {
+        ".write": "auth != null",
+        "reactions": {
+          "$uid": {
+            ".write": "$uid === auth.uid"
+          }
+        }
+      }
+    },
+    "blocked": {
       "$uid": {
-        ".read": "auth != null",
+        ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid"
+      }
+    },
+    "friendRequests": {
+      ".read": "auth != null",
+      "$requestId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
       }
     },
     "friends": {
@@ -29,47 +34,15 @@
         }
       }
     },
-    "friendRequests": {
-      ".read": "auth != null",
-      "$requestId": {
+    "hbIds": {
+      "$hbId": {
         ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    },
-    "blocked": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
-      }
-    },
-    "activityFeed": {
-      ".read": "auth != null",
-      "$activityId": {
-        ".write": "auth != null",
-        "reactions": {
-          "$uid": {
-            ".write": "$uid === auth.uid"
-          }
-        }
+        ".write": "auth != null && (!data.exists() || data.val() === auth.uid)"
       }
     },
     "notifications": {
       "$uid": {
         ".read": "$uid === auth.uid",
-        ".write": "auth != null"
-      }
-    },
-    "socialChallenges": {
-      ".read": "auth != null",
-      "$challengeId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    },
-    "teams": {
-      ".read": "auth != null",
-      "$teamId": {
-        ".read": "auth != null",
         ".write": "auth != null"
       }
     },
@@ -79,30 +52,18 @@
         ".write": "$uid === auth.uid"
       }
     },
-    "spaces": {
+    "socialChallenges": {
       ".read": "auth != null",
-      "$spaceId": {
-        ".read": "auth != null",
-        ".write": "auth != null && (!data.exists() || data.child('createdBy').val() === auth.uid)"
-      }
-    },
-    "spaceMembers": {
-      ".read": "auth != null",
-      "$memberKey": {
-        ".read": "auth != null",
-        ".write": "auth != null && (!data.exists() || newData.child('userId').val() === auth.uid || root.child('spaceMembers').child($memberKey).child('userId').val() === auth.uid || root.child('spaces').child(newData.child('spaceId').val()).child('createdBy').val() === auth.uid)"
-      }
-    },
-    "spaceRoles": {
-      "$spaceId": {
+      "$challengeId": {
         ".read": "auth != null",
         ".write": "auth != null"
       }
     },
-    "spaceRosters": {
-      "$spaceId": {
+    "socialProfiles": {
+      ".read": "auth != null",
+      "$uid": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "$uid === auth.uid"
       }
     },
     "spaceAuditLogs": {
@@ -119,6 +80,46 @@
       "$inviteCode": {
         ".read": "auth != null",
         ".write": "auth != null"
+      }
+    },
+    "spaceMembers": {
+      ".read": "auth != null",
+      ".indexOn": ["userId", "spaceId"],
+      "$memberKey": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || newData.child('userId').val() === auth.uid || root.child('spaceMembers').child($memberKey).child('userId').val() === auth.uid || root.child('spaces').child(newData.child('spaceId').val()).child('createdBy').val() === auth.uid)"
+      }
+    },
+    "spaceRoles": {
+      "$spaceId": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('spaces').child($spaceId).child('createdBy').val() === auth.uid"
+      }
+    },
+    "spaceRosters": {
+      "$spaceId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "spaces": {
+      ".read": "auth != null",
+      "$spaceId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || data.child('createdBy').val() === auth.uid)"
+      }
+    },
+    "teams": {
+      ".read": "auth != null",
+      "$teamId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
       }
     }
   }

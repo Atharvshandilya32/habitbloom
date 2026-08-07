@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import {
   calculateContributionHeatmap,
@@ -47,9 +47,9 @@ export default function AnalyticsView({ habits, logs, onGoToDashboard }: Analyti
   const selectedMonth = new Date().getMonth() + 1;
   const selectedYear = new Date().getFullYear();
 
-  const heatmap = calculateContributionHeatmap(habits, logs, 364); // 52 weeks
-  const trend7 = calculateTrend7Days(habits, logs);
-  const trend30 = calculateTrend30Days(habits, logs);
+  const heatmap = useMemo(() => calculateContributionHeatmap(habits, logs, 364), [habits, logs]); // 52 weeks
+  const trend7 = useMemo(() => calculateTrend7Days(habits, logs), [habits, logs]);
+  const trend30 = useMemo(() => calculateTrend30Days(habits, logs), [habits, logs]);
 
   const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
 

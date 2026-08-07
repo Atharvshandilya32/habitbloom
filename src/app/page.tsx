@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { MotionConfig } from 'framer-motion';
 import Navbar, { NavTab } from './components/charts/TitleBanner';
 import RequireAuth from './auth/RequireAuth';
@@ -18,7 +18,8 @@ const HabitDnaView = dynamic(() => import('./components/HabitDnaView').then(mod 
 const HabitGardenView = dynamic(() => import('./components/HabitGardenView').then(mod => mod.HabitGardenView), { ssr: false });
 const FutureProjectionView = dynamic(() => import('./components/FutureProjectionView').then(mod => mod.FutureProjectionView), { ssr: false });
 const WeeklyReflectionView = dynamic(() => import('./components/WeeklyReflectionView').then(mod => mod.WeeklyReflectionView), { ssr: false });
-const HabitWrappedModal = dynamic(() => import('./components/HabitWrappedModal').then(mod => mod.HabitWrappedModal), { ssr: false });
+const WrappedView = dynamic(() => import('./components/WrappedView'), { ssr: false });
+import CelebrationOverlay from './components/CelebrationOverlay';
 import { OnboardingGuide } from './components/OnboardingGuide';
 
 // Dynamic Lazy Loaded Sub-Views for optimal initial bundle performance
@@ -38,19 +39,22 @@ import SpacesHub from './components/SpacesHub';
 const SpaceDashboard = dynamic(() => import('./components/SpaceDashboard'), { ssr: false });
 import CreateSpaceModal from './components/CreateSpaceModal';
 import { Space, SpaceInvite } from '../../lib/spaceTypes';
-import { XP_CONSTANTS, getLevelFromXp } from '../../lib/xpEngine';
+import { XP_CONSTANTS, getLevelFromXp, calculateTotalXp } from '../../lib/xpEngine';
+import BeautifulDayStart from './components/BeautifulDayStart';
+import { generateDailyStory } from '../../lib/storyEngine';
+import { calculateBloomScore } from '../../lib/bloomScoreUtils';
 import { initOfflineSync, queueMutation } from '../../lib/offlineSyncEngine';
 import { createNewSpace } from '../../lib/spaceUtils';
 import { ensureUserProfile, UserProfile } from '../../lib/userProfile';
 const IdentityModal = dynamic(() => import('./components/identity/IdentityModal'), { ssr: false });
 
 import { Habit, HabitLog, Goal as GoalType, Challenge, JournalEntry } from '../../lib/habitTypes';
-import { makeLogKey, getMonthKeyPrefix } from '../../lib/habitUtils';
+import { makeLogKey, getMonthKeyPrefix, getCurrentStreak } from '../../lib/habitUtils';
 import { useHabitReminders } from '../../lib/useHabitReminders';
 
 // Firebase imports
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { ref, onValue, set, get } from 'firebase/database';
+import { ref, onValue, set, get, query, orderByChild, equalTo } from 'firebase/database';
 import { auth, database } from '../../lib/firebase';
 
 const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
@@ -83,10 +87,12 @@ export default function Page() {
   const [isLoadingFirebase, setIsLoadingFirebase] = useState(true);
 
   // UI State
+  const [hasSeenWelcomeToday, setHasSeenWelcomeToday] = useState(true);
   const [guideOpen, setGuideOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [identityModalOpen, setIdentityModalOpen] = useState(false);
   const [wrappedOpen, setWrappedOpen] = useState(false);
+  const [celebration, setCelebration] = useState({ isOpen: false, title: '', description: '', icon: '' });
   const [userProfileData, setUserProfileData] = useState<UserProfile | null>(null);
   const [toastMsg, setToastMsg] = useState('');
   const [toastOpen, setToastOpen] = useState(false);
@@ -132,6 +138,54 @@ export default function Page() {
   useEffect(() => {
     if (shouldShowGuide()) setGuideOpen(true);
   }, []);
+
+  useEffect(() => {
+    const todayStr = new Date().toDateString();
+    const lastSeen = localStorage.getItem('habitbloom_last_welcome');
+    if (lastSeen !== todayStr) {
+      setHasSeenWelcomeToday(false);
+    }
+  }, []);
+
+  const previousTotalCompletedRef = useRef(-1);
+  useEffect(() => {
+    const currentCompleted = Object.values(logs).filter(Boolean).length;
+    if (previousTotalCompletedRef.current !== -1 && currentCompleted > previousTotalCompletedRef.current) {
+      let highestStreak = 0;
+      let habitName = '';
+      habits.forEach(habit => {
+        const streak = getCurrentStreak(habit, logs, year, month, getDaysInMonth(year, month));
+        if (streak > highestStreak) {
+          highestStreak = streak;
+          habitName = habit.name;
+        }
+      });
+      
+      if (highestStreak === 30 || highestStreak === 100) {
+        setCelebration({
+          isOpen: true,
+          title: `${highestStreak}-Day Streak!`,
+          description: `You have reached an incredible milestone for ${habitName}.`,
+          icon: '🔥'
+        });
+      } else if (currentCompleted === 10) {
+        setCelebration({
+          isOpen: true,
+          title: `Taking Root`,
+          description: `You have completed 10 total habits. Your journey begins.`,
+          icon: '🌿'
+        });
+      } else if (currentCompleted === 50) {
+        setCelebration({
+          isOpen: true,
+          title: `A Flourishing Garden`,
+          description: `50 habits completed! You are cultivating a new lifestyle.`,
+          icon: '🌸'
+        });
+      }
+    }
+    previousTotalCompletedRef.current = currentCompleted;
+  }, [logs, habits, year, month]);
 
   // Helper function to sync individual paths to Firebase via offline queue
   const syncToFirebase = useCallback((key: string, value: unknown) => {
@@ -237,12 +291,12 @@ export default function Page() {
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          if (data.habits) setHabits(data.habits);
+          if (data.habits) setHabits(Array.isArray(data.habits) ? data.habits : Object.values(data.habits));
           if (data.logs) setLogs(data.logs);
           if (data.habitLogsArray) setHabitLogsArray(data.habitLogsArray);
-          if (data.goals) setGoals(data.goals);
-          if (data.challenges) setChallenges(data.challenges);
-          if (data.journals) setJournals(data.journals);
+          if (data.goals) setGoals(Array.isArray(data.goals) ? data.goals : Object.values(data.goals));
+          if (data.challenges) setChallenges(Array.isArray(data.challenges) ? data.challenges : Object.values(data.challenges));
+          if (data.journals) setJournals(Array.isArray(data.journals) ? data.journals : Object.values(data.journals));
         } else {
           set(userRef, {
             habits: habits.length > 0 ? habits : [
@@ -272,12 +326,12 @@ export default function Page() {
   useEffect(() => {
     if (!database || !currentUser) return;
 
-    const membersRef = ref(database, 'spaceMembers');
+    const membersQuery = query(ref(database, 'spaceMembers'), orderByChild('userId'), equalTo(currentUser.uid));
     const spacesRef = ref(database, 'spaces');
     const rolesRef = ref(database, 'spaceRoles');
 
     const unsubscribeMembers = onValue(
-      membersRef,
+      membersQuery,
       (snapshot) => {
         if (!snapshot.exists()) {
           setUserSpaces([]);
@@ -361,6 +415,12 @@ export default function Page() {
     const key = makeLogKey(habitId, year, month, day);
     const dateTimestamp = new Date(year, month - 1, day).getTime();
 
+    // Prevent time-traveler exploit
+    if (dateTimestamp > Date.now()) {
+      showToast('Cannot log habits in the future!');
+      return;
+    }
+
     setLogs(prevLogs => {
       const isCurrentlyDone = !!prevLogs[key];
       const updatedLogs = { ...prevLogs };
@@ -369,20 +429,31 @@ export default function Page() {
       } else {
         updatedLogs[key] = true;
       }
-      queueMutation('set', `users/${currentUser?.uid}/logs`, updatedLogs);
+      
+      if (currentUser) {
+        if (isCurrentlyDone) {
+          queueMutation('set', `users/${currentUser.uid}/logs/${key}`, null);
+        } else {
+          queueMutation('set', `users/${currentUser.uid}/logs/${key}`, true);
+        }
+      }
+
+      if (userProfileData && currentUser) {
+        // Prevent Infinite XP Exploit
+        const xpDelta = isCurrentlyDone ? -XP_CONSTANTS.HABIT_COMPLETION : XP_CONSTANTS.HABIT_COMPLETION;
+        const newXp = Math.max(0, (userProfileData.experiencePoints || 0) + xpDelta);
+        const newLevel = getLevelFromXp(newXp);
+        
+        const updatedProfile = { 
+          ...userProfileData, 
+          experiencePoints: newXp, 
+          currentLevel: newLevel 
+        };
+        setUserProfileData(updatedProfile);
+        queueMutation('set', `users/${currentUser.uid}/profile`, updatedProfile);
+      }
 
       if (!isCurrentlyDone) {
-        if (userProfileData && currentUser) {
-          const newXp = (userProfileData.experiencePoints || 0) + XP_CONSTANTS.HABIT_COMPLETION;
-          const newLevel = getLevelFromXp(newXp);
-          const updatedProfile = { 
-            ...userProfileData, 
-            experiencePoints: newXp, 
-            currentLevel: newLevel 
-          };
-          setUserProfileData(updatedProfile);
-          queueMutation('set', `users/${currentUser.uid}/profile`, updatedProfile);
-        }
         showToast('Habit completed! Keep it up.');
       }
       return updatedLogs;
@@ -397,7 +468,7 @@ export default function Page() {
           ? [...logsArray, dateTimestamp].sort()
           : logsArray.filter((_, i) => i !== index),
       };
-      syncToFirebase('habitLogsArray', updatedLogsArray);
+      syncToFirebase(`habitLogsArray/${habitId}`, updatedLogsArray[habitId]);
       return updatedLogsArray;
     });
   }, [year, month, currentUser, userProfileData, syncToFirebase]);
@@ -456,7 +527,7 @@ export default function Page() {
     };
     setHabits(prev => {
       const updated = [...prev, newHabit];
-      syncToFirebase('habits', updated);
+      syncToFirebase(`habits/${newHabit.id}`, newHabit);
       return updated;
     });
     showToast('Habit created successfully.');
@@ -465,7 +536,7 @@ export default function Page() {
   const handleDeleteHabit = useCallback((habitId: string) => {
     setHabits(prev => {
       const updatedHabits = prev.filter(h => h.id !== habitId);
-      syncToFirebase('habits', updatedHabits);
+      syncToFirebase(`habits/${habitId}`, null);
       return updatedHabits;
     });
 
@@ -491,9 +562,11 @@ export default function Page() {
 
   const handleUpdateHabit = useCallback((habitId: string, updates: Partial<Habit>) => {
     setHabits(prev => {
-      const updated = prev.map(h => h.id === habitId ? { ...h, ...updates } : h);
-      syncToFirebase('habits', updated);
-      return updated;
+      const targetHabit = prev.find(h => h.id === habitId);
+      if (targetHabit) {
+        syncToFirebase(`habits/${habitId}`, { ...targetHabit, ...updates });
+      }
+      return prev.map(h => h.id === habitId ? { ...h, ...updates } : h);
     });
   }, [syncToFirebase]);
 
@@ -501,7 +574,7 @@ export default function Page() {
   const handleAddGoal = useCallback((goal: GoalType) => {
     setGoals(prev => {
       const updated = [...prev, goal];
-      syncToFirebase('goals', updated);
+      syncToFirebase(`goals/${goal.id}`, goal);
       return updated;
     });
     showToast('Goal set successfully.');
@@ -509,16 +582,18 @@ export default function Page() {
 
   const handleUpdateGoal = useCallback((goalId: string, updates: Partial<GoalType>) => {
     setGoals(prev => {
-      const updated = prev.map(g => g.id === goalId ? { ...g, ...updates } : g);
-      syncToFirebase('goals', updated);
-      return updated;
+      const targetGoal = prev.find(g => g.id === goalId);
+      if (targetGoal) {
+        syncToFirebase(`goals/${goalId}`, { ...targetGoal, ...updates });
+      }
+      return prev.map(g => g.id === goalId ? { ...g, ...updates } : g);
     });
   }, [syncToFirebase]);
 
   const handleJoinChallenge = useCallback((challenge: Challenge) => {
     setChallenges(prev => {
       const updated = [...prev, challenge];
-      syncToFirebase('challenges', updated);
+      syncToFirebase(`challenges/${challenge.id}`, challenge);
       return updated;
     });
     showToast(`Joined ${challenge.title} challenge.`);
@@ -527,7 +602,7 @@ export default function Page() {
   const handleSaveJournal = useCallback((entry: JournalEntry) => {
     setJournals(prev => {
       const updated = [...prev.filter(j => j.id !== entry.id), entry];
-      syncToFirebase('journals', updated);
+      syncToFirebase(`journals/${entry.id}`, entry);
       return updated;
     });
     showToast('Journal entry saved.');
@@ -536,7 +611,7 @@ export default function Page() {
   const handleDeleteJournal = useCallback((journalId: string) => {
     setJournals(prev => {
       const updated = prev.filter(j => j.id !== journalId);
-      syncToFirebase('journals', updated);
+      syncToFirebase(`journals/${journalId}`, null);
       return updated;
     });
     showToast('Journal entry deleted.');
@@ -550,6 +625,27 @@ export default function Page() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Memoize heavy welcome screen computations
+  const welcomeStats = useMemo(() => {
+    if (hasSeenWelcomeToday || isLoadingFirebase) return null;
+    const xp = calculateTotalXp(habits, logs);
+    const level = getLevelFromXp(xp);
+    const nextLevelXp = level * (level + 1) * 50;
+    
+    let longestStreak = 0;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    habits.forEach(h => {
+      const s = getCurrentStreak(h, logs, year, month, daysInMonth);
+      if (s > longestStreak) longestStreak = s;
+    });
+
+    return {
+      xp, level, xpRemaining: nextLevelXp - xp, longestStreak,
+      bloomScoreObj: calculateBloomScore(habits, logs, year, month),
+      story: generateDailyStory(habits, logs, xp, level)
+    };
+  }, [habits, logs, hasSeenWelcomeToday, isLoadingFirebase, year, month]);
+
   if (isLoadingFirebase && habits.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-600 gap-3">
@@ -560,6 +656,27 @@ export default function Page() {
   }
 
   const todayDateStr = `${year}-${String(month).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+
+
+
+  if (!hasSeenWelcomeToday && !isLoadingFirebase && welcomeStats) {
+    const userName = currentUser?.displayName?.split(' ')[0] || 'Friend';
+
+    return (
+      <BeautifulDayStart
+        userName={userName}
+        storySentence={welcomeStats.story}
+        bloomScore={welcomeStats.bloomScoreObj.totalBloomScore}
+        level={welcomeStats.level}
+        xpRemaining={welcomeStats.xpRemaining}
+        longestStreak={welcomeStats.longestStreak}
+        onEnter={() => {
+          localStorage.setItem('habitbloom_last_welcome', new Date().toDateString());
+          setHasSeenWelcomeToday(true);
+        }}
+      />
+    );
+  }
 
   return (
     <MotionConfig reducedMotion="always">
@@ -712,6 +829,7 @@ export default function Page() {
               <TimelineView
                 journals={journals}
                 habits={habits}
+                logs={logs}
                 onEditJournal={(id) => {
                   const entry = journals.find(j => j.id === id);
                   if (entry) {
@@ -846,13 +964,22 @@ export default function Page() {
         </main>
 
         {/* Habit Wrapped Retrospective Modal */}
-        <HabitWrappedModal
+        <WrappedView
           isOpen={wrappedOpen}
           onClose={() => setWrappedOpen(false)}
           habits={habits}
-          logsObj={logs}
+          logs={logs}
+          journals={journals}
           year={year}
           month={month}
+        />
+
+        <CelebrationOverlay
+          isOpen={celebration.isOpen}
+          title={celebration.title}
+          description={celebration.description}
+          icon={celebration.icon}
+          onClose={() => setCelebration({ ...celebration, isOpen: false })}
         />
 
         {/* Intelligent Progressive Onboarding */}

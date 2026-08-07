@@ -11,6 +11,7 @@ import {
   LeaderboardEntry,
 } from './socialTypes';
 import { formatHbId } from './identityUtils';
+import { XP_CONSTANTS, getLevelFromXp, getUniverseTitle } from './xpEngine';
 
 export const DEFAULT_PRIVACY: UserPrivacySettings = {
   profileVisibility: 'public',
@@ -29,26 +30,13 @@ export function calculateXPAndGamification(
 ) {
   const completedCount = Object.values(logs).filter(Boolean).length;
   
-  // XP Formula: 20 XP per completed habit log + 10 XP bonus per streak day
-  const totalXP = (completedCount * 20) + (currentStreak * 10) + (habitsCount * 50);
+  // XP Formula: Base completion + streak bonus
+  const totalXP = (completedCount * XP_CONSTANTS.HABIT_COMPLETION) + (currentStreak * XP_CONSTANTS.STREAK_BONUS) + (habitsCount * 50);
 
-  // Level Formula: Level = floor(sqrt(totalXP / 100)) + 1
-  const level = Math.max(1, Math.floor(Math.sqrt(totalXP / 100)) + 1);
-
-  const levelTitles: Record<number, string> = {
-    1: 'Seedling Sprout ✦ Level 1',
-    2: 'Consistent Bloom 🌱 Level 2',
-    3: 'Habit Artisan 🌿 Level 3',
-    4: 'Focus Apprentice ⚔️ Level 4',
-    5: 'Discipline Master 🛡️ Level 5',
-    6: 'Routine Alchemist ✨ Level 6',
-    7: 'Habit Sentinel 👑 Level 7',
-    8: 'Unstoppable Titan 🔥 Level 8',
-    9: 'Mindful Legend 🌟 Level 9',
-    10: 'Universal Bloom Master 💎 Level 10',
-  };
-
-  const levelTitle = levelTitles[Math.min(level, 10)] || `Universal Titan 💎 Level ${level}`;
+  // Unified Level & Title logic
+  const level = getLevelFromXp(totalXP);
+  const titleData = getUniverseTitle(level);
+  const levelTitle = `${titleData.title} ${titleData.icon} Level ${level}`;
 
   // Evaluate unlockable badges
   const badges: UserBadge[] = [];

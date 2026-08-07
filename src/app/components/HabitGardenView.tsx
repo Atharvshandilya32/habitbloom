@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { fireConfetti } from '../../../lib/confetti';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { getHabitStats, getCurrentStreak, makeLogKey } from '../../../lib/habitUtils';
 import { SpringConfigs, EasingCurves } from '../../../lib/motion/motionTokens';
+import { GardenEnvironment, getEnvironmentClasses, getTimeOfDay, TimeOfDay } from './GardenEnvironment';
 
 interface HabitGardenViewProps {
   habits: Habit[];
@@ -28,10 +29,23 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
 }) => {
   const activeLogs = logs || logsObj || EMPTY_LOGS;
   const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('afternoon');
+  const [isToggling, setIsToggling] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setTimeOfDay(getTimeOfDay());
+  }, []);
+
+  const envClasses = getEnvironmentClasses(timeOfDay);
+
   const daysInMonth = new Date(year, month, 0).getDate();
   const todayDate = new Date().getDate();
 
   const handleWaterPlant = (habitId: string, isDoneToday: boolean) => {
+    if (isToggling[habitId]) return;
+    
+    setIsToggling(prev => ({ ...prev, [habitId]: true }));
+    
     if (onToggleHabit) {
       onToggleHabit(habitId, todayDate);
       if (!isDoneToday) {
@@ -43,6 +57,10 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
         });
       }
     }
+    
+    setTimeout(() => {
+      setIsToggling(prev => ({ ...prev, [habitId]: false }));
+    }, 500);
   };
 
   const gardenPlants = React.useMemo(() => {
@@ -126,12 +144,13 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
       </motion.div>
 
       {/* Main Garden Grid Plot */}
-      <div className="rounded-3xl p-6 sm:p-8 bg-slate-50 border border-slate-200/80 min-h-[400px] flex flex-col justify-between shadow-sm relative overflow-hidden">
+      <div className={`rounded-3xl p-6 sm:p-8 min-h-[400px] flex flex-col justify-between shadow-sm relative overflow-hidden transition-colors duration-1000 border ${envClasses.bg}`}>
+        <GardenEnvironment timeOfDay={timeOfDay} />
         {gardenPlants.length === 0 ? (
-          <div className="flex flex-col items-center justify-center my-auto py-16 text-center space-y-3">
+          <div className="flex flex-col items-center justify-center my-auto py-16 text-center space-y-3 relative z-10">
             <span className="text-6xl select-none">🪴</span>
-            <h3 className="text-lg font-bold text-slate-800">Your Garden is Empty</h3>
-            <p className="text-xs text-slate-600 max-w-sm font-medium">
+            <h3 className={`text-lg font-bold ${envClasses.titleText}`}>Your Garden is Empty</h3>
+            <p className={`text-xs max-w-sm font-medium ${envClasses.textMuted}`}>
               Add habits to plant seeds in your personal Habit Sanctuary and watch them flourish.
             </p>
           </div>
@@ -149,10 +168,10 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
                   transition={SpringConfigs.tactile}
                   onClick={() => setSelectedPlantId(plant.habit.id)}
                   type="button"
-                  className={`relative cursor-pointer rounded-2xl p-5 flex flex-col items-center justify-between text-center transition-all bg-white border w-full focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
+                  className={`relative cursor-pointer rounded-2xl p-5 flex flex-col items-center justify-between text-center transition-all border w-full focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${envClasses.plantBg} ${envClasses.plantBorder} ${
                     isSelected
                       ? 'border-2 border-emerald-500 shadow-md ring-4 ring-emerald-50'
-                      : 'border-slate-200 hover:border-emerald-300 shadow-sm'
+                      : 'shadow-sm'
                   }`}
                 >
                   {/* Status Indicator */}
@@ -178,10 +197,10 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
 
                   {/* Habit Title */}
                   <div className="w-full space-y-1">
-                    <h4 className="text-sm font-extrabold text-slate-900 truncate">
+                    <h4 className={`text-sm font-extrabold truncate ${envClasses.titleText}`}>
                       {plant.habit.name}
                     </h4>
-                    <div className="text-[11px] font-bold text-slate-600">
+                    <div className={`text-[11px] font-bold ${envClasses.textMuted}`}>
                       {plant.stats.pct}% Health
                     </div>
                   </div>
@@ -217,7 +236,7 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
         )}
 
         {/* Footer Ground Strip */}
-        <div className="mt-8 pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between text-xs text-slate-600 font-semibold relative z-10">
+        <div className={`mt-8 pt-4 border-t flex flex-wrap items-center justify-between text-xs font-semibold relative z-10 ${envClasses.plantBorder} ${envClasses.textMuted}`}>
           <span>🌱 Seedling (0-24%) → 🌿 Budding (25-49%) → 🌸 Blooming (50-79%) → 🌺 Full Bloom (80%+)</span>
           <span>Click any plant to highlight</span>
         </div>

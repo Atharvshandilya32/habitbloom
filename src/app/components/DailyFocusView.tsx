@@ -34,6 +34,7 @@ const DailyFocusView = React.memo(function DailyFocusView({
 }: DailyFocusViewProps) {
   const [showCelebration, setShowCelebration] = useState(false);
   const [insights, setInsights] = useState<string[]>([]);
+  const [isToggling, setIsToggling] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setInsights(generateSmartInsights(habits, logs));
@@ -66,6 +67,17 @@ const DailyFocusView = React.memo(function DailyFocusView({
   const viewBox = `0 0 ${sqSize} ${sqSize}`;
   const dashArray = radius * Math.PI * 2;
   const dashOffset = dashArray - (dashArray * progressPercent) / 100;
+
+  const handleToggle = (habitId: string, day: number) => {
+    if (isToggling[habitId]) return;
+    
+    setIsToggling(prev => ({ ...prev, [habitId]: true }));
+    onToggleCell(habitId, day);
+    
+    setTimeout(() => {
+      setIsToggling(prev => ({ ...prev, [habitId]: false }));
+    }, 500); // 500ms debounce to prevent rapid clicking issues
+  };
 
   return (
     <MotionPageWrapper className="max-w-3xl mx-auto space-y-6">
@@ -109,7 +121,7 @@ const DailyFocusView = React.memo(function DailyFocusView({
         
         <div className="flex-1 space-y-3 text-center md:text-left z-10">
           <h2 className="text-3xl font-black tracking-tight text-slate-900">
-            {progressPercent === 100 ? "You&apos;re all done! 🎉" : "Today&apos;s Focus"}
+            {progressPercent === 100 ? "You're all done! 🎉" : "Today's Focus"}
           </h2>
           <p className="text-slate-600 font-bold text-sm">
             {progressPercent === 100 
@@ -183,8 +195,9 @@ const DailyFocusView = React.memo(function DailyFocusView({
                   isCompleted 
                     ? 'bg-slate-50 border-slate-200/80 shadow-xs' 
                     : 'bg-white border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-300'
-                }`}
-                onClick={() => onToggleCell(habit.id, day)}
+                } ${isToggling[habit.id] ? 'opacity-80 pointer-events-none cursor-wait' : ''}`}
+                onClick={() => handleToggle(habit.id, day)}
+                disabled={isToggling[habit.id]}
               >
                 <div className={`w-12 h-12 flex items-center justify-center text-2xl rounded-2xl mr-4 group-hover:scale-105 transition-transform flex-shrink-0 ${
                   isCompleted ? 'bg-slate-200/70' : 'bg-slate-100'

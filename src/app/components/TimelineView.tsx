@@ -1,51 +1,29 @@
 import React from 'react';
-import { Clock, MessageSquare } from 'lucide-react';
-import { JournalEntry, Habit } from '../../../lib/habitTypes';
-
-interface TimelineEvent {
-  id: string;
-  type: 'journal' | 'habit_completion' | 'goal_reached' | 'challenge_update';
-  title: string;
-  description?: string;
-  timestamp: Date;
-  icon: React.ReactNode;
-  colorClass: string;
-}
+import { Clock } from 'lucide-react';
+import { JournalEntry, Habit, HabitLog } from '../../../lib/habitTypes';
+import { generateChronicleEvents } from '../../../lib/memoryEngine';
 
 interface TimelineViewProps {
   journals: JournalEntry[];
   habits: Habit[];
+  logs: HabitLog;
   onEditJournal?: (journalId: string) => void;
 }
 
-export default function TimelineView({ journals, habits, onEditJournal }: TimelineViewProps) {
+export default function TimelineView({ journals, habits, logs, onEditJournal }: TimelineViewProps) {
   
-  // Construct timeline events from journals
-  const events: TimelineEvent[] = journals.map(j => {
-    const habit = habits.find(h => h.id === j.habitId);
-    return {
-      id: j.id,
-      type: 'journal',
-      title: habit ? `Journaled about ${habit.name}` : 'Daily Journal Entry',
-      description: j.notes || (j.mood ? `Felt ${j.mood}` : undefined),
-      timestamp: new Date(j.date), // In a real app we'd use exact timestamps
-      icon: <MessageSquare size={16} />,
-      colorClass: 'bg-blue-500 text-white',
-    };
-  });
-
-  // Sort descending
-  events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  // Construct timeline events from journals, milestones, and memories
+  const events = generateChronicleEvents(habits, logs, journals);
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-300">
       <div>
         <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-          <Clock size={24} className="text-blue-500" />
-          Activity Timeline
+          <Clock size={24} className="text-emerald-500" />
+          Bloom Chronicle
         </h2>
         <p className="text-slate-500 text-sm font-medium mt-1">
-          A chronological history of your journals, completed habits, and milestones.
+          The story of your growth, beautifully preserved over time.
         </p>
       </div>
 
@@ -61,7 +39,7 @@ export default function TimelineView({ journals, habits, onEditJournal }: Timeli
             {events.map((event) => (
               <div key={event.id} className="relative pl-8">
                 {/* Timeline Dot */}
-                <div className={`absolute -left-[17px] top-1 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center shadow-sm ${event.colorClass}`}>
+                <div className={`absolute -left-[17px] top-1 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center shadow-sm text-sm ${event.colorClass}`}>
                   {event.icon}
                 </div>
                 

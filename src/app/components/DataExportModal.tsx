@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { X, Download, FileSpreadsheet, FileJson, Printer, CheckCircle2 } from 'lucide-react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
-import { calculatePersonalRecords, calculateWeeklyReview } from '../../../lib/analyticsUtils';
+import { calculatePersonalRecords, calculateWeeklyReview, calculateActiveDaysCount } from '../../../lib/analyticsUtils';
 import { toast } from 'sonner';
 
 interface DataExportModalProps {
@@ -101,6 +101,8 @@ export default function DataExportModal({ isOpen, onClose, habits, logs }: DataE
         return;
       }
 
+      const activeDays = calculateActiveDaysCount(logs);
+
       const html = `
         <!DOCTYPE html>
         <html>
@@ -129,10 +131,10 @@ export default function DataExportModal({ isOpen, onClose, habits, logs }: DataE
 
             <h2>Personal Records & Performance Overview</h2>
             <div class="grid">
-              <div class="card"><div class="card-title">Consistency Score</div><div class="card-val">${records.consistencyScore}%</div></div>
-              <div class="card"><div class="card-title">Longest Streak</div><div class="card-val">${records.longestStreak} days</div></div>
-              <div class="card"><div class="card-title">Total Active Days</div><div class="card-val">${records.totalActiveDays} days</div></div>
-              <div class="card"><div class="card-title">Habits Completed</div><div class="card-val">${records.totalHabitsCompleted}</div></div>
+              <div class="card"><div class="card-title">Best Habit Consistency</div><div class="card-val">${records.bestHabitConsistency}%</div></div>
+              <div class="card"><div class="card-title">Longest Streak</div><div class="card-val">${records.longestSuccessfulPeriod} days</div></div>
+              <div class="card"><div class="card-title">Total Active Days</div><div class="card-val">${activeDays} days</div></div>
+              <div class="card"><div class="card-title">Most Habits Completed</div><div class="card-val">${records.mostHabitsCompleted}</div></div>
             </div>
 
             <h2>Weekly Performance Summary</h2>

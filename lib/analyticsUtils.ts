@@ -1,4 +1,4 @@
-import { Habit, HabitLog, WeeklyReviewSummary, HeatmapCell, PersonalRecords, HABIT_CATEGORIES } from './habitTypes';
+import { Habit, HabitLog, WeeklyReviewSummary, HeatmapCell, HABIT_CATEGORIES } from './habitTypes';
 import { makeLogKey } from './habitUtils';
 import { subDays, format, startOfWeek, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth, getDaysInMonth } from 'date-fns';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Plus, Trash2, Check, Pencil, X, Sparkles, Flame, Search, StickyNote, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { Habit, HabitLog, HABIT_CATEGORIES } from '../../../lib/habitTypes';
@@ -56,7 +56,7 @@ export default function HabitGrid({
 
   const editNameRef = useRef<HTMLInputElement>(null);
 
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const todayDay =
     today.getFullYear() === year && today.getMonth() + 1 === month
       ? today.getDate()

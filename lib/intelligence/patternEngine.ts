@@ -1,7 +1,7 @@
 import { Habit, HabitLog } from '../habitTypes';
 import { InsightObj } from './intelligenceTypes';
 import { makeLogKey } from '../habitUtils';
-import { getDaysInMonth } from 'date-fns';
+
 
 /**
  * Detects patterns for a specific habit.

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, Plus, ChevronRight, Calendar, Flag, Trophy, CheckCircle2 } from 'lucide-react';
+import { Target, Plus, Calendar, Trophy, CheckCircle2 } from 'lucide-react';
 import { Goal as GoalType, Habit, HabitLog } from '../../../lib/habitTypes';
 import { Button } from './ui/Button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from './ui/Card';
@@ -14,7 +14,7 @@ interface GoalsViewProps {
   onUpdateGoal: (goalId: string, updates: Partial<GoalType>) => void;
 }
 
-export default function GoalsView({ goals, habits, logs, onAddGoal, onUpdateGoal }: GoalsViewProps) {
+export default function GoalsView({ goals, habits, logs, onAddGoal }: GoalsViewProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newTarget, setNewTarget] = useState(100);

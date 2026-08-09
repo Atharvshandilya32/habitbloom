@@ -34,7 +34,7 @@ export const WeeklyReflectionView: React.FC<WeeklyReflectionViewProps> = ({
   year = new Date().getFullYear(),
   month = new Date().getMonth() + 1,
 }) => {
-  const activeLogs = logs || logsObj || {};
+  const activeLogs = React.useMemo(() => logs || logsObj || {}, [logs, logsObj]);
   const daysInMonth = new Date(year, month, 0).getDate();
   const weeklyStats = getWeeklyStats(habits, activeLogs, year, month, daysInMonth);
 
@@ -57,10 +57,10 @@ export const WeeklyReflectionView: React.FC<WeeklyReflectionViewProps> = ({
   const improvementDelta = currentWeek.pct - prevWeek.pct;
 
   // Generate Intelligence Context
-  const targetDateForEngine = new Date(year, month - 1, todayDate);
+  // Generate Intelligence Context
+  const targetDateForEngine = React.useMemo(() => new Date(year, month - 1, todayDate), [year, month, todayDate]);
   const engineInsights = React.useMemo(() => IntelligenceEngine.generateInsights(habits, activeLogs, targetDateForEngine), [habits, activeLogs, targetDateForEngine]);
   const engineRecs = React.useMemo(() => IntelligenceEngine.generateRecommendations(habits, activeLogs, targetDateForEngine), [habits, activeLogs, targetDateForEngine]);
-  const engineTrends = React.useMemo(() => IntelligenceEngine.generateTrends(habits, activeLogs, targetDateForEngine), [habits, activeLogs, targetDateForEngine]);
 
   // Reflection Form State
   const [winNote, setWinNote] = useState<string>('');

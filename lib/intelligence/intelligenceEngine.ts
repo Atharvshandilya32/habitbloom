@@ -3,7 +3,7 @@ import { InsightObj, RecommendationObj, TrendObj, IntelligenceEngineContract } f
 import { generatePatterns } from './patternEngine';
 import { generateTrends } from './trendEngine';
 import { generateRecommendations } from './recommendationEngine';
-import { calculateHabitHealth, getCategoryCompletionStats } from '../analyticsUtils';
+import { calculateHabitHealth } from '../analyticsUtils';
 
 /**
  * Deterministic Engine implementation of the IntelligenceEngineContract.

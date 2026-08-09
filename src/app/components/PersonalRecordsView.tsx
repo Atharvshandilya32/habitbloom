@@ -3,7 +3,7 @@
 import React from 'react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { calculatePersonalRecords } from '../../../lib/analyticsUtils';
-import { Trophy, Flame, Calendar, Award, CheckCircle2, Zap, Star, ShieldCheck, Sparkles } from 'lucide-react';
+import { Trophy, Flame, Award, CheckCircle2, Star, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface PersonalRecordsViewProps {
   habits: Habit[];

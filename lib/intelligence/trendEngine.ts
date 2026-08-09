@@ -1,7 +1,6 @@
 import { Habit, HabitLog } from '../habitTypes';
 import { TrendObj, TrendStatus } from './intelligenceTypes';
-import { calculateHabitConsistency } from '../analyticsUtils';
-import { subDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { subDays } from 'date-fns';
 import { makeLogKey } from '../habitUtils';
 
 /**

@@ -493,7 +493,7 @@ export default function Page() {
       syncToFirebase(`habitLogsArray/${habitId}`, updatedLogsArray[habitId]);
       return updatedLogsArray;
     });
-  }, [year, month, currentUser, logs, userProfileData, syncToFirebase]);
+  }, [year, month, currentUser, logs, syncToFirebase]);
 
   // ── Reset current month ────────────────────────────────────────────────
   const handleResetMonth = useCallback(() => {

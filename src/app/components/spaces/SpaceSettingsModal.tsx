@@ -8,6 +8,7 @@ import { createPermissions } from '../../../../lib/spaceTemplates';
 import { database } from '../../../../lib/firebase';
 import { ref, set, get, child, onValue, off } from 'firebase/database';
 import { generateSpaceInvite } from '../../../../lib/spaceUtils';
+import { toast } from 'sonner';
 
 interface SpaceSettingsModalProps {
   isOpen: boolean;
@@ -347,7 +348,7 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
                         <button onClick={() => {
                           if (navigator.clipboard && navigator.clipboard.writeText) {
                             navigator.clipboard.writeText(inviteUrl);
-                            alert('Copied to clipboard!');
+                            toast.success('Space link copied.');
                           } else {
                             const input = document.getElementById('invite-url-input') as HTMLInputElement;
                             if (input) {
@@ -355,9 +356,9 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
                               input.setSelectionRange(0, 99999); // For mobile devices
                               try {
                                 document.execCommand('copy');
-                                alert('Copied to clipboard!');
+                                toast.success('Space link copied.');
                               } catch {
-                                alert('Unable to copy automatically. Please select and copy manually.');
+                                toast.error("Couldn't copy the link. Please try again.");
                               }
                             }
                           }

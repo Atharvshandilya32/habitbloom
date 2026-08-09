@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { fireConfetti } from '../../../lib/confetti';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { getHabitStats, getCurrentStreak, makeLogKey } from '../../../lib/habitUtils';
+import { calculateTotalXp, getLevelFromXp } from '../../../lib/xpEngine';
 import { SpringConfigs, EasingCurves } from '../../../lib/motion/motionTokens';
 import { GardenEnvironment, getEnvironmentClasses, getTimeOfDay, TimeOfDay } from './GardenEnvironment';
 
@@ -40,6 +41,16 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
 
   const daysInMonth = new Date(year, month, 0).getDate();
   const todayDate = new Date().getDate();
+  const level = React.useMemo(() => getLevelFromXp(calculateTotalXp(habits, activeLogs)), [habits, activeLogs]);
+
+  const getGardenStage = (lvl: number) => {
+    if (lvl >= 20) return { name: 'Thriving', icon: '🌳', color: 'text-amber-700 bg-amber-100 border-amber-200' };
+    if (lvl >= 10) return { name: 'Flourishing', icon: '🌸', color: 'text-pink-700 bg-pink-100 border-pink-200' };
+    if (lvl >= 5) return { name: 'Growing', icon: '🌿', color: 'text-teal-700 bg-teal-100 border-teal-200' };
+    if (lvl >= 2) return { name: 'Sprout', icon: '🌱', color: 'text-emerald-700 bg-emerald-100 border-emerald-200' };
+    return { name: 'Seed', icon: '🌰', color: 'text-stone-700 bg-stone-100 border-stone-200' };
+  };
+  const stage = getGardenStage(level);
 
   const handleWaterPlant = (habitId: string, isDoneToday: boolean) => {
     if (isToggling[habitId]) return;
@@ -129,7 +140,14 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
           </div>
 
           {/* Quick Metrics */}
-          <div className="flex items-center gap-4 bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-emerald-100 shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center gap-4 bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-emerald-100 shadow-sm hover:shadow-md transition-all flex-wrap">
+            <div className="text-center px-3">
+              <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold border ${stage.color}`}>
+                {stage.icon} {stage.name} Stage
+              </span>
+              <span className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mt-1">Ecosystem Status</span>
+            </div>
+            <div className="h-8 w-px bg-slate-200" />
             <div className="text-center px-3">
               <span className="block text-2xl font-black text-emerald-600">{gardenHealthScore}%</span>
               <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Garden Health</span>
@@ -145,7 +163,7 @@ export const HabitGardenView: React.FC<HabitGardenViewProps> = React.memo(({
 
       {/* Main Garden Grid Plot */}
       <div className={`rounded-3xl p-6 sm:p-8 min-h-[400px] flex flex-col justify-between shadow-sm relative overflow-hidden transition-colors duration-1000 border ${envClasses.bg}`}>
-        <GardenEnvironment timeOfDay={timeOfDay} />
+        <GardenEnvironment timeOfDay={timeOfDay} level={level} />
         {gardenPlants.length === 0 ? (
           <div className="flex flex-col items-center justify-center my-auto py-16 text-center space-y-3 relative z-10">
             <span className="text-6xl select-none">🪴</span>

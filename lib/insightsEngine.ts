@@ -20,6 +20,26 @@ export function generateInsights(habits: Habit[], logs: HabitLog): Insight[] {
     const streak = getCurrentStreak(habit, logs, year, month, daysInMonth);
     const stats = getHabitStats(habit, logs, daysInMonth, year, month);
     
+    // Calculate Habit Age in Days
+    let firstLogDate: Date | null = null;
+    Object.keys(logs).forEach(key => {
+      if (key.startsWith(`${habit.id}_`) && logs[key]) {
+        const parts = key.split('_');
+        if (parts.length >= 4) {
+          const date = new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]));
+          if (!firstLogDate || date < firstLogDate) {
+            firstLogDate = date;
+          }
+        }
+      }
+    });
+
+    const ageInDays = firstLogDate 
+      ? Math.floor((now.getTime() - firstLogDate.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
+    const hasEnoughHistory = ageInDays >= 14;
+
     // 1. Streak Insight
     if (streak >= 5) {
       insights.push({
@@ -69,7 +89,7 @@ export function generateInsights(habits: Habit[], logs: HabitLog): Insight[] {
     const weekendRate = weekendTotal > 0 ? weekendDone / weekendTotal : 0;
     
     // If weekday rate is high but weekend rate is low (e.g. >30% difference)
-    if (weekdayRate > 0.6 && weekendRate < 0.3 && weekendTotal >= 2) {
+    if (hasEnoughHistory && weekdayRate > 0.6 && weekendRate < 0.3 && weekendTotal >= 4) {
       insights.push({
         id: `weekend-drop-${habit.id}`,
         title: `Weekend slump for ${habit.name}?`,
@@ -80,7 +100,7 @@ export function generateInsights(habits: Habit[], logs: HabitLog): Insight[] {
     }
 
     // 4. Low Engagement Warning
-    if (stats.pct < 25 && stats.done > 0 && stats.goal > 7) {
+    if (hasEnoughHistory && stats.pct < 25 && stats.done > 0 && stats.goal > 7) {
       insights.push({
         id: `low-pct-${habit.id}`,
         title: `Struggling with ${habit.name}?`,

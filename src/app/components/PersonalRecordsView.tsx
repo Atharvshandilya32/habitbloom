@@ -16,8 +16,8 @@ export default function PersonalRecordsView({ habits, logs }: PersonalRecordsVie
   const cards = [
     {
       id: 'longest-streak',
-      title: 'Longest Streak Ever',
-      value: `${records.longestStreak} Days`,
+      title: 'Longest Successful Period',
+      value: `${records.longestSuccessfulPeriod} Days`,
       subtitle: 'Consecutive active days across all habits',
       icon: <Flame className="w-6 h-6 text-orange-500" />,
       bgGradient: 'from-orange-500/10 via-amber-500/5 to-transparent',
@@ -25,69 +25,49 @@ export default function PersonalRecordsView({ habits, logs }: PersonalRecordsVie
       badge: 'All-Time Record',
     },
     {
-      id: 'most-single-day',
-      title: 'Peak Single Day',
-      value: `${records.mostCompletedInDay} Habits`,
-      subtitle: 'Most habit checkoffs completed in 24 hours',
-      icon: <Zap className="w-6 h-6 text-emerald-500" />,
-      bgGradient: 'from-emerald-500/10 via-teal-500/5 to-transparent',
-      borderColor: 'border-emerald-200/80',
-      badge: 'Daily High',
-    },
-    {
-      id: 'highest-week',
-      title: 'Highest Completion Week',
-      value: `${records.highestCompletionWeek}%`,
-      subtitle: 'Best 7-day average consistency rate',
+      id: 'highest-week-xp',
+      title: 'Highest Weekly XP',
+      value: `${records.highestWeeklyXp} XP`,
+      subtitle: 'Maximum XP earned in a 7-day period',
       icon: <Award className="w-6 h-6 text-blue-500" />,
       bgGradient: 'from-blue-500/10 via-indigo-500/5 to-transparent',
       borderColor: 'border-blue-200/80',
       badge: 'Weekly Milestone',
     },
     {
-      id: 'highest-month',
-      title: 'Highest Completion Month',
-      value: `${records.highestCompletionMonth}%`,
-      subtitle: 'Best 30-day average consistency rate',
+      id: 'highest-month-xp',
+      title: 'Highest Monthly XP',
+      value: `${records.highestMonthlyXp} XP`,
+      subtitle: 'Maximum XP earned in a 30-day period',
       icon: <Trophy className="w-6 h-6 text-purple-500" />,
       bgGradient: 'from-purple-500/10 via-pink-500/5 to-transparent',
       borderColor: 'border-purple-200/80',
       badge: 'Monthly Best',
     },
     {
-      id: 'perfect-weeks',
-      title: 'Perfect Weeks',
-      value: `${records.perfectWeeks} Weeks`,
-      subtitle: 'Weeks with 100% habit completion score',
+      id: 'best-consistency',
+      title: 'Best Habit Consistency',
+      value: `${records.bestHabitConsistency}%`,
+      subtitle: 'Highest historical consistency score for a single habit',
       icon: <Star className="w-6 h-6 text-amber-500" />,
       bgGradient: 'from-amber-500/10 via-yellow-500/5 to-transparent',
       borderColor: 'border-amber-200/80',
-      badge: '100% Accuracy',
-    },
-    {
-      id: 'perfect-months',
-      title: 'Perfect Months',
-      value: `${records.perfectMonths} Months`,
-      subtitle: 'Full calendar months with zero missed days',
-      icon: <ShieldCheck className="w-6 h-6 text-teal-500" />,
-      bgGradient: 'from-teal-500/10 via-emerald-500/5 to-transparent',
-      borderColor: 'border-teal-200/80',
       badge: 'Mastery',
     },
     {
-      id: 'total-active-days',
-      title: 'Total Active Days',
-      value: `${records.totalActiveDays} Days`,
-      subtitle: 'Unique days where at least 1 habit was logged',
-      icon: <Calendar className="w-6 h-6 text-indigo-500" />,
-      bgGradient: 'from-indigo-500/10 via-blue-500/5 to-transparent',
-      borderColor: 'border-indigo-200/80',
-      badge: 'Consistency',
+      id: 'highest-bloom',
+      title: 'Highest Bloom Score',
+      value: `${records.highestBloomScore}`,
+      subtitle: 'Peak monthly growth tier score',
+      icon: <ShieldCheck className="w-6 h-6 text-teal-500" />,
+      bgGradient: 'from-teal-500/10 via-emerald-500/5 to-transparent',
+      borderColor: 'border-teal-200/80',
+      badge: 'Garden Growth',
     },
     {
       id: 'total-completed',
       title: 'Total Habits Completed',
-      value: `${records.totalHabitsCompleted}`,
+      value: `${records.mostHabitsCompleted}`,
       subtitle: 'Lifetime completed habit checkoffs',
       icon: <CheckCircle2 className="w-6 h-6 text-emerald-600" />,
       bgGradient: 'from-emerald-600/10 via-teal-600/5 to-transparent',
@@ -113,8 +93,8 @@ export default function PersonalRecordsView({ habits, logs }: PersonalRecordsVie
 
         <div className="flex items-center gap-3 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-md">
           <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Consistency Index</div>
-            <div className="text-2xl font-black text-emerald-400">{records.consistencyScore}%</div>
+            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Total Habits</div>
+            <div className="text-2xl font-black text-emerald-400">{records.mostHabitsCompleted}</div>
           </div>
         </div>
       </div>

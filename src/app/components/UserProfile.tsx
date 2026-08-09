@@ -7,7 +7,7 @@ import { Pencil, Check, X, User as UserIcon, Mail, Calendar, Target, Flame, Tren
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { getLast6MonthsStats, getCurrentStreak } from '../../../lib/habitUtils';
 import { generateUserIdentity } from '../../../lib/identityEngine';
-import { calculateTotalXp, getLevelFromXp, getUniverseTitle } from '../../../lib/xpEngine';
+import { calculateTotalXp, getLevelFromXp, getUniverseTitle, getXpForLevel } from '../../../lib/xpEngine';
 import UniversePortalModal from './UniversePortalModal';
 
 import { toast } from 'sonner';
@@ -36,6 +36,12 @@ export default function UserProfile({ user, habits, logs, currentYear, currentMo
   const totalXp = calculateTotalXp(habits, logs);
   const level = getLevelFromXp(totalXp);
   const universe = getUniverseTitle(level);
+  const currentLevelBaseXp = getXpForLevel(level);
+  const nextLevelBaseXp = getXpForLevel(level + 1);
+  const xpIntoLevel = totalXp - currentLevelBaseXp;
+  const xpRequiredForLevel = nextLevelBaseXp - currentLevelBaseXp;
+  const levelProgressPct = Math.round((xpIntoLevel / xpRequiredForLevel) * 100);
+  const xpToNextLevel = nextLevelBaseXp - totalXp;
 
   // Best streak across all habits this month
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
@@ -185,16 +191,31 @@ export default function UserProfile({ user, habits, logs, currentYear, currentMo
           {/* Universe Progression Badge */}
           <button 
             onClick={() => setIsPortalOpen(true)}
-            className="w-full text-left mb-3 px-3 py-2 bg-slate-900 rounded-xl flex items-center gap-3 hover:bg-slate-800 hover:scale-[1.02] transition-all cursor-pointer group"
+            className="w-full text-left mb-3 px-4 py-4 bg-slate-900 rounded-xl flex flex-col gap-3 hover:bg-slate-800 hover:scale-[1.02] transition-all cursor-pointer group shadow-sm"
           >
-            <div className="text-2xl group-hover:scale-110 transition-transform">{universe.icon}</div>
-            <div className="flex-1">
-              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-between">
-                <span>Level {level}</span>
-                <span className="text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">View Journey &rarr;</span>
-              </h4>
-              <h3 className="text-sm font-bold text-white">{universe.title}</h3>
-              <p className="text-xs text-slate-300">{universe.subtitle}</p>
+            <div className="flex items-center gap-3">
+              <div className="text-3xl group-hover:scale-110 transition-transform">{universe.icon}</div>
+              <div className="flex-1">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-between">
+                  <span>Level {level}</span>
+                  <span className="text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">View Journey &rarr;</span>
+                </h4>
+                <h3 className="text-sm font-bold text-white">{universe.title}</h3>
+                <p className="text-[10px] text-slate-400">{universe.subtitle}</p>
+              </div>
+            </div>
+            
+            <div className="w-full mt-1">
+              <div className="flex justify-between items-end mb-1.5">
+                <span className="text-xs font-bold text-white">{totalXp} / {nextLevelBaseXp} XP</span>
+                <span className="text-[10px] font-semibold text-emerald-400">{xpToNextLevel} XP to Level {level + 1}</span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out" 
+                  style={{ width: `${levelProgressPct}%` }}
+                />
+              </div>
             </div>
           </button>
 

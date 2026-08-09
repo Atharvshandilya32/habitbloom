@@ -122,7 +122,7 @@ export default function SpaceDashboard({
       <div className="flex items-center justify-between">
         <button 
           onClick={onBack}
-          className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm"
+          className="flex items-center gap-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors bg-white dark:bg-slate-900/50 dark:border-slate-800 px-4 py-2 rounded-xl border border-slate-200 shadow-sm"
         >
           <ArrowLeft size={16} />
           Back to Spaces Hub
@@ -136,7 +136,7 @@ export default function SpaceDashboard({
                   setSettingsInitialTab('general');
                   setSettingsOpen(true);
                 }}
-                className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm transition-colors"
+                className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900/50 dark:border-slate-800 px-4 py-2 rounded-xl border border-slate-200 shadow-sm transition-colors"
               >
                 <Settings size={16} />
                 Settings
@@ -176,15 +176,15 @@ export default function SpaceDashboard({
         
         <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
           <div className="flex items-end gap-5 flex-1 min-w-0">
-            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-4xl shadow-lg shrink-0">
+            <div className="w-20 h-20 bg-white dark:bg-slate-900/50 dark:border-slate-800 rounded-2xl flex items-center justify-center text-4xl shadow-lg shrink-0">
               {space.type === 'gym' ? '🏋️' : space.type === 'school' ? '🎓' : space.type === 'company' ? '🏢' : '🚀'}
             </div>
             <div className="pb-1 text-white flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-1">
-                <span className="px-2.5 py-0.5 rounded-lg bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-lg bg-white dark:bg-slate-900/50 dark:border-slate-800/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider">
                   {space.type}
                 </span>
-                <span className="px-2.5 py-0.5 rounded-lg bg-white/30 backdrop-blur-md text-xs font-bold capitalize text-white truncate max-w-[120px]">
+                <span className="px-2.5 py-0.5 rounded-lg bg-white dark:bg-slate-900/50 dark:border-slate-800/30 backdrop-blur-md text-xs font-bold capitalize text-white truncate max-w-[120px]">
                   Role: {role?.name || 'Member'}
                 </span>
               </div>
@@ -197,24 +197,23 @@ export default function SpaceDashboard({
       <div className="px-2">
         <p className="text-slate-600 font-medium">{space.description}</p>
         {branding.welcomeMessage && (
-          <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700">
+          <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 rounded-xl text-sm text-slate-700">
             <strong>Welcome:</strong> {branding.welcomeMessage}
           </div>
         )}
       </div>
 
-      {/* Internal Space Navigation */}
       <div 
         role="tablist" 
         aria-label="Space Navigation" 
-        className="flex gap-2 border-b border-slate-200 pb-px overflow-x-auto no-scrollbar"
+        className="flex gap-2 border-b border-slate-200 pb-px overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         <button 
           role="tab"
           aria-selected={activeTab === 'home'}
           aria-controls="tabpanel-home"
           onClick={() => setActiveTab('home')}
-          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'home' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'home' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
         >
           <Megaphone size={16} aria-hidden="true" /> {labels.announcementsTitle}
         </button>
@@ -223,7 +222,7 @@ export default function SpaceDashboard({
           aria-selected={activeTab === 'challenges'}
           aria-controls="tabpanel-challenges"
           onClick={() => setActiveTab('challenges')}
-          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'challenges' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'challenges' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
         >
           <Trophy size={16} aria-hidden="true" /> {labels.challengesTitle}
         </button>
@@ -232,7 +231,7 @@ export default function SpaceDashboard({
           aria-selected={activeTab === 'templates'}
           aria-controls="tabpanel-templates"
           onClick={() => setActiveTab('templates')}
-          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'templates' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'templates' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
         >
           <Target size={16} aria-hidden="true" /> {labels.templatesTitle}
         </button>
@@ -241,7 +240,7 @@ export default function SpaceDashboard({
           aria-selected={activeTab === 'members'}
           aria-controls="tabpanel-members"
           onClick={() => setActiveTab('members')}
-          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'members' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'members' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
         >
           <Users size={16} aria-hidden="true" /> {labels.membersTitle}
         </button>
@@ -251,7 +250,7 @@ export default function SpaceDashboard({
             aria-selected={activeTab === 'coach'}
             aria-controls="tabpanel-coach"
             onClick={() => setActiveTab('coach')}
-            className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'coach' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'coach' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
           >
             <BrainCircuit size={16} aria-hidden="true" /> {labels.coachDashboardTitle}
           </button>
@@ -262,7 +261,7 @@ export default function SpaceDashboard({
             aria-selected={activeTab === 'analytics'}
             aria-controls="tabpanel-analytics"
             onClick={() => setActiveTab('analytics')}
-            className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'analytics' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            className={`flex items-center gap-2 px-5 py-3 border-b-2 font-bold text-sm whitespace-nowrap transition-colors ${activeTab === 'analytics' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
           >
             <BarChart3 size={16} aria-hidden="true" /> Analytics
           </button>
@@ -282,8 +281,8 @@ export default function SpaceDashboard({
               />
             </div>
             <div className="space-y-4">
-              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border border-emerald-50 shadow-sm transition-all hover:shadow-md">
-                <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+              <div className="bg-white dark:bg-slate-900/50 dark:border-slate-800/80 backdrop-blur-sm p-6 rounded-3xl border border-emerald-50 shadow-sm transition-all hover:shadow-md">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-2">
                   <Target size={16} className="text-emerald-500"/> Active Templates
                 </h3>
                 {templates.length > 0 ? (
@@ -295,8 +294,8 @@ export default function SpaceDashboard({
                   {templates.length > 0 ? 'View All' : 'Create First Template'}
                 </button>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border border-emerald-50 shadow-sm transition-all hover:shadow-md">
-                <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+              <div className="bg-white dark:bg-slate-900/50 dark:border-slate-800/80 backdrop-blur-sm p-6 rounded-3xl border border-emerald-50 shadow-sm transition-all hover:shadow-md">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-2">
                   <Trophy size={16} className="text-emerald-500"/> Active Challenges
                 </h3>
                 {challenges.length > 0 ? (
@@ -349,7 +348,7 @@ export default function SpaceDashboard({
         {activeTab === 'coach' && (
           <ErrorBoundary fallbackMessage="Failed to load coach dashboard.">
             <Suspense fallback={<CardSkeleton />}>
-              <CoachDashboard space={space} role={role} />
+              <CoachDashboard role={role} />
             </Suspense>
           </ErrorBoundary>
         )}

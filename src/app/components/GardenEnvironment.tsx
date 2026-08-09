@@ -12,10 +12,11 @@ export const getTimeOfDay = (): TimeOfDay => {
   return 'night';
 };
 
-const Fireflies = () => {
+const Fireflies = ({ level }: { level: number }) => {
+  const count = Math.min(30, 8 + Math.floor(level / 3));
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(12)].map((_, i) => (
+      {[...Array(count)].map((_, i) => (
         <motion.div
           key={i}
           className="absolute w-1 h-1 bg-yellow-100 rounded-full shadow-[0_0_6px_2px_rgba(253,224,71,0.4)]"
@@ -41,10 +42,11 @@ const Fireflies = () => {
   );
 };
 
-const Stars = () => {
+const Stars = ({ level }: { level: number }) => {
+  const count = Math.min(60, 15 + Math.floor(level / 2));
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(25)].map((_, i) => (
+      {[...Array(count)].map((_, i) => (
         <motion.div
           key={i}
           className="absolute bg-indigo-100 rounded-full"
@@ -69,10 +71,11 @@ const Stars = () => {
   );
 };
 
-const Birds = () => {
-   return (
+const Birds = ({ level }: { level: number }) => {
+  const count = Math.min(8, 2 + Math.floor(level / 8));
+  return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(3)].map((_, i) => (
+      {[...Array(count)].map((_, i) => (
         <motion.div
           key={i}
           className="absolute text-slate-700/20"
@@ -94,10 +97,11 @@ const Birds = () => {
   );
 };
 
-const FallingLeaves = () => {
+const FallingLeaves = ({ level }: { level: number }) => {
+  const count = Math.min(15, 4 + Math.floor(level / 5));
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(6)].map((_, i) => (
+      {[...Array(count)].map((_, i) => (
         <motion.div
           key={`leaf-${i}`}
           className="absolute w-2 h-2 md:w-3 md:h-3 rounded-full opacity-60 bg-amber-500/30"
@@ -129,10 +133,11 @@ const AmbientRays = () => {
   );
 };
 
-const Butterflies = () => {
+const Butterflies = ({ level }: { level: number }) => {
+  const count = Math.min(8, 1 + Math.floor(level / 10));
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(2)].map((_, i) => (
+      {[...Array(count)].map((_, i) => (
         <motion.div
           key={`butterfly-${i}`}
           className="absolute text-rose-300"
@@ -158,9 +163,10 @@ const Butterflies = () => {
 
 interface GardenEnvironmentProps {
   timeOfDay: TimeOfDay;
+  level?: number;
 }
 
-export const GardenEnvironment: React.FC<GardenEnvironmentProps> = ({ timeOfDay }) => {
+export const GardenEnvironment: React.FC<GardenEnvironmentProps> = ({ timeOfDay, level = 1 }) => {
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -171,26 +177,26 @@ export const GardenEnvironment: React.FC<GardenEnvironmentProps> = ({ timeOfDay 
       {timeOfDay === 'morning' && (
         <>
           <AmbientRays />
-          <Birds />
-          <Butterflies />
+          <Birds level={level} />
+          <Butterflies level={level} />
         </>
       )}
       {timeOfDay === 'afternoon' && (
         <>
-          <FallingLeaves />
-          <Butterflies />
+          <FallingLeaves level={level} />
+          <Butterflies level={level} />
         </>
       )}
       {timeOfDay === 'evening' && (
         <>
           <AmbientRays />
-          <FallingLeaves />
+          <FallingLeaves level={level} />
         </>
       )}
       {timeOfDay === 'night' && (
         <>
-          <Stars />
-          <Fireflies />
+          <Stars level={level} />
+          <Fireflies level={level} />
         </>
       )}
     </motion.div>

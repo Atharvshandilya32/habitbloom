@@ -8,6 +8,7 @@ import { X, ChevronRight, ChevronLeft } from 'lucide-react';
 import { SpringConfigs } from '../../../lib/motion/motionTokens';
 import { fireConfetti } from '../../../lib/confetti';
 import { getHabitStats } from '../../../lib/habitUtils';
+import { IntelligenceEngine } from '../../../lib/intelligence/intelligenceEngine';
 
 interface WrappedViewProps {
   isOpen: boolean;
@@ -30,7 +31,14 @@ export default function WrappedView({ isOpen, onClose, habits, logs, journals, y
   const daysInMonth = new Date(year, month, 0).getDate();
 
   // Compute stats for slides
-  const totalCheckins = Object.keys(logs).filter(k => k.includes(`_${year}_${month}_`) && logs[k]).length;
+  const currentMonthCheckins = Object.keys(logs).filter(k => k.includes(`_${year}_${month}_`) && logs[k]).length;
+  
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const prevYear = month === 1 ? year - 1 : year;
+  const prevMonthCheckins = Object.keys(logs).filter(k => k.includes(`_${prevYear}_${prevMonth}_`) && logs[k]).length;
+
+  const diffCheckins = currentMonthCheckins - prevMonthCheckins;
+
   const monthJournals = journals.filter(j => {
     const d = new Date(j.date);
     return d.getFullYear() === year && d.getMonth() === month - 1;
@@ -48,16 +56,26 @@ export default function WrappedView({ isOpen, onClose, habits, logs, journals, y
 
   const identity = generateUserIdentity(habits, logs);
 
+  const { topInsight, topRec } = React.useMemo(() => {
+    const endOfMonth = new Date(year, month - 1, daysInMonth);
+    const insights = IntelligenceEngine.generateInsights(habits, logs, endOfMonth);
+    const recs = IntelligenceEngine.generateRecommendations(habits, logs, endOfMonth);
+    return {
+      topInsight: insights.length > 0 ? insights[0] : null,
+      topRec: recs.length > 0 ? recs[0] : null
+    };
+  }, [habits, logs, year, month, daysInMonth]);
+
   const slides = [
     {
       id: 'welcome',
       bg: 'bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-white',
       content: (
         <div className="flex flex-col items-center text-center space-y-6">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={SpringConfigs.milestone} className="text-7xl mb-4">✨</motion.div>
-          <motion.h4 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-indigo-300 font-bold tracking-widest uppercase">Your Month In Review</motion.h4>
-          <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-5xl sm:text-6xl font-black">{monthName} Wrapped</motion.h2>
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-xl text-indigo-100/80 max-w-sm">Let&apos;s take a look at how your garden grew this month.</motion.p>
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={SpringConfigs.milestone} className="text-7xl mb-4">📈</motion.div>
+          <motion.h4 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-indigo-300 font-bold tracking-widest uppercase">Monthly Growth Review</motion.h4>
+          <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-5xl sm:text-6xl font-black">{monthName}</motion.h2>
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-xl text-indigo-100/80 max-w-sm">Let&apos;s see how your personal growth compounded this month compared to the last.</motion.p>
         </div>
       )
     },
@@ -68,8 +86,19 @@ export default function WrappedView({ isOpen, onClose, habits, logs, journals, y
         <div className="flex flex-col items-center text-center space-y-8 w-full max-w-md">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
             <h4 className="text-emerald-200 font-bold tracking-widest uppercase text-sm">Dedication</h4>
-            <div className="text-7xl font-black tracking-tighter">{totalCheckins}</div>
-            <p className="text-lg text-emerald-100">Total Check-ins this month</p>
+            <div className="text-7xl font-black tracking-tighter">{currentMonthCheckins}</div>
+            <p className="text-lg text-emerald-100 mb-2">Total Check-ins this month</p>
+            {prevMonthCheckins > 0 && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-900/40 text-emerald-100 text-sm font-bold border border-emerald-500/30">
+                {diffCheckins > 0 ? (
+                  <><span>📈</span> {diffCheckins} more than last month!</>
+                ) : diffCheckins < 0 ? (
+                  <><span>📉</span> {Math.abs(diffCheckins)} fewer than last month.</>
+                ) : (
+                  <><span>🤝</span> Exactly the same as last month!</>
+                )}
+              </div>
+            )}
           </motion.div>
           
           {bestHabit && bestPct > 0 && (
@@ -94,6 +123,26 @@ export default function WrappedView({ isOpen, onClose, habits, logs, journals, y
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-xl text-blue-100 max-w-sm">
             {monthJournals.length > 0 ? "Thoughts and memories preserved for your future self." : "Next month, try writing down a few thoughts!"}
           </motion.p>
+        </div>
+      )
+    },
+    {
+      id: 'intelligence',
+      bg: 'bg-gradient-to-br from-indigo-800 to-slate-900 text-white',
+      content: (
+        <div className="flex flex-col items-center text-center space-y-6">
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={SpringConfigs.milestone} className="text-7xl mb-4">🧠</motion.div>
+          <motion.h4 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-indigo-300 font-bold tracking-widest uppercase">Growth Intelligence</motion.h4>
+          
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white/10 backdrop-blur-md rounded-3xl p-6 w-full max-w-sm border border-white/20">
+            <h4 className="text-indigo-200 font-bold text-sm mb-1 uppercase">Biggest Discovery</h4>
+            <p className="text-lg font-bold text-white mb-2">{topInsight ? topInsight.description : "You are steadily building history."}</p>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white/10 backdrop-blur-md rounded-3xl p-6 w-full max-w-sm border border-white/20">
+            <h4 className="text-indigo-200 font-bold text-sm mb-1 uppercase">Next Focus</h4>
+            <p className="text-lg font-bold text-white mb-2">{topRec ? topRec.title + ' - ' + topRec.description : "Keep focusing on consistency across your active habits."}</p>
+          </motion.div>
         </div>
       )
     },

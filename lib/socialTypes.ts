@@ -204,3 +204,14 @@ export interface AiChallengeRecommendation {
   habitCategory: string;
   emoji: string;
 }
+
+export interface DirectMessage {
+  id: string;
+  chatId: string; // usually sorted "uidA_uidB"
+  senderUid: string;
+  senderName: string;
+  receiverUid: string;
+  content: string;
+  createdAt: string;
+  read: boolean;
+}

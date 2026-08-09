@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Target, Plus, ChevronRight, Calendar, Flag, Trophy, CheckCircle2 } from 'lucide-react';
-import { Goal as GoalType } from '../../../lib/habitTypes';
+import { Goal as GoalType, Habit, HabitLog } from '../../../lib/habitTypes';
 import { Button } from './ui/Button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from './ui/Card';
 import { Badge } from './ui/Badge';
@@ -8,35 +8,48 @@ import { Input } from './ui/Input';
 
 interface GoalsViewProps {
   goals: GoalType[];
+  habits: Habit[];
+  logs: HabitLog;
   onAddGoal: (goal: GoalType) => void;
   onUpdateGoal: (goalId: string, updates: Partial<GoalType>) => void;
 }
 
-export default function GoalsView({ goals, onAddGoal, onUpdateGoal }: GoalsViewProps) {
+export default function GoalsView({ goals, habits, logs, onAddGoal, onUpdateGoal }: GoalsViewProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newTarget, setNewTarget] = useState(100);
-  const [newMetric, setNewMetric] = useState('days');
+  const [newMetric, setNewMetric] = useState('completions');
+  const [newLinkedHabitId, setNewLinkedHabitId] = useState('');
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
 
   const handleAdd = () => {
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || !newLinkedHabitId) return;
     onAddGoal({
       id: `goal-${Date.now()}`,
       title: newTitle,
       targetCount: newTarget,
       currentProgress: 0,
       metric: newMetric,
+      linkedHabitIds: [newLinkedHabitId],
       createdAt: new Date().toISOString(),
     });
     setNewTitle('');
     setNewTarget(100);
-    setNewMetric('days');
+    setNewMetric('completions');
+    setNewLinkedHabitId('');
     setIsAdding(false);
   };
 
+  const getGoalProgress = (goal: GoalType) => {
+    if (!goal.linkedHabitIds || goal.linkedHabitIds.length === 0) return goal.currentProgress || 0;
+    const linkedId = goal.linkedHabitIds[0];
+    const count = Object.keys(logs).filter(k => k.startsWith(linkedId + '_') && logs[k] === true).length;
+    return count;
+  };
+
   const filteredGoals = goals.filter(goal => {
-    const isCompleted = goal.currentProgress >= goal.targetCount;
+    const progress = getGoalProgress(goal);
+    const isCompleted = progress >= goal.targetCount;
     if (filter === 'active') return !isCompleted;
     if (filter === 'completed') return isCompleted;
     return true;
@@ -97,13 +110,26 @@ export default function GoalsView({ goals, onAddGoal, onUpdateGoal }: GoalsViewP
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Metric</label>
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Metric Name</label>
                 <Input 
                   type="text" 
-                  placeholder="days, books, hours" 
+                  placeholder="times, books, hours" 
                   value={newMetric}
                   onChange={e => setNewMetric(e.target.value)}
                 />
+              </div>
+              <div className="md:col-span-4">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Linked Habit</label>
+                <select 
+                  className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={newLinkedHabitId}
+                  onChange={e => setNewLinkedHabitId(e.target.value)}
+                >
+                  <option value="" disabled>Select a habit to track this goal automatically</option>
+                  {habits.map(h => (
+                    <option key={h.id} value={h.id}>{h.emoji} {h.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </CardContent>
@@ -126,15 +152,15 @@ export default function GoalsView({ goals, onAddGoal, onUpdateGoal }: GoalsViewP
         </div>
 
         {goals.length === 0 && !isAdding ? (
-          <div className="text-center py-20 bg-background rounded-3xl border border-border border-dashed flex flex-col items-center">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              <Flag size={32} className="text-muted-foreground" />
+          <div className="text-center py-20 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 rounded-3xl border border-emerald-100 border-dashed flex flex-col items-center bg-white/80 backdrop-blur-sm">
+            <div className="w-16 h-16 bg-white/60 rounded-full flex items-center justify-center mb-4 shadow-sm">
+              <span className="text-3xl">🎯</span>
             </div>
-            <h3 className="text-xl font-bold text-foreground">No goals defined yet</h3>
-            <p className="text-muted-foreground font-medium max-w-md mx-auto mt-2">
-              Set long-term macro goals like reading 100 books or working out 200 days this year to stay on track.
+            <h3 className="text-xl font-black text-slate-900">No macro goals defined yet</h3>
+            <p className="text-slate-600 font-medium max-w-md mx-auto mt-2 text-sm">
+              Set long-term goals like reading 100 books or working out 200 days this year. HabitBloom will track them automatically based on your daily habits.
             </p>
-            <Button onClick={() => setIsAdding(true)} variant="outline" className="mt-6">
+            <Button onClick={() => setIsAdding(true)} className="mt-6 font-extrabold shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white hover:scale-105 transition-all duration-300">
               Create First Goal
             </Button>
           </div>
@@ -143,8 +169,10 @@ export default function GoalsView({ goals, onAddGoal, onUpdateGoal }: GoalsViewP
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredGoals.map(goal => {
-              const pct = Math.min(100, Math.round((goal.currentProgress / goal.targetCount) * 100));
+              const currentProgress = getGoalProgress(goal);
+              const pct = Math.min(100, Math.round((currentProgress / goal.targetCount) * 100));
               const isCompleted = pct >= 100;
+              const linkedHabit = habits.find(h => goal.linkedHabitIds?.includes(h.id));
 
               return (
                 <Card key={goal.id} className={`group transition-all hover:shadow-md bg-white/80 backdrop-blur-sm border-emerald-50 hover:border-emerald-200 ${isCompleted ? 'border-emerald-300 bg-emerald-50/30' : ''}`}>
@@ -159,8 +187,13 @@ export default function GoalsView({ goals, onAddGoal, onUpdateGoal }: GoalsViewP
                         <h3 className="font-bold text-xl text-slate-800 leading-tight pr-4">{goal.title}</h3>
                         <div className="text-sm font-semibold text-slate-500 flex items-center gap-1.5">
                           <Target size={14} />
-                          {goal.currentProgress} / {goal.targetCount} {goal.metric}
+                          {currentProgress} / {goal.targetCount} {goal.metric}
                         </div>
+                        {linkedHabit && (
+                          <div className="text-xs font-semibold text-slate-400 flex items-center gap-1 mt-1">
+                            Tracking from: {linkedHabit.emoji} {linkedHabit.name}
+                          </div>
+                        )}
                       </div>
                       <div className={`text-3xl font-black ${isCompleted ? 'text-emerald-600' : 'text-slate-800'}`}>
                         {pct}%
@@ -180,18 +213,7 @@ export default function GoalsView({ goals, onAddGoal, onUpdateGoal }: GoalsViewP
                         Started {new Date(goal.createdAt).toLocaleDateString()}
                       </div>
                       
-                      {!isCompleted ? (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-8 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => {
-                            onUpdateGoal(goal.id, { currentProgress: goal.currentProgress + 1 });
-                          }}
-                        >
-                          Log Progress <ChevronRight size={14} className="ml-1" />
-                        </Button>
-                      ) : (
+                      {isCompleted && (
                         <div className="text-emerald-600 flex items-center gap-1 text-xs font-bold">
                           <CheckCircle2 size={14} /> Completed
                         </div>

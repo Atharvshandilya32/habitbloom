@@ -11,6 +11,7 @@ import {
   Bell,
   Sparkles,
   Search,
+  MessageCircle,
 } from 'lucide-react';
 import {
   UserSocialProfile,
@@ -34,6 +35,7 @@ import ShareCardModal from './ShareCardModal';
 import LeaderboardView from './LeaderboardView';
 import ChallengesHub from './ChallengesHub';
 import AiCoachWidget from './AiCoachWidget';
+import DirectMessagesView from './DirectMessagesView';
 import { Habit, HabitLog } from '../../../../lib/habitTypes';
 import { User } from 'firebase/auth';
 import { ref, onValue, set, push } from 'firebase/database';
@@ -52,7 +54,7 @@ export default function SocialHubView({
   logs,
   onShowToast,
 }: SocialHubViewProps) {
-  const [activeTab, setActiveTab] = useState<'feed' | 'friends' | 'leaderboards' | 'challenges' | 'ai'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'friends' | 'messages' | 'leaderboards' | 'challenges' | 'ai'>('feed');
 
   // Modals state
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -307,6 +309,7 @@ export default function SocialHubView({
         {[
           { id: 'feed', label: 'Timeline Feed', icon: Activity },
           { id: 'friends', label: `Friends (${friends.length})`, icon: Users },
+          { id: 'messages', label: 'Messages', icon: MessageCircle },
           { id: 'leaderboards', label: 'Leaderboards', icon: Trophy },
           { id: 'challenges', label: `Challenges (${challenges.length})`, icon: Flame },
           { id: 'ai', label: 'AI Coach', icon: Bot },
@@ -316,7 +319,7 @@ export default function SocialHubView({
           return (
             <button
               key={t.id}
-              onClick={() => setActiveTab(t.id as 'feed' | 'friends' | 'leaderboards' | 'challenges' | 'ai')}
+              onClick={() => setActiveTab(t.id as 'feed' | 'friends' | 'messages' | 'leaderboards' | 'challenges' | 'ai')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${
                 isActive
                   ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-md'
@@ -467,6 +470,13 @@ export default function SocialHubView({
               status: 'active',
             });
           }}
+        />
+      )}
+
+      {activeTab === 'messages' && (
+        <DirectMessagesView 
+          currentUserProfile={mySocialProfile}
+          friends={friends}
         />
       )}
 

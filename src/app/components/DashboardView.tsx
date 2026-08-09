@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { NavTab } from './charts/TitleBanner';
 import {
@@ -13,6 +13,7 @@ import {
 import { calculateBloomScore } from '../../../lib/bloomScoreUtils';
 import HabitGrid, { HabitGridProps } from './habitGrid';
 import HabitGardenView from './HabitGardenView';
+import BloomScoreModal from './BloomScoreModal';
 import {
   Sparkles,
   Flame,
@@ -46,6 +47,7 @@ const DashboardView = React.memo(function DashboardView({
   onUpdateHabit,
   onNavigateTab,
 }: DashboardViewProps) {
+  const [isBloomModalOpen, setIsBloomModalOpen] = useState(false);
   const today = new Date();
   const todayDay = today.getDate();
 
@@ -74,6 +76,84 @@ const DashboardView = React.memo(function DashboardView({
   }, [habits, logs, currentYear, currentMonth, todayDay]);
 
   const userName = user?.displayName ? user.displayName.split(' ')[0] : 'Blooming Star';
+
+  const logCount = useMemo(() => Object.keys(logs).filter(k => logs[k]).length, [logs]);
+  let userStage: 'NEW' | 'ESTABLISHED' | 'LONG_TERM' = 'NEW';
+  if (logCount >= 150) userStage = 'LONG_TERM';
+  else if (logCount >= 15) userStage = 'ESTABLISHED';
+
+  const GardenSnapshot = (
+    <div className="w-full animate-in slide-in-from-bottom-4 duration-700">
+      <HabitGardenView 
+        habits={habits}
+        logs={logs}
+        year={year}
+        month={month}
+        onToggleHabit={onToggleCell}
+      />
+    </div>
+  );
+
+  const MiddleSection = (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      {/* Main Tracker */}
+      <div className="lg:col-span-8 space-y-6">
+        <Card className="p-1">
+          <HabitGrid
+            habits={habits}
+            logs={logs}
+            year={year}
+            month={month}
+            daysInMonth={daysInMonth}
+            onToggleCell={onToggleCell}
+            onAddHabit={onAddHabit}
+            onDeleteHabit={onDeleteHabit}
+            onUpdateHabit={onUpdateHabit}
+          />
+        </Card>
+      </div>
+
+      {/* Right Sidebar (Motivation, Space Activity) */}
+      <div className="lg:col-span-4 space-y-6">
+        
+        {userStage !== 'NEW' && (
+          <Card className="bg-gradient-to-br from-teal-50/50 to-emerald-50/50 border-teal-100 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+                <Quote size={16} className="text-teal-600" /> Daily Motivation
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-teal-800/80 font-medium italic leading-relaxed">
+                &quot;Small disciplines repeated with consistency every day lead to great achievements gained slowly over time.&quot;
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {userStage !== 'NEW' && (
+          <Card className="bg-white/80 backdrop-blur-sm border-emerald-50">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+                <Users size={16} className="text-emerald-500" /> Space Activity
+              </CardTitle>
+              <Badge variant="secondary" className="text-[10px]">Live</Badge>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3 py-4 text-center">
+                <p className="text-sm text-slate-500">No recent activity.</p>
+                <p className="text-xs text-slate-400">Join a space to see what others are up to.</p>
+              </div>
+              <Button variant="outline" className="w-full text-xs" onClick={() => onNavigateTab('spaces')}>
+                Go to Spaces <ArrowRight size={14} className="ml-1.5" />
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8 animate-in fade-in duration-500">
@@ -128,7 +208,10 @@ const DashboardView = React.memo(function DashboardView({
         </Card>
 
         {/* Level & Bloom Score Card */}
-        <Card className="lg:col-span-4 flex flex-col justify-between relative overflow-hidden group hover:border-emerald-300 transition-colors bg-white/80 backdrop-blur-sm border-emerald-50">
+        <Card 
+          onClick={() => setIsBloomModalOpen(true)}
+          className="lg:col-span-4 flex flex-col justify-between relative overflow-hidden group hover:border-emerald-300 transition-colors bg-white/80 backdrop-blur-sm border-emerald-50 cursor-pointer"
+        >
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardDescription className="font-bold uppercase tracking-wider text-emerald-700/70">Bloom Score</CardDescription>
@@ -174,94 +257,26 @@ const DashboardView = React.memo(function DashboardView({
         </Card>
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────
-          2. MIDDLE SECTION (Habit Grid + Context Sidebar)
-      ───────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Main Tracker */}
-        <div className="lg:col-span-8 space-y-6">
-          <Card className="p-1">
-            <HabitGrid
-              habits={habits}
-              logs={logs}
-              year={year}
-              month={month}
-              daysInMonth={daysInMonth}
-              onToggleCell={onToggleCell}
-              onAddHabit={onAddHabit}
-              onDeleteHabit={onDeleteHabit}
-              onUpdateHabit={onUpdateHabit}
-            />
-          </Card>
-        </div>
-
-        {/* Right Sidebar (Motivation, Space Activity) */}
-        <div className="lg:col-span-4 space-y-6">
-          
-          <Card className="bg-gradient-to-br from-teal-50/50 to-emerald-50/50 border-teal-100 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
-                <Quote size={16} className="text-teal-600" /> Daily Motivation
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-teal-800/80 font-medium italic leading-relaxed">
-                &quot;Small disciplines repeated with consistency every day lead to great achievements gained slowly over time.&quot;
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 backdrop-blur-sm border-emerald-50">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
-                <Users size={16} className="text-emerald-500" /> Space Activity
-              </CardTitle>
-              <Badge variant="secondary" className="text-[10px]">Live</Badge>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Mock Space Activity */}
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                    AM
-                  </div>
-                  <div>
-                    <p className="text-sm text-foreground"><strong>Alex</strong> completed Morning Run</p>
-                    <p className="text-[11px] text-muted-foreground">2 mins ago in &quot;Early Risers&quot;</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xs">
-                    SJ
-                  </div>
-                  <div>
-                    <p className="text-sm text-foreground"><strong>Sarah</strong> reached a 7-day streak!</p>
-                    <p className="text-[11px] text-muted-foreground">1 hr ago in &quot;Readers Club&quot;</p>
-                  </div>
-                </div>
-              </div>
-              <Button variant="outline" className="w-full text-xs" onClick={() => onNavigateTab('spaces')}>
-                Go to Spaces <ArrowRight size={14} className="ml-1.5" />
-              </Button>
-            </CardContent>
-          </Card>
-
-        </div>
-      </div>
+      <BloomScoreModal 
+        isOpen={isBloomModalOpen} 
+        onClose={() => setIsBloomModalOpen(false)} 
+        breakdown={metrics.bloom} 
+      />
 
       {/* ─────────────────────────────────────────────────────────────
-          3. HABIT GARDEN SNAPSHOT
+          2 & 3. DYNAMIC ORDERING (Middle Section & Garden)
       ───────────────────────────────────────────────────────────── */}
-      <div className="w-full">
-         <HabitGardenView 
-            habits={habits}
-            logs={logs}
-            year={year}
-            month={month}
-            onToggleHabit={onToggleCell}
-         />
-      </div>
+      {userStage === 'LONG_TERM' ? (
+        <>
+          {GardenSnapshot}
+          {MiddleSection}
+        </>
+      ) : (
+        <>
+          {MiddleSection}
+          {GardenSnapshot}
+        </>
+      )}
 
     </div>
   );

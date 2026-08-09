@@ -8,6 +8,7 @@ import { auth, database } from '../../../../lib/firebase';
 import { CheckCircle2, Users, AlertTriangle } from 'lucide-react';
 import { Space, SpaceInvite } from '../../../../lib/spaceTypes';
 import { logAuditEvent } from '../../../../lib/auditLogger';
+import { toast } from 'sonner';
 
 export default function InvitePage() {
   const params = useParams();
@@ -162,7 +163,7 @@ export default function InvitePage() {
       
       router.push(`/?joined_space=${space.id}`);
     } catch {
-      alert('Failed to join the space. Please try again.');
+      toast.error('Could not join the space. Please try again later or check your connection.');
     }
   };
 

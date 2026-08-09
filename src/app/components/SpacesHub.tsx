@@ -205,14 +205,11 @@ export default function SpacesHub({
                       </button>
                     ) : (
                       <button 
-                        onClick={() => {
-                          // For a public space, we could auto-join or prompt for an invite code.
-                          // Usually public spaces don't need invites, but since joining isn't hooked up for public spaces directly yet:
-                          alert('Joining public spaces directly will be available soon! For now, please use an invite code.');
-                        }}
-                        className="w-full py-2 bg-emerald-500 text-white hover:bg-emerald-600 font-bold rounded-xl transition-all duration-300 hover:scale-105"
+                        disabled
+                        className="w-full py-2 bg-slate-100 text-slate-400 font-bold rounded-xl cursor-not-allowed"
+                        title="Joining public spaces directly will be available soon. For now, please use an invite code."
                       >
-                        Join Organization
+                        Join Unavailable
                       </button>
                     )}
                   </div>

@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, Database } from 'firebase/database';
 import { getAuth, Auth } from 'firebase/auth';
+import { getMessaging, Messaging } from 'firebase/messaging';
 
 // TODO: Replace these with your Firebase config from Firebase Console
 // Steps to get your config:
@@ -8,7 +9,7 @@ import { getAuth, Auth } from 'firebase/auth';
 // 2. Create a new project (or use existing)
 // 3. Click "Add app" → Web
 // 4. Copy the config object and paste below
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
@@ -23,6 +24,7 @@ const isValidDatabaseUrl = (url?: string) => Boolean(url && (url.startsWith('htt
 let app: ReturnType<typeof initializeApp> | undefined;
 let database: Database | undefined;
 let auth: Auth | undefined;
+let messaging: Messaging | undefined;
 
 if (firebaseConfig.apiKey && firebaseConfig.projectId) {
   try {
@@ -31,10 +33,13 @@ if (firebaseConfig.apiKey && firebaseConfig.projectId) {
       database = getDatabase(app);
     }
     auth = getAuth(app);
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      messaging = getMessaging(app);
+    }
   } catch (error) {
     console.info('Firebase initialization deferred. App running in offline local mode.', error);
   }
 }
 
-export { database, auth, app };
+export { database, auth, messaging, app };
 

@@ -21,12 +21,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Compass,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../../lib/firebase';
 import { User as FirebaseUser } from 'firebase/auth';
+import { useTheme } from '../ThemeProvider';
 
-export type NavTab = 'focus' | 'dashboard' | 'analytics' | 'records' | 'goals' | 'challenges' | 'timeline' | 'settings' | 'spaces' | 'social' | 'dna' | 'garden' | 'projection' | 'reflection';
+export type NavTab = 'focus' | 'dashboard' | 'analytics' | 'insights' | 'records' | 'goals' | 'challenges' | 'timeline' | 'settings' | 'spaces' | 'social' | 'dna' | 'garden' | 'projection' | 'reflection';
 
 interface NavbarProps {
   user: FirebaseUser | null;
@@ -41,6 +44,7 @@ interface NavbarProps {
 export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOpenSearch, onOpenIdentityModal, onOpenWrapped }: NavbarProps) {
   const [signingOut, setSigningOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { themeMode, setThemeMode } = useTheme();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -99,7 +103,7 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
     : '?';
 
   return (
-    <nav className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <nav className="sticky top-0 z-40 w-full bg-white/95 dark:bg-black/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
         {/* Logo */}
         <button
@@ -135,6 +139,7 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
             {[
               { id: 'dashboard' as NavTab, label: 'Dashboard', icon: LayoutDashboard },
               { id: 'analytics' as NavTab, label: 'Analytics', icon: Activity },
+              { id: 'insights' as NavTab, label: 'Insights', icon: Compass },
               { id: 'goals' as NavTab, label: 'Goals', icon: Target },
               { id: 'spaces' as NavTab, label: 'Spaces', icon: Compass },
             ].map((tabItem) => {
@@ -194,6 +199,14 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
+            className="hidden md:flex items-center justify-center h-8 w-8 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all"
+            title="Toggle Dark Mode"
+          >
+            {themeMode === 'dark' ? <Sun size={14} className="text-amber-500" /> : <Moon size={14} className="text-indigo-500" />}
+          </button>
+          
           {onOpenWrapped && (
             <button
               onClick={onOpenWrapped}
@@ -296,6 +309,14 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
           >
             <Activity size={15} />
             Analytics
+          </button>
+          <button
+            onClick={() => handleNavClick('insights')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'insights' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+          >
+            <Compass size={15} />
+            Insights
           </button>
           <button
             onClick={() => handleNavClick('social')}

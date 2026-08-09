@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { MotionConfig } from 'framer-motion';
 import Navbar, { NavTab } from './components/charts/TitleBanner';
 import RequireAuth from './auth/RequireAuth';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { toast } from 'sonner';
 import GuideModal, { shouldShowGuide } from './components/GuideModal';
 import CalendarSettings from './components/CalendarSettings';
 
@@ -19,6 +21,7 @@ const HabitGardenView = dynamic(() => import('./components/HabitGardenView').the
 const FutureProjectionView = dynamic(() => import('./components/FutureProjectionView').then(mod => mod.FutureProjectionView), { ssr: false });
 const WeeklyReflectionView = dynamic(() => import('./components/WeeklyReflectionView').then(mod => mod.WeeklyReflectionView), { ssr: false });
 const WrappedView = dynamic(() => import('./components/WrappedView'), { ssr: false });
+const BloomInsightsView = dynamic(() => import('./components/BloomInsightsView').then(mod => mod.BloomInsightsView), { ssr: false });
 import CelebrationOverlay from './components/CelebrationOverlay';
 import { OnboardingGuide } from './components/OnboardingGuide';
 
@@ -39,7 +42,7 @@ import SpacesHub from './components/SpacesHub';
 const SpaceDashboard = dynamic(() => import('./components/SpaceDashboard'), { ssr: false });
 import CreateSpaceModal from './components/CreateSpaceModal';
 import { Space, SpaceInvite } from '../../lib/spaceTypes';
-import { XP_CONSTANTS, getLevelFromXp, calculateTotalXp } from '../../lib/xpEngine';
+import { getLevelFromXp, calculateTotalXp } from '../../lib/xpEngine';
 import BeautifulDayStart from './components/BeautifulDayStart';
 import { generateDailyStory, generateMilestoneMessage } from '../../lib/storyEngine';
 import { calculateBloomScore } from '../../lib/bloomScoreUtils';
@@ -96,6 +99,7 @@ export default function Page() {
   const [userProfileData, setUserProfileData] = useState<UserProfile | null>(null);
   const [toastMsg, setToastMsg] = useState('');
   const [toastOpen, setToastOpen] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
 
   // Journal Modal State
   const [journalModalOpen, setJournalModalOpen] = useState(false);
@@ -144,6 +148,20 @@ export default function Page() {
     const lastSeen = localStorage.getItem('habitbloom_last_welcome');
     if (lastSeen !== todayStr) {
       setHasSeenWelcomeToday(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsOffline(!navigator.onLine);
+      const handleOnline = () => setIsOffline(false);
+      const handleOffline = () => setIsOffline(true);
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
     }
   }, []);
 
@@ -203,8 +221,13 @@ export default function Page() {
     const savedChallenges = localStorage.getItem('habitbloom_challenges');
     const savedJournals = localStorage.getItem('habitbloom_journals');
 
+    const dedupeById = <T extends { id: string }>(arr: T[]): T[] => Array.from(new Map(arr.filter(Boolean).map(item => [item.id, item])).values());
+
     if (savedHabits) {
-      try { setHabits(JSON.parse(savedHabits)); } catch { setHabits([]); }
+      try { 
+        const parsed = JSON.parse(savedHabits);
+        setHabits(dedupeById(Array.isArray(parsed) ? parsed : [])); 
+      } catch { setHabits([]); }
     } else {
       setHabits([
         { id: 'habit-1', name: 'Drink water', emoji: '💧', goal: 10, category: '🏃 Fitness' },
@@ -291,18 +314,22 @@ export default function Page() {
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          if (data.habits) setHabits(Array.isArray(data.habits) ? data.habits : Object.values(data.habits));
+          const dedupeById = <T extends { id: string }>(arr: T[]): T[] => Array.from(new Map(arr.filter(Boolean).map(item => [item.id, item])).values());
+          if (data.habits) setHabits(dedupeById(Array.isArray(data.habits) ? data.habits : Object.values(data.habits)));
           if (data.logs) setLogs(data.logs);
           if (data.habitLogsArray) setHabitLogsArray(data.habitLogsArray);
-          if (data.goals) setGoals(Array.isArray(data.goals) ? data.goals : Object.values(data.goals));
-          if (data.challenges) setChallenges(Array.isArray(data.challenges) ? data.challenges : Object.values(data.challenges));
-          if (data.journals) setJournals(Array.isArray(data.journals) ? data.journals : Object.values(data.journals));
+          if (data.goals) setGoals(dedupeById(Array.isArray(data.goals) ? data.goals : Object.values(data.goals)));
+          if (data.challenges) setChallenges(dedupeById(Array.isArray(data.challenges) ? data.challenges : Object.values(data.challenges)));
+          if (data.journals) setJournals(dedupeById(Array.isArray(data.journals) ? data.journals : Object.values(data.journals)));
         } else {
+          const initialHabits = habits.length > 0 ? habits : [
+            { id: 'habit-1', name: 'Drink water', emoji: '💧', goal: 10, category: '🏃 Fitness' },
+            { id: 'habit-2', name: 'Read books', emoji: '📚', goal: 5, category: '📚 Learning' },
+          ];
+          const habitsMap = initialHabits.reduce((acc: Record<string, typeof initialHabits[0]>, h) => { acc[h.id] = h; return acc; }, {});
+          
           set(userRef, {
-            habits: habits.length > 0 ? habits : [
-              { id: 'habit-1', name: 'Drink water', emoji: '💧', goal: 10, category: '🏃 Fitness' },
-              { id: 'habit-2', name: 'Read books', emoji: '📚', goal: 5, category: '📚 Learning' },
-            ],
+            habits: habitsMap,
             logs,
             habitLogsArray,
             goals,
@@ -314,6 +341,7 @@ export default function Page() {
       },
       (error) => {
         console.error('Firebase sync error:', error);
+        toast.error('Unable to sync with server. Changes will be saved when you reconnect.', { id: 'firebase-sync-error' });
         setIsLoadingFirebase(false);
       }
     );
@@ -402,6 +430,7 @@ export default function Page() {
       },
       (error) => {
         console.error('Firebase space sync error:', error);
+        toast.error('Unable to sync spaces with server. Reconnecting...', { id: 'firebase-space-sync-error' });
       }
     );
 
@@ -411,53 +440,46 @@ export default function Page() {
   const daysInMonth = getDaysInMonth(year, month);
 
   // ── Toggle cell ────────────────────────────────────────────────────────
-  const handleToggleCell = useCallback((habitId: string, day: number) => {
-    const key = makeLogKey(habitId, year, month, day);
-    const dateTimestamp = new Date(year, month - 1, day).getTime();
-
-    // Prevent time-traveler exploit
-    if (dateTimestamp > Date.now()) {
-      showToast('Cannot log habits in the future!');
-      return;
-    }
-
-    setLogs(prevLogs => {
-      const isCurrentlyDone = !!prevLogs[key];
-      const updatedLogs = { ...prevLogs };
-      if (isCurrentlyDone) {
-        delete updatedLogs[key];
-      } else {
-        updatedLogs[key] = true;
+    const handleToggleCell = useCallback(async (habitId: string, day: number) => {
+      const key = makeLogKey(habitId, year, month, day);
+      const dateTimestamp = new Date(year, month - 1, day).getTime();
+  
+      if (dateTimestamp > Date.now()) {
+        showToast('Cannot log habits in the future!');
+        return;
       }
-      
-      if (currentUser) {
-        if (isCurrentlyDone) {
-          queueMutation('set', `users/${currentUser.uid}/logs/${key}`, null);
-        } else {
-          queueMutation('set', `users/${currentUser.uid}/logs/${key}`, true);
+  
+      // Keep track of old state for rollback
+      const oldLogs = { ...logs };
+      const isCurrentlyDone = !!oldLogs[key];
+  
+      setLogs(prevLogs => {
+        const updatedLogs = { ...prevLogs };
+        if (isCurrentlyDone) delete updatedLogs[key];
+        else updatedLogs[key] = true;
+        
+        if (!isCurrentlyDone) showToast('Habit completed! Keep it up.');
+        return updatedLogs;
+      });
+  
+      if (currentUser && database) {
+        try {
+          const dbRef = ref(database, `users/${currentUser.uid}/logs/${key}`);
+          if (navigator.onLine) {
+            if (isCurrentlyDone) await set(dbRef, null);
+            else await set(dbRef, true);
+          } else {
+            queueMutation('set', `users/${currentUser.uid}/logs/${key}`, isCurrentlyDone ? null : true);
+          }
+        } catch (error) {
+          console.error("Firebase write failed:", error);
+          showToast('Failed to save progress. Rolling back...');
+          // Rollback
+          setLogs(oldLogs);
+          return; // Stop execution
         }
       }
 
-      if (userProfileData && currentUser) {
-        // Prevent Infinite XP Exploit
-        const xpDelta = isCurrentlyDone ? -XP_CONSTANTS.HABIT_COMPLETION : XP_CONSTANTS.HABIT_COMPLETION;
-        const newXp = Math.max(0, (userProfileData.experiencePoints || 0) + xpDelta);
-        const newLevel = getLevelFromXp(newXp);
-        
-        const updatedProfile = { 
-          ...userProfileData, 
-          experiencePoints: newXp, 
-          currentLevel: newLevel 
-        };
-        setUserProfileData(updatedProfile);
-        queueMutation('set', `users/${currentUser.uid}/profile`, updatedProfile);
-      }
-
-      if (!isCurrentlyDone) {
-        showToast('Habit completed! Keep it up.');
-      }
-      return updatedLogs;
-    });
 
     setHabitLogsArray(prevLogsArray => {
       const logsArray = prevLogsArray[habitId] || [];
@@ -471,7 +493,7 @@ export default function Page() {
       syncToFirebase(`habitLogsArray/${habitId}`, updatedLogsArray[habitId]);
       return updatedLogsArray;
     });
-  }, [year, month, currentUser, userProfileData, syncToFirebase]);
+  }, [year, month, currentUser, logs, userProfileData, syncToFirebase]);
 
   // ── Reset current month ────────────────────────────────────────────────
   const handleResetMonth = useCallback(() => {
@@ -733,8 +755,15 @@ export default function Page() {
           onOpenWrapped={() => setWrappedOpen(true)}
         />
 
-        <main className="min-h-screen bg-slate-50/70 p-4 sm:p-6 text-slate-950 pb-20">
+        <main className="min-h-screen bg-slate-50 dark:bg-black p-4 sm:p-6 text-slate-950 dark:text-slate-50 pb-20">
           <h1 className="sr-only">HabitBloom – SaaS Habit Tracker & Productivity Operating System</h1>
+
+          {isOffline && (
+            <div className="mx-auto max-w-7xl mb-4 p-2 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-center gap-2 text-amber-700 text-xs font-bold shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              Working offline. Changes will sync when reconnected.
+            </div>
+          )}
 
           <div className="mx-auto max-w-7xl space-y-6">
 
@@ -750,6 +779,7 @@ export default function Page() {
             )}
 
             {/* Tab Views */}
+            <ErrorBoundary fallbackMessage="An error occurred in this view. Please try again or refresh the page.">
             {activeTab === 'focus' && (
               <DailyFocusView
                 habits={habits}
@@ -768,6 +798,7 @@ export default function Page() {
                     setJournalModalOpen(true);
                   }
                 }}
+                journals={journals}
               />
             )}
 
@@ -813,6 +844,8 @@ export default function Page() {
             {activeTab === 'goals' && (
               <GoalsView
                 goals={goals}
+                habits={habits}
+                logs={logs}
                 onAddGoal={handleAddGoal}
                 onUpdateGoal={handleUpdateGoal}
               />
@@ -873,6 +906,14 @@ export default function Page() {
                   onGoToDashboard={() => setActiveTab('dashboard')}
                 />
               </div>
+            )}
+
+            {activeTab === 'insights' && (
+              <BloomInsightsView 
+                habits={habits}
+                logs={logs}
+                onNavigateTab={setActiveTab}
+              />
             )}
 
             {activeTab === 'records' && (
@@ -960,6 +1001,7 @@ export default function Page() {
                 />
               </div>
             )}
+            </ErrorBoundary>
           </div>
         </main>
 

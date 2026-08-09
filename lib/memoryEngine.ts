@@ -1,4 +1,5 @@
 import { Habit, HabitLog, JournalEntry } from './habitTypes';
+import { calculateTotalXp, getLevelFromXp } from './xpEngine';
 
 export interface ChronicleEvent {
   id: string;
@@ -40,8 +41,27 @@ export function generateChronicleEvents(habits: Habit[], logs: HabitLog, journal
     });
   });
 
-  if (logKeys.length === 0 && journals.length === 0) {
+  if (logKeys.length === 0 && journals.length === 0 && habits.length === 0) {
     return events;
+  }
+
+  // 1.5 Add Habit Creation Event
+  const sortedHabits = [...habits].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeA - timeB;
+  });
+
+  if (sortedHabits.length > 0 && sortedHabits[0].createdAt) {
+    events.push({
+      id: 'first-habit',
+      type: 'creation',
+      title: 'First Habit Created',
+      description: `You created your first habit: ${sortedHabits[0].name}.`,
+      timestamp: new Date(sortedHabits[0].createdAt),
+      icon: '✨',
+      colorClass: 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-emerald-100/50'
+    });
   }
 
   // 2. Discover Firsts from Logs
@@ -129,6 +149,47 @@ export function generateChronicleEvents(habits: Habit[], logs: HabitLog, journal
         colorClass: 'bg-slate-50 text-slate-700 border-slate-200 shadow-slate-100/50'
       });
     }
+  }
+
+  // 4. Add XP & Level Milestones (Using latest log date as milestone date)
+  const totalXp = calculateTotalXp(habits, logs);
+  const currentLevel = getLevelFromXp(totalXp);
+  const latestLogDate = logDates.length > 0 ? logDates[logDates.length - 1].date : now;
+
+  if (totalXp >= 100) {
+    events.push({
+      id: 'xp-100', type: 'milestone', title: '100 XP Reached',
+      description: 'You earned your first 100 Experience Points.', timestamp: latestLogDate, icon: '🌟',
+      colorClass: 'bg-yellow-50 text-yellow-600 border-yellow-200 shadow-yellow-100/50'
+    });
+  }
+  if (totalXp >= 500) {
+    events.push({
+      id: 'xp-500', type: 'milestone', title: '500 XP Milestone',
+      description: 'Halfway to a thousand! Incredible momentum.', timestamp: latestLogDate, icon: '🔥',
+      colorClass: 'bg-orange-50 text-orange-600 border-orange-200 shadow-orange-100/50'
+    });
+  }
+  if (totalXp >= 1000) {
+    events.push({
+      id: 'xp-1000', type: 'milestone', title: '1K XP Achieved',
+      description: 'You have amassed 1,000 XP. A true HabitBloom master.', timestamp: latestLogDate, icon: '👑',
+      colorClass: 'bg-indigo-50 text-indigo-600 border-indigo-200 shadow-indigo-100/50'
+    });
+  }
+  if (currentLevel >= 5) {
+    events.push({
+      id: 'level-5', type: 'milestone', title: 'Level 5 Unlocked',
+      description: 'Your dedication is blooming.', timestamp: latestLogDate, icon: '🌿',
+      colorClass: 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-emerald-100/50'
+    });
+  }
+  if (currentLevel >= 10) {
+    events.push({
+      id: 'level-10', type: 'milestone', title: 'Level 10 Achieved',
+      description: 'Double digits! You are in the top tier of consistency.', timestamp: latestLogDate, icon: '🌸',
+      colorClass: 'bg-pink-50 text-pink-600 border-pink-200 shadow-pink-100/50'
+    });
   }
 
   // Sort descending

@@ -90,6 +90,7 @@ export interface JournalEntry {
   difficulty?: number; // 1-5
   wins?: string;
   challenges?: string;
+  weeklyFocus?: string;
 }
 
 export interface Goal {

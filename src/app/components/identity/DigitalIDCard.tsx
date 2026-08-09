@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
 import { ShieldCheck, Download, Printer, Sparkles, Building2, User } from 'lucide-react';
 import { DigitalIDCardData } from '../../../../lib/identityTypes';
 import { formatHbId } from '../../../../lib/identityUtils';
@@ -55,7 +56,7 @@ export default function DigitalIDCard({ cardData, onClose }: DigitalIDCardProps)
       img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
     } catch {
       setDownloading(false);
-      alert('Unable to export image directly. You can take a screenshot or print.');
+      toast.info('Unable to export image directly. You can take a screenshot or print.');
     }
   };
 

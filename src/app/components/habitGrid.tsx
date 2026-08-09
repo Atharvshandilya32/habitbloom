@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Check, Pencil, X, Sparkles, Flame, Search, StickyNote } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Plus, Trash2, Check, Pencil, X, Sparkles, Flame, Search, StickyNote, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { Habit, HabitLog, HABIT_CATEGORIES } from '../../../lib/habitTypes';
 import { makeLogKey, getCurrentStreak, getHabitStats } from '../../../lib/habitUtils';
+import { calculateHabitHealth } from '../../../lib/analyticsUtils';
+import { IntelligenceEngine } from '../../../lib/intelligence/intelligenceEngine';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -62,15 +64,20 @@ export default function HabitGrid({
 
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
+  // Deterministic Trends
+  const trends = useMemo(() => IntelligenceEngine.generateTrends(habits, logs, today), [habits, logs, today]);
+
   // Filter habits by search query and category
-  const filteredHabits = habits.filter(h => {
-    const matchesSearch = h.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      selectedCategory === 'All' ||
-      h.category === selectedCategory ||
-      h.category?.includes(selectedCategory.split(' ')[1] || '');
-    return matchesSearch && matchesCategory;
-  });
+  const filteredHabits = useMemo(() => {
+    return habits.filter(h => {
+      const matchesSearch = h.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        selectedCategory === 'All' ||
+        h.category === selectedCategory ||
+        h.category?.includes(selectedCategory.split(' ')[1] || '');
+      return matchesSearch && matchesCategory;
+    });
+  }, [habits, searchQuery, selectedCategory]);
 
   const startEdit = (habit: Habit) => {
     setEditingId(habit.id);
@@ -107,6 +114,11 @@ export default function HabitGrid({
     setIsToggling(prev => ({ ...prev, [cellKey]: true }));
     
     const wasChecked = !!logs[cellKey];
+
+    // Micro-interaction: Haptic Feedback
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(wasChecked ? 20 : [30, 50, 30]);
+    }
 
     onToggleCell(habitId, day);
 
@@ -258,12 +270,32 @@ export default function HabitGrid({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
+            {filteredHabits.length === 0 && (
+              <tr>
+                <td colSpan={daysInMonth + 2} className="py-16 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+                      <span className="text-2xl opacity-50">🍃</span>
+                    </div>
+                    <p className="text-slate-500 font-medium text-sm">No habits found.</p>
+                    <button
+                      onClick={onAddHabit}
+                      className="mt-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      Plant a new habit
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )}
             <AnimatePresence>
             {filteredHabits.map((habit, rowIdx) => {
               const isEditing = editingId === habit.id;
               const rowBg = rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30';
               const currentStreak = getCurrentStreak(habit, logs, year, month, daysInMonth);
               const stats = getHabitStats(habit, logs, daysInMonth, year, month);
+              const health = calculateHabitHealth(habit, logs);
+              const habitTrend = trends.find(t => t.habitId === habit.id);
 
               return (
                 <motion.tr 
@@ -272,7 +304,7 @@ export default function HabitGrid({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  key={habit.id} 
+                  key={`${habit.id}-${rowIdx}`} 
                   className={`${rowBg} hover:bg-slate-50/80 transition-colors group`}
                 >
                   {/* Habit Name / Edit Cell */}
@@ -384,6 +416,34 @@ export default function HabitGrid({
                               {stats.pct}% rate
                             </span>
                           </div>
+                          
+                          {/* Habit Health & Trend Badges */}
+                          <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                            <div 
+                              title={health.description}
+                              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold cursor-help
+                                ${health.status === '🌱 THRIVING' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                  health.status === '🌿 STABLE' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                  health.status === '🍂 NEEDS ATTENTION' ? 'bg-rose-50 text-rose-700 border border-rose-100' :
+                                  'bg-slate-50 text-slate-600 border border-slate-200'
+                                }
+                              `}
+                            >
+                              <Activity size={10} />
+                              {health.status}
+                            </div>
+                            
+                            {habitTrend && habitTrend.status !== 'INSUFFICIENT_DATA' && habitTrend.status !== 'STABLE' && (
+                              <div
+                                title={habitTrend.evidence}
+                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold cursor-help
+                                  ${habitTrend.status === 'IMPROVING' ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'bg-orange-50 text-orange-700 border border-orange-100'}`}
+                              >
+                                <span>{habitTrend.icon}</span>
+                                <span>{habitTrend.status}</span>
+                              </div>
+                            )}
+                          </div>
 
                           {/* Notes preview drawer */}
                           {activeNotesHabitId === habit.id && habit.notes && (
@@ -418,7 +478,7 @@ export default function HabitGrid({
                         <button
                           onClick={() => handleToggle(habit.id, d)}
                           aria-label={`${checked ? 'Uncheck' : 'Check'} ${habit.name} on day ${d}`}
-                          className={`inline-flex h-6 w-6 items-center justify-center rounded-md text-xs transition-all duration-150 ${
+                          className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs transition-all duration-150 ${
                             isPulsing ? 'scale-125 shadow-md ring-2 ring-emerald-400' : ''
                           } ${
                             checked
@@ -427,7 +487,7 @@ export default function HabitGrid({
                           } ${isToggling[cellKey] ? 'opacity-50 pointer-events-none cursor-wait' : ''}`}
                           disabled={isToggling[cellKey]}
                         >
-                          <Check className="h-3.5 w-3.5 stroke-[3]" />
+                          <Check className="h-4 w-4 stroke-[3]" />
                         </button>
                       </td>
                     );

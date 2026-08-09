@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Habit, HabitLog, JournalEntry, MoodType } from '../../../lib/habitTypes';
 import { getWeeklyStats } from '../../../lib/habitUtils';
 import { EasingCurves } from '../../../lib/motion/motionTokens';
+import { IntelligenceEngine } from '../../../lib/intelligence/intelligenceEngine';
 
 interface WeeklyReflectionViewProps {
   habits: Habit[];
@@ -55,6 +56,12 @@ export const WeeklyReflectionView: React.FC<WeeklyReflectionViewProps> = ({
   const prevWeek = activeWeekIdx > 0 ? weeklyStats[activeWeekIdx - 1] : { pct: 0 };
   const improvementDelta = currentWeek.pct - prevWeek.pct;
 
+  // Generate Intelligence Context
+  const targetDateForEngine = new Date(year, month - 1, todayDate);
+  const engineInsights = React.useMemo(() => IntelligenceEngine.generateInsights(habits, activeLogs, targetDateForEngine), [habits, activeLogs, targetDateForEngine]);
+  const engineRecs = React.useMemo(() => IntelligenceEngine.generateRecommendations(habits, activeLogs, targetDateForEngine), [habits, activeLogs, targetDateForEngine]);
+  const engineTrends = React.useMemo(() => IntelligenceEngine.generateTrends(habits, activeLogs, targetDateForEngine), [habits, activeLogs, targetDateForEngine]);
+
   // Reflection Form State
   const [winNote, setWinNote] = useState<string>('');
   const [challengeNote, setChallengeNote] = useState<string>('');
@@ -78,6 +85,7 @@ export const WeeklyReflectionView: React.FC<WeeklyReflectionViewProps> = ({
       wins: winNote,
       challenges: challengeNote,
       mood: mood,
+      weeklyFocus: nextWeekGoal,
     };
 
     if (onSaveJournal) {
@@ -124,6 +132,33 @@ export const WeeklyReflectionView: React.FC<WeeklyReflectionViewProps> = ({
             <span className="text-[11px] font-bold text-emerald-600 block">
               {improvementDelta >= 0 ? `+${improvementDelta}% vs last week` : `${improvementDelta}% vs last week`}
             </span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Bloom Interpretation */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.05, ease: EasingCurves.apple }}
+        className="rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 shadow-sm space-y-4"
+      >
+        <h3 className="text-base sm:text-lg font-black text-indigo-900 flex items-center gap-2">
+          <span>✨ Bloom Interpretation</span>
+        </h3>
+        
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="bg-white/80 p-4 rounded-2xl border border-indigo-50">
+            <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">Strongest Insight</span>
+            <div className="text-sm font-semibold text-slate-800">
+              {engineInsights.length > 0 ? engineInsights[0].description : "You are steadily building your history."}
+            </div>
+          </div>
+          <div className="bg-white/80 p-4 rounded-2xl border border-indigo-50">
+            <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">Next Focus</span>
+            <div className="text-sm font-semibold text-slate-800">
+              {engineRecs.length > 0 ? engineRecs[0].title + ' - ' + engineRecs[0].description : "Keep focusing on consistency across your active habits."}
+            </div>
           </div>
         </div>
       </motion.div>
@@ -203,7 +238,7 @@ export const WeeklyReflectionView: React.FC<WeeklyReflectionViewProps> = ({
 
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">
-                Biggest Win This Week:
+                Key Accomplishments:
               </label>
               <input
                 type="text"
@@ -216,7 +251,7 @@ export const WeeklyReflectionView: React.FC<WeeklyReflectionViewProps> = ({
 
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">
-                Challenge or Area to Improve:
+                Insights & Learnings:
               </label>
               <input
                 type="text"
@@ -229,7 +264,7 @@ export const WeeklyReflectionView: React.FC<WeeklyReflectionViewProps> = ({
 
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">
-                Next Week Key Commitment:
+                Focus & Reflection for Next Week:
               </label>
               <input
                 type="text"

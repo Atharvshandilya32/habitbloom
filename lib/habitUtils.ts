@@ -87,18 +87,31 @@ export function getCurrentStreak(
     today.getFullYear() === year && today.getMonth() + 1 === month
       ? Math.min(today.getDate(), daysInMonth)
       : daysInMonth;
+      
   let streak = 0;
-  let freezesUsed = 0;
+  let currentGap = 0;
+  
+  // Base gap allowance based on goal frequency.
+  // If goal is 30/31, allowed gap is 1. If goal is 4 (weekly), allowed gap is 7.
+  let allowedGapSize = Math.max(1, Math.floor(daysInMonth / Math.max(1, habit.goal)));
+  
+  // Add 1-day bonus Streak Shield for daily habits if allowFreeze is true
+  if (allowedGapSize === 1 && allowFreeze) {
+    allowedGapSize = 2; 
+  }
 
   for (let day = endDay; day >= 1; day--) {
     const key = makeLogKey(habit.id, year, month, day);
     if (logs[key]) {
       streak += 1;
-    } else if (allowFreeze && freezesUsed < 1 && day < endDay) {
-      // 1-Day Streak Shield Freeze protection
-      freezesUsed += 1;
+      currentGap = 0; // Reset gap counter
     } else {
-      break;
+      // If we are evaluating days before today and the gap is too large, the streak breaks.
+      // We don't penalize missing 'today' yet until the gap actually exceeds allowance.
+      if (currentGap >= allowedGapSize && day < endDay) {
+        break;
+      }
+      currentGap += 1;
     }
   }
 

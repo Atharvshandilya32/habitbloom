@@ -89,6 +89,101 @@ export function calculateOverallConsistencyScore(habits: Habit[], logs: HabitLog
 }
 
 /**
+ * Calculates consistency for a single habit based on actual scheduled opportunities in the last N days.
+ * For now, we assume the habit is scheduled daily, or we scale by habit.goal.
+ */
+export function calculateHabitConsistency(habit: Habit, logs: HabitLog, days: number = 14): number {
+  const today = new Date();
+  let totalPossible = 0;
+  let totalCompleted = 0;
+
+  for (let i = 0; i < days; i++) {
+    const d = subDays(today, i);
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    const dayNum = d.getDate();
+    totalPossible += 1; // Assuming daily schedule unless habit has specific days
+    
+    const key = makeLogKey(habit.id, y, m, dayNum);
+    if (logs[key]) totalCompleted += 1;
+  }
+
+  // Adjust totalPossible if habit has a monthly goal (e.g. goal=15 days/mo -> ~50% frequency)
+  // Simplified: if goal < 31, scale possible days.
+  const frequencyRatio = Math.min(1, Math.max(0.1, habit.goal / 31));
+  const expectedOpportunities = Math.round(totalPossible * frequencyRatio);
+  const adjustedPossible = Math.max(1, expectedOpportunities);
+
+  const rate = Math.round((totalCompleted / adjustedPossible) * 100);
+  return Math.min(100, rate); // Cap at 100%
+}
+
+export type HabitHealthType = '🌱 THRIVING' | '🌿 STABLE' | '🍂 NEEDS ATTENTION' | '🌱 NEW';
+
+export interface HabitHealthResult {
+  status: HabitHealthType;
+  description: string;
+  rate: number;
+}
+
+/**
+ * Deterministic habit health calculation based on a trailing 14-day window.
+ */
+export function calculateHabitHealth(habit: Habit, logs: HabitLog, days: number = 14): HabitHealthResult {
+  const today = new Date();
+  let totalCompleted = 0;
+
+  // Determine age of habit
+  let firstLogDate: Date | null = null;
+  Object.keys(logs).forEach(key => {
+    if (key.startsWith(`${habit.id}_`) && logs[key]) {
+      const parts = key.split('_');
+      if (parts.length >= 4) {
+        const date = new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]));
+        if (!firstLogDate || date < firstLogDate) {
+          firstLogDate = date;
+        }
+      }
+    }
+  });
+
+  const ageInDays = firstLogDate 
+    ? Math.floor((today.getTime() - firstLogDate.getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+
+  // If habit is less than 7 days old, it's NEW
+  if (ageInDays < 7 && totalCompleted < 7) {
+    return {
+      status: '🌱 NEW',
+      description: 'Not enough data yet. Keep building!',
+      rate: 0
+    };
+  }
+
+  const rate = calculateHabitConsistency(habit, logs, days);
+  
+  // To build description:
+  const frequencyRatio = Math.min(1, Math.max(0.1, habit.goal / 31));
+  const expectedOpportunities = Math.max(1, Math.round(days * frequencyRatio));
+  
+  // Recount exact completions in window
+  for (let i = 0; i < days; i++) {
+    const d = subDays(today, i);
+    const key = makeLogKey(habit.id, d.getFullYear(), d.getMonth() + 1, d.getDate());
+    if (logs[key]) totalCompleted += 1;
+  }
+
+  let status: HabitHealthType;
+  if (rate >= 80) status = '🌱 THRIVING';
+  else if (rate >= 50) status = '🌿 STABLE';
+  else status = '🍂 NEEDS ATTENTION';
+
+  const description = `Completed ${totalCompleted} of ${expectedOpportunities} scheduled sessions recently.`;
+
+  return { status, description, rate };
+}
+
+/**
  * Generates 365-day GitHub style contribution heatmap data.
  */
 export function calculateContributionHeatmap(habits: Habit[], logs: HabitLog, days = 365): HeatmapCell[] {
@@ -308,95 +403,84 @@ export function calculateWeeklyReview(
  * Calculates Personal Records stats across all time.
  */
 export function calculatePersonalRecords(habits: Habit[], logs: HabitLog): PersonalRecords {
-  const totalHabitsCompleted = calculateTotalHabitsCompleted(logs);
-  const totalActiveDays = calculateActiveDaysCount(logs);
-  const longestStreak = calculateLongestStreakOverall(habits, logs);
-  const consistencyScore = calculateOverallConsistencyScore(habits, logs);
-
-  // Group logs by YYYY-MM-DD to find max completed in a day
-  const dateCounts: Record<string, number> = {};
-  Object.entries(logs).forEach(([key, done]) => {
-    if (!done) return;
-    const parts = key.split('_');
-    if (parts.length >= 4) {
-      const dateKey = `${parts[1]}-${parts[2].padStart(2, '0')}-${parts[3].padStart(2, '0')}`;
-      dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
-    }
-  });
-
-  const mostCompletedInDay = Object.values(dateCounts).length > 0
-    ? Math.max(...Object.values(dateCounts))
-    : 0;
-
-  // Calculate highest completion week % & perfect weeks
+  const mostHabitsCompleted = calculateTotalHabitsCompleted(logs);
+  const longestSuccessfulPeriod = calculateLongestStreakOverall(habits, logs);
+  
   const today = new Date();
-  let maxWeekPct = 0;
-  let perfectWeeks = 0;
+  
+  let highestWeeklyXp = 0;
+  let highestMonthlyXp = 0;
+  let highestBloomScore = 0;
+  let bestHabitConsistency = 0;
 
+  // 1. Calculate Habit-level stats
+  const habitConsistencyScores = habits.map(h => calculateHabitConsistency(h, logs));
+  bestHabitConsistency = habitConsistencyScores.length > 0 ? Math.max(...habitConsistencyScores) : 0;
+
+  // 2. Calculate Weekly/Monthly/Bloom Metrics
   if (habits.length > 0) {
+    for (let mOffset = 0; mOffset < 12; mOffset++) {
+      const refD = new Date(today.getFullYear(), today.getMonth() - mOffset, 1);
+      const mStart = startOfMonth(refD);
+      const mEnd = endOfMonth(refD);
+      const days = eachDayOfInterval({ start: mStart, end: mEnd });
+
+      let monthlyXp = 0;
+      let monthlyBloom = 0;
+
+      days.forEach(d => {
+        let dailyXp = 0;
+        habits.forEach(h => {
+          if (logs[makeLogKey(h.id, d.getFullYear(), d.getMonth() + 1, d.getDate())]) {
+            // Estimate 10 XP per completion
+            const xp = 10;
+            dailyXp += xp;
+            monthlyBloom += xp;
+          }
+        });
+        monthlyXp += dailyXp;
+      });
+
+      if (monthlyXp > highestMonthlyXp) highestMonthlyXp = monthlyXp;
+      if (monthlyBloom > highestBloomScore) highestBloomScore = monthlyBloom;
+    }
+
+    // Simplified weekly approximation
     for (let w = 0; w < 52; w++) {
       const refD = subDays(today, w * 7);
       const wStart = startOfWeek(refD, { weekStartsOn: 1 });
       const wEnd = endOfWeek(refD, { weekStartsOn: 1 });
       const days = eachDayOfInterval({ start: wStart, end: wEnd });
 
-      let doneCount = 0;
+      let weeklyXp = 0;
       days.forEach(d => {
-        const y = d.getFullYear();
-        const m = d.getMonth() + 1;
-        const dayNum = d.getDate();
         habits.forEach(h => {
-          if (logs[makeLogKey(h.id, y, m, dayNum)]) doneCount += 1;
+          if (logs[makeLogKey(h.id, d.getFullYear(), d.getMonth() + 1, d.getDate())]) {
+            weeklyXp += 10;
+          }
         });
       });
-
-      const possible = days.length * habits.length;
-      const pct = possible > 0 ? Math.round((doneCount / possible) * 100) : 0;
-      if (pct > maxWeekPct) maxWeekPct = pct;
-      if (pct === 100) perfectWeeks += 1;
-    }
-  }
-
-  // Calculate highest completion month % & perfect months
-  let maxMonthPct = 0;
-  let perfectMonths = 0;
-
-  if (habits.length > 0) {
-    for (let mOffset = 0; mOffset < 12; mOffset++) {
-      const refD = new Date(today.getFullYear(), today.getMonth() - mOffset, 1);
-      const mStart = startOfMonth(refD);
-      const mEnd = endOfMonth(refD);
-      const daysInM = getDaysInMonth(refD);
-
-      let doneCount = 0;
-      const days = eachDayOfInterval({ start: mStart, end: mEnd });
-      days.forEach(d => {
-        const y = d.getFullYear();
-        const m = d.getMonth() + 1;
-        const dayNum = d.getDate();
-        habits.forEach(h => {
-          if (logs[makeLogKey(h.id, y, m, dayNum)]) doneCount += 1;
-        });
-      });
-
-      const possible = daysInM * habits.length;
-      const pct = possible > 0 ? Math.round((doneCount / possible) * 100) : 0;
-      if (pct > maxMonthPct) maxMonthPct = pct;
-      if (pct === 100) perfectMonths += 1;
+      if (weeklyXp > highestWeeklyXp) highestWeeklyXp = weeklyXp;
     }
   }
 
   return {
-    longestStreak,
-    highestCompletionWeek: maxWeekPct,
-    highestCompletionMonth: maxMonthPct,
-    mostCompletedInDay,
-    perfectWeeks,
-    perfectMonths,
-    totalActiveDays,
-    totalHabitsCompleted,
-    consistencyScore,
+    highestWeeklyXp,
+    highestMonthlyXp,
+    longestSuccessfulPeriod,
+    bestHabitConsistency,
+    mostHabitsCompleted,
+    highestBloomScore,
   };
+}
+
+export interface PersonalRecords {
+  highestWeeklyXp: number;
+  highestMonthlyXp: number;
+  longestSuccessfulPeriod: number;
+  bestHabitConsistency: number;
+  mostHabitsCompleted: number;
+  highestBloomScore: number;
 }
 
 /**

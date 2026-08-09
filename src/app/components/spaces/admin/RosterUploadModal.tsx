@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import { parseCSVText, uploadRosterToSpace } from '../../../../../lib/rosterParser';
 
 interface RosterUploadModalProps {
@@ -61,7 +62,7 @@ export default function RosterUploadModal({
 
     setUploading(false);
     if (success) {
-      alert(`Successfully uploaded ${parsed.entries.length} roster entries to ${spaceName}!`);
+      toast.success(`Successfully uploaded ${parsed.entries.length} roster entries to ${spaceName}!`);
       if (onSuccess) onSuccess();
       onClose();
     } else {

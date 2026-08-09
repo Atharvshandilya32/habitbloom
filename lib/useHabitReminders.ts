@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Habit, HabitLog } from './habitTypes';
 import { makeLogKey } from './habitUtils';
+import { messaging, firebaseConfig, database, auth } from './firebase';
+import { getToken } from 'firebase/messaging';
+import { ref, set } from 'firebase/database';
 
 export interface ReminderConfig {
   globalEnabled: boolean;
@@ -60,6 +63,24 @@ export function useHabitReminders(habits: Habit[], logs: HabitLog) {
       setPermission(res);
       if (res === 'granted') {
         updateConfig({ globalEnabled: true });
+
+        if (messaging && auth?.currentUser) {
+          try {
+            const configStr = encodeURIComponent(JSON.stringify(firebaseConfig));
+            const registration = await navigator.serviceWorker.register(`/firebase-messaging-sw.js?config=${configStr}`);
+            
+            const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+            if (vapidKey) {
+              const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
+              if (currentToken) {
+                await set(ref(database, `users/${auth.currentUser.uid}/fcmTokens/${currentToken}`), true);
+              }
+            }
+          } catch (fcmErr) {
+            console.error('FCM Token error:', fcmErr);
+          }
+        }
+
         sendNotification('🌸 HabitBloom Reminders Enabled!', {
           body: 'You will receive daily reminders to complete your habits.',
         });
@@ -77,8 +98,8 @@ export function useHabitReminders(habits: Habit[], logs: HabitLog) {
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
         const notification = new Notification(title, {
-          icon: '/favicon.ico',
-          badge: '/favicon.ico',
+          icon: '/assets/notification-icon.png',
+          badge: '/assets/notification-icon.png',
           ...options,
         });
 

@@ -38,7 +38,7 @@ import AiCoachWidget from './AiCoachWidget';
 import DirectMessagesView from './DirectMessagesView';
 import { Habit, HabitLog } from '../../../../lib/habitTypes';
 import { User } from 'firebase/auth';
-import { ref, onValue, set, push } from 'firebase/database';
+import { ref, onValue, set, push, query, orderByChild, equalTo } from 'firebase/database';
 import { database } from '../../../../lib/firebase';
 
 interface SocialHubViewProps {
@@ -132,17 +132,33 @@ export default function SocialHubView({
 
     // Realtime Friend Requests Listener
     const requestsRef = ref(database, 'friendRequests');
-    const unsubReqs = onValue(requestsRef, (snap) => {
+    const incomingQuery = query(requestsRef, orderByChild('receiverUid'), equalTo(currentUser.uid));
+    const sentQuery = query(requestsRef, orderByChild('senderUid'), equalTo(currentUser.uid));
+
+    let incomingReqs: FriendRequest[] = [];
+    let sentReqs: FriendRequest[] = [];
+
+    const updateRequests = () => {
+      setIncomingRequests(incomingReqs.filter((r) => r.status === 'pending'));
+      setSentRequests(sentReqs);
+    };
+
+    const unsubIncomingReqs = onValue(incomingQuery, (snap) => {
       if (snap.exists()) {
-        const allReqs = Object.values(snap.val()) as FriendRequest[];
-        setIncomingRequests(
-          allReqs.filter((r) => r.receiverUid === currentUser.uid && r.status === 'pending')
-        );
-        setSentRequests(allReqs.filter((r) => r.senderUid === currentUser.uid));
+        incomingReqs = Object.values(snap.val()) as FriendRequest[];
       } else {
-        setIncomingRequests([]);
-        setSentRequests([]);
+        incomingReqs = [];
       }
+      updateRequests();
+    });
+
+    const unsubSentReqs = onValue(sentQuery, (snap) => {
+      if (snap.exists()) {
+        sentReqs = Object.values(snap.val()) as FriendRequest[];
+      } else {
+        sentReqs = [];
+      }
+      updateRequests();
     });
 
     // Realtime Activity Feed Listener
@@ -186,7 +202,8 @@ export default function SocialHubView({
 
     return () => {
       unsubFriends();
-      unsubReqs();
+      unsubIncomingReqs();
+      unsubSentReqs();
       unsubFeed();
       unsubNotifs();
       unsubChallenges();

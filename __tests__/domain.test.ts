@@ -2,7 +2,7 @@ import { formatHbId } from '../lib/identityUtils';
 import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
 import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
-import { getCurrentStreak } from '../lib/habitUtils';
+import { getCurrentStreak, getHabitStats } from '../lib/habitUtils';
 
 
 /**
@@ -62,6 +62,26 @@ function runTests() {
   };
   const streak = getCurrentStreak(mockHabit, mockLogs, 2026, 8, 31, true);
   assert(typeof streak === 'number' && streak >= 0, 'Streak engine computes valid numeric streak count');
+
+  // 7. Habit Stats Generator Tests
+  const statsNormal = getHabitStats(mockHabit as any, mockLogs, 31, 2026, 8);
+  assert(statsNormal.done === 2, 'Habit stats counts correct done days');
+  assert(statsNormal.goal === 30, 'Habit stats reflects correct goal');
+  assert(statsNormal.pct === Math.round((2 / 30) * 100), 'Habit stats calculates correct percentage');
+
+  const mockHabitOverachieve = { id: 'h2', name: 'Water', emoji: '💧', goal: 1, category: 'Health' };
+  const mockLogsOverachieve = {
+    'h2_2026_8_1': true,
+    'h2_2026_8_2': true,
+  };
+  const statsOverachieve = getHabitStats(mockHabitOverachieve as any, mockLogsOverachieve, 31, 2026, 8);
+  assert(statsOverachieve.done === 2, 'Habit stats counts correct done days even if > goal');
+  assert(statsOverachieve.pct === 100, 'Habit stats percentage caps at 100%');
+
+  const mockHabitZeroGoal = { id: 'h3', name: 'Nothing', emoji: '😶', goal: 0, category: 'Health' };
+  const statsZeroGoal = getHabitStats(mockHabitZeroGoal as any, {}, 31, 2026, 8);
+  assert(statsZeroGoal.goal === 1, 'Habit stats sets minimum goal to 1 to avoid Division by Zero');
+  assert(statsZeroGoal.pct === 0, 'Habit stats returns 0% for zero completion with 0 goal');
 
   console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed.`);
   if (failed > 0) {

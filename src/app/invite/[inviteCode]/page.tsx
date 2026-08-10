@@ -43,17 +43,10 @@ export default function InvitePage() {
       // Validate Invite Code against Firebase
       try {
         const dbRef = ref(database);
-        const invitesSnapshot = await get(child(dbRef, 'spaceInvites'));
-        
+        const inviteSnapshot = await get(child(dbRef, `spaceInvites/${inviteCode}`));
         let foundInvite: SpaceInvite | null = null;
-        if (invitesSnapshot.exists()) {
-          const invites = invitesSnapshot.val();
-          for (const key in invites) {
-            if (invites[key].code === inviteCode) {
-              foundInvite = invites[key];
-              break;
-            }
-          }
+        if (inviteSnapshot.exists()) {
+          foundInvite = inviteSnapshot.val();
         }
 
         if (!foundInvite) {
@@ -75,22 +68,15 @@ export default function InvitePage() {
         }
 
         // Count Members and Check Duplicate
-        const membersSnapshot = await get(child(dbRef, 'spaceMembers'));
-        if (membersSnapshot.exists()) {
-          const members = membersSnapshot.val();
-          let count = 0;
-          for (const key in members) {
-            if (members[key].spaceId === foundInvite.spaceId) {
-              count++;
-              if (members[key].userId === u.uid) {
-                // User is already a member, just redirect
-                router.push(`/?joined_space=${foundInvite.spaceId}`);
-                return;
-              }
-            }
-          }
-          setMemberCount(count);
+        // Check Duplicate
+        const myMemberSnapshot = await get(child(dbRef, `spaceMembers/${foundInvite.spaceId}_${u.uid}`));
+        if (myMemberSnapshot.exists()) {
+          // User is already a member, just redirect
+          router.push(`/?joined_space=${foundInvite.spaceId}`);
+          return;
         }
+        
+        setMemberCount(0); // member count hidden for privacy
 
         setCheckingInvite(false);
       } catch {

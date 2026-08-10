@@ -72,12 +72,12 @@ export default function CreateSpaceModal({ isOpen, onClose, onCreate }: CreateSp
                     onClick={() => setType(t.id)}
                     className={`cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col gap-2 ${
                       type === t.id 
-                        ? 'border-indigo-500 bg-indigo-50 shadow-sm' 
-                        : 'border-slate-100 bg-white hover:border-indigo-200'
+                        ? 'border-emerald-500 bg-emerald-50 shadow-sm' 
+                        : 'border-slate-100 bg-white hover:border-emerald-200'
                     }`}
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                      type === t.id ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-500'
+                      type === t.id ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500'
                     }`}>
                       {t.icon}
                     </div>
@@ -104,7 +104,7 @@ export default function CreateSpaceModal({ isOpen, onClose, onCreate }: CreateSp
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Titan Fitness Elite"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium"
                     autoFocus
                   />
                 </div>
@@ -115,7 +115,7 @@ export default function CreateSpaceModal({ isOpen, onClose, onCreate }: CreateSp
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="What is this space about?"
                     rows={3}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium resize-none"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium resize-none"
                   />
                 </div>
               </div>
@@ -151,15 +151,15 @@ export default function CreateSpaceModal({ isOpen, onClose, onCreate }: CreateSp
           {step === 1 ? (
             <button 
               onClick={handleNext}
-              className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-colors"
+              className="px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
             >
-              Continue
+              Next Step
             </button>
           ) : (
             <button 
               onClick={handleCreate}
               disabled={!name.trim()}
-              className="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-sm transition-colors"
+              className="px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
             >
               Create Space
             </button>

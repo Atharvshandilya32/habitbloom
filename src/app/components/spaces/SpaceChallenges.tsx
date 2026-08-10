@@ -8,16 +8,31 @@ interface SpaceChallengesProps {
   challenges: SpaceChallenge[];
   role: CustomRole | null | undefined;
   currentUserId: string;
+  spaceId: string;
   spaceType: import('../../../../lib/spaceTypes').SpaceType;
+  personalHabits: import('../../../../lib/habitTypes').Habit[];
+  habitLogsArray: Record<string, number[]>;
+  currentUserName: string;
   onCreateChallenge: (title: string, description: string, type: SpaceChallengeType, totalDays: number) => void;
   onJoinChallenge: (challengeId: string) => void;
+}
+
+interface ChallengeProgress {
+  count: number;
+  anonymous: boolean;
+  name: string;
+  lastUpdated: string;
 }
 
 export default function SpaceChallenges({
   challenges,
   role,
   currentUserId,
+  spaceId,
   spaceType,
+  personalHabits,
+  habitLogsArray,
+  currentUserName,
   onCreateChallenge,
   onJoinChallenge
 }: SpaceChallengesProps) {
@@ -51,6 +66,59 @@ export default function SpaceChallenges({
     setType('7-day');
     setShowForm(false);
   };
+
+  // Sync personal progress to Firebase for active challenges we joined
+  React.useEffect(() => {
+    if (!challenges || challenges.length === 0 || !personalHabits) return;
+    
+    challenges.forEach(challenge => {
+      if (challenge.participants?.includes(currentUserId)) {
+        // Calculate completions in challenge window
+        const start = new Date(challenge.startDate).getTime();
+        const end = challenge.endDate ? new Date(challenge.endDate).getTime() : start + (challenge.totalDays * 24 * 60 * 60 * 1000);
+        
+        let count = 0;
+        personalHabits.forEach(habit => {
+          const logs = habitLogsArray[habit.id];
+          if (logs) {
+            logs.forEach(logTime => {
+              if (logTime >= start && logTime <= end) count++;
+            });
+          }
+        });
+
+        // Use dynamic import of firebase to avoid passing it as prop if we can, but since this is client component we can import database
+        import('../../../../lib/firebase').then(({ database }) => {
+           if (database) {
+             import('firebase/database').then(({ ref, set }) => {
+               const progRef = ref(database, `spaceChallenges/${spaceId}/${challenge.id}/progress/${currentUserId}`);
+               set(progRef, { count, anonymous: false, name: currentUserName, lastUpdated: new Date().toISOString() });
+             });
+           }
+        });
+      }
+    });
+  }, [challenges, personalHabits, currentUserId, spaceId, currentUserName, habitLogsArray]);
+
+  // Fetch all progress for leaderboard
+  const [challengeProgress, setChallengeProgress] = useState<Record<string, Record<string, ChallengeProgress>>>({});
+  React.useEffect(() => {
+    import('../../../../lib/firebase').then(({ database }) => {
+       if (database) {
+         import('firebase/database').then(({ ref, onValue }) => {
+           const unsubscribes = challenges.map(c => {
+             const progRef = ref(database, `spaceChallenges/${spaceId}/${c.id}/progress`);
+             return onValue(progRef, snap => {
+               if (snap.exists()) {
+                 setChallengeProgress(prev => ({ ...prev, [c.id]: snap.val() }));
+               }
+             });
+           });
+           return () => unsubscribes.forEach(unsub => unsub());
+         });
+       }
+    });
+  }, [challenges, spaceId]);
 
   return (
     <div className="space-y-6">
@@ -209,6 +277,15 @@ export default function SpaceChallenges({
           challenges.map(challenge => {
             const participants = challenge.participants || [];
             const hasJoined = participants.includes(currentUserId);
+            const progressMap = challengeProgress[challenge.id] || {};
+            const progressList = Object.entries(progressMap).map(([uid, data]) => ({ uid, ...data }));
+            progressList.sort((a, b) => b.count - a.count);
+            
+            const myProgress = progressMap[currentUserId]?.count || 0;
+            const target = challenge.totalDays; // simplified target
+            const completed = myProgress >= target;
+            const remaining = Math.max(0, target - myProgress);
+
             return (
               <div key={challenge.id} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm relative group overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
@@ -232,14 +309,54 @@ export default function SpaceChallenges({
                 </p>
                 
                 {hasJoined ? (
-                  <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-bold bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-100 w-full justify-center">
-                    <CheckCircle2 size={16} />
-                    You are participating
+                  <div className="space-y-4">
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                       <div className="flex justify-between items-center mb-2">
+                         <span className="text-sm font-bold text-slate-700">Your Progress</span>
+                         <span className="text-sm font-bold text-emerald-600">{myProgress} / {target}</span>
+                       </div>
+                       <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden mb-3">
+                         <div className="bg-emerald-500 h-2 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (myProgress/target)*100)}%`}}></div>
+                       </div>
+                       
+                       {completed ? (
+                         <div className="flex items-center gap-2 text-emerald-600 text-sm font-bold bg-emerald-100/50 px-3 py-2 rounded-xl border border-emerald-100 justify-center">
+                           <CheckCircle2 size={16} /> Challenge Complete!
+                         </div>
+                       ) : (
+                         <div className="text-center text-xs font-bold text-slate-500">
+                           Keep going. {remaining} completions to reach the goal.
+                         </div>
+                       )}
+                    </div>
+                    
+                    {/* No Shame Leaderboard */}
+                    {progressList.length > 0 && (
+                      <div className="mt-4 border-t border-slate-100 pt-4">
+                        <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Community Progress</h5>
+                        <div className="space-y-2">
+                          {progressList.slice(0, 3).map((p, i) => (
+                            <div key={p.uid} className="flex justify-between items-center text-sm">
+                              <span className="font-medium text-slate-700 flex items-center gap-2">
+                                {i === 0 && <Trophy size={14} className="text-amber-500"/>}
+                                {p.anonymous ? 'Anonymous Participant' : p.name}
+                              </span>
+                              <span className="font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg">{p.count}</span>
+                            </div>
+                          ))}
+                          {progressList.length > 3 && (
+                            <div className="text-center text-xs font-medium text-slate-400 pt-1">
+                              + {progressList.length - 3} more growing together
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <button 
                     onClick={() => onJoinChallenge(challenge.id)}
-                    className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm"
+                    className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm mt-4"
                   >
                     Join Challenge
                   </button>

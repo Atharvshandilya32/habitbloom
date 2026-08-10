@@ -261,7 +261,7 @@ const DailyFocusView = React.memo(function DailyFocusView({
         
         <div className="flex-1 space-y-3 text-center md:text-left z-10">
           <h2 className="text-3xl font-black tracking-tight text-slate-900">
-            {progressPercent === 100 ? "You&apos;re all done! 🎉" : "Today&apos;s Focus"}
+            {progressPercent === 100 ? "You're all done! 🎉" : "Today's Focus"}
           </h2>
           <p className="text-slate-600 font-bold text-sm">
             {progressPercent === 100 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Search, Plus, Compass, LogIn, Trophy } from 'lucide-react';
+import { Users, Plus, Compass, LogIn, Trophy } from 'lucide-react';
 import { Space, SpaceInvite } from '../../../lib/spaceTypes';
 
 interface SpacesHubProps {
@@ -14,13 +14,11 @@ interface SpacesHubProps {
 
 export default function SpacesHub({
   userSpaces,
-  publicSpaces = [],
   pendingInvites,
   onCreateSpaceClick,
   onEnterSpace,
   onAcceptInvite
 }: SpacesHubProps) {
-  const [searchQuery, setSearchQuery] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const router = useRouter();
 
@@ -155,74 +153,7 @@ export default function SpacesHub({
       </div>
 
 
-      <div className="space-y-4 pt-8 border-t border-slate-200/60">
-        <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Discover Public Spaces</h3>
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search organizations..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-white/80 backdrop-blur-sm border border-emerald-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
-            />
-          </div>
-        </div>
-        
-        {searchQuery.trim() === '' ? (
-          <div className="text-center py-12 bg-slate-100/50 rounded-3xl border border-slate-200">
-            <p className="text-slate-500 font-medium">Use the search bar to find public organizations.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {publicSpaces
-              .filter(space => 
-                space.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                space.description.toLowerCase().includes(searchQuery.toLowerCase())
-              )
-              .map(space => {
-                const isMember = userSpaces.some(us => us.id === space.id);
-                return (
-                  <div 
-                    key={space.id} 
-                    className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border border-emerald-50 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all group"
-                  >
-                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <Users size={24} />
-                    </div>
-                    <h4 className="text-xl font-bold text-slate-800 mb-1">{space.name}</h4>
-                    <span className="inline-block px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase rounded-lg mb-3">
-                      {space.type}
-                    </span>
-                    <p className="text-sm text-slate-500 line-clamp-2 mb-4">{space.description}</p>
-                    {isMember ? (
-                      <button 
-                        onClick={() => onEnterSpace(space.id)}
-                        className="w-full py-2 bg-emerald-100/50 text-emerald-700 hover:bg-emerald-100 font-bold rounded-xl transition-all"
-                      >
-                        Enter Space
-                      </button>
-                    ) : (
-                      <button 
-                        disabled
-                        className="w-full py-2 bg-slate-100 text-slate-400 font-bold rounded-xl cursor-not-allowed"
-                        title="Joining public spaces directly will be available soon. For now, please use an invite code."
-                      >
-                        Join Unavailable
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            {publicSpaces.filter(space => space.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-              <div className="col-span-full text-center py-12 bg-slate-100/50 rounded-3xl border border-slate-200">
-                <p className="text-slate-500 font-medium">No organizations found matching &quot;{searchQuery}&quot;</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+
 
     </div>
   );

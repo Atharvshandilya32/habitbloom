@@ -23,7 +23,9 @@ interface SpaceDashboardProps {
   space: Space;
   role: CustomRole | null | undefined;
   currentUserId: string;
+  currentUserName?: string;
   personalHabits: Habit[];
+  habitLogsArray: Record<string, number[]>;
   onBack: () => void;
   onInstallTemplate: (template: SpaceHabitTemplate) => void;
 }
@@ -32,7 +34,9 @@ export default function SpaceDashboard({
   space, 
   role, 
   currentUserId,
+  currentUserName = 'Member',
   personalHabits,
+  habitLogsArray,
   onBack,
   onInstallTemplate
 }: SpaceDashboardProps) {
@@ -316,7 +320,11 @@ export default function SpaceDashboard({
             challenges={challenges}
             role={role}
             currentUserId={currentUserId}
+            currentUserName={currentUserName}
+            spaceId={space.id}
             spaceType={space.type}
+            personalHabits={personalHabits}
+            habitLogsArray={habitLogsArray}
             onCreateChallenge={handleCreateChallenge}
             onJoinChallenge={handleJoinChallenge}
           />
@@ -348,7 +356,7 @@ export default function SpaceDashboard({
         {activeTab === 'coach' && (
           <ErrorBoundary fallbackMessage="Failed to load coach dashboard.">
             <Suspense fallback={<CardSkeleton />}>
-              <CoachDashboard role={role} />
+              <CoachDashboard role={role} challenges={challenges} />
             </Suspense>
           </ErrorBoundary>
         )}

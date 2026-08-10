@@ -42,7 +42,7 @@ export default function AnnouncementsFeed({ announcements, role, onPostAnnouncem
       {hasPermission(role, 'sendAnnouncements') && !showPostForm && (
         <button 
           onClick={() => setShowPostForm(true)}
-          className="w-full bg-white border border-slate-200 border-dashed rounded-3xl p-4 flex items-center justify-center gap-2 text-slate-500 font-bold hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+          className="w-full bg-white border border-slate-200 border-dashed rounded-3xl p-4 flex items-center justify-center gap-2 text-slate-500 font-bold hover:bg-slate-50 hover:text-emerald-600 transition-colors"
         >
           <Megaphone size={18} />
           Post New Announcement
@@ -52,7 +52,7 @@ export default function AnnouncementsFeed({ announcements, role, onPostAnnouncem
       {hasPermission(role, 'sendAnnouncements') && showPostForm && (
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm animate-in slide-in-from-top-2">
           <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4">
-            <Megaphone size={18} className="text-indigo-500" />
+            <Megaphone size={18} className="text-emerald-500" />
             Create Announcement
           </h3>
           <div className="space-y-4">
@@ -61,14 +61,14 @@ export default function AnnouncementsFeed({ announcements, role, onPostAnnouncem
               placeholder="Announcement Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium"
             />
             <textarea
               placeholder="What do you want to share with the community?"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={4}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium resize-none"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium resize-none"
             />
             <div className="flex items-center justify-between pt-2">
               <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-700">
@@ -92,7 +92,7 @@ export default function AnnouncementsFeed({ announcements, role, onPostAnnouncem
                 <button 
                   onClick={handlePost}
                   disabled={!title.trim() || !content.trim()}
-                  className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-2 px-5 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
                 >
                   <Send size={16} />
                   Post
@@ -117,7 +117,7 @@ export default function AnnouncementsFeed({ announcements, role, onPostAnnouncem
             {hasPermission(role, 'sendAnnouncements') ? (
               <button 
                 onClick={() => setShowPostForm(true)}
-                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition-colors inline-flex items-center gap-2"
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-colors inline-flex items-center gap-2"
               >
                 <Megaphone size={16} /> Write First Announcement
               </button>

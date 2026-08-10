@@ -57,7 +57,7 @@ import { useHabitReminders } from '../../lib/useHabitReminders';
 
 // Firebase imports
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { ref, onValue, set, get, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, onValue, set, get, query, orderByChild, equalTo, child } from 'firebase/database';
 import { auth, database } from '../../lib/firebase';
 
 const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
@@ -149,6 +149,14 @@ export default function Page() {
     if (lastSeen !== todayStr) {
       setHasSeenWelcomeToday(false);
     }
+  }, []);
+
+  // Global safety timeout to prevent infinite loading screen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoadingFirebase(false);
+    }, 5000);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -304,14 +312,24 @@ export default function Page() {
 
   // 4. Real-time Firebase Sync
   useEffect(() => {
-    if (!database || !currentUser) return;
+    if (!currentUser) return;
+    if (!database) {
+      setIsLoadingFirebase(false);
+      return;
+    }
 
     const userRef = ref(database, `users/${currentUser.uid}`);
     setIsLoadingFirebase(true);
 
+    // Fallback: If Firebase takes too long (e.g. offline), unblock the UI
+    const timeoutId = setTimeout(() => {
+      setIsLoadingFirebase(false);
+    }, 5000);
+
     const unsubscribe = onValue(
       userRef,
       (snapshot) => {
+        clearTimeout(timeoutId);
         if (snapshot.exists()) {
           const data = snapshot.val();
           const dedupeById = <T extends { id: string }>(arr: T[]): T[] => Array.from(new Map(arr.filter(Boolean).map(item => [item.id, item])).values());
@@ -340,6 +358,7 @@ export default function Page() {
         setIsLoadingFirebase(false);
       },
       (error) => {
+        clearTimeout(timeoutId);
         console.error('Firebase sync error:', error);
         toast.error('Unable to sync with server. Changes will be saved when you reconnect.', { id: 'firebase-sync-error' });
         setIsLoadingFirebase(false);
@@ -348,7 +367,7 @@ export default function Page() {
 
     return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+  }, [currentUser?.uid, database]);
 
   // 5. Real-time Firebase Sync for Spaces
   useEffect(() => {
@@ -383,51 +402,41 @@ export default function Page() {
           return;
         }
 
-        // Fetch actual space details
-        onValue(
-          spacesRef,
-          (spaceSnapshot) => {
-            if (spaceSnapshot.exists()) {
-              const allSpaces = spaceSnapshot.val();
-              const mySpaces = mySpaceIds.map(id => allSpaces[id]).filter(Boolean);
+        // Fetch actual space details individually due to security rules
+        Promise.all(mySpaceIds.map(id => get(child(spacesRef, id)))).then(spaceSnapshots => {
+          const mySpaces = spaceSnapshots.map(snap => snap.exists() ? snap.val() : null).filter(Boolean) as Space[];
 
-              // Run silent migrations if necessary
-              const spacesToMigrate = mySpaces.filter(space => space.schemaVersion !== 2);
-              if (spacesToMigrate.length > 0) {
-                import('../../lib/migrateSpace').then(({ migrateLegacySpace }) => {
-                  spacesToMigrate.forEach(space => migrateLegacySpace(space));
-                });
-              }
+          // Run silent migrations if necessary
+          mySpaces.forEach(space => {
+            if (space.schemaVersion !== 2) {
+              import('../../lib/migrateSpace').then(({ migrateLegacySpace }) => migrateLegacySpace(space));
+            }
+          });
 
-              setUserSpaces(mySpaces);
+          setUserSpaces(mySpaces);
 
-              // Also store all spaces for public search (if no privacy settings yet, assume all are public)
-              const allSpacesList = Object.values(allSpaces) as Space[];
-              // For a real app we might filter out spaces the user is already in, or keep them.
-              setPublicSpaces(allSpacesList);
+          // Public spaces search is removed for privacy
+          setPublicSpaces([]);
 
-              // Fetch roles for the spaces we belong to
-              get(rolesRef).then(rolesSnapshot => {
-                if (rolesSnapshot.exists()) {
-                  const allSpaceRoles = rolesSnapshot.val();
-                  const resolvedRoles: Record<string, import('../../lib/spaceTypes').CustomRole> = {};
+          // Fetch roles for the spaces we belong to
+          get(rolesRef).then(rolesSnapshot => {
+            if (rolesSnapshot.exists()) {
+              const allSpaceRoles = rolesSnapshot.val();
+              const resolvedRoles: Record<string, import('../../lib/spaceTypes').CustomRole> = {};
 
-                  mySpaceIds.forEach(spaceId => {
-                    const roleId = myRoleMappings[spaceId];
-                    if (roleId && allSpaceRoles[spaceId] && allSpaceRoles[spaceId][roleId]) {
-                      resolvedRoles[spaceId] = allSpaceRoles[spaceId][roleId];
-                    }
-                  });
-                  setUserRoles(resolvedRoles);
+              mySpaceIds.forEach(spaceId => {
+                const roleId = myRoleMappings[spaceId];
+                if (roleId && allSpaceRoles[spaceId] && allSpaceRoles[spaceId][roleId]) {
+                  resolvedRoles[spaceId] = allSpaceRoles[spaceId][roleId];
                 }
               });
-
-            } else {
-              setPublicSpaces([]);
+              setUserRoles(resolvedRoles);
             }
-          },
-          { onlyOnce: true } // Read spaces once per member update
-        );
+          });
+        }).catch(err => {
+          console.error("Failed to load spaces", err);
+          setPublicSpaces([]);
+        });
       },
       (error) => {
         console.error('Firebase space sync error:', error);
@@ -436,7 +445,7 @@ export default function Page() {
     );
 
     return () => unsubscribeMembers();
-  }, [currentUser]);
+  }, [currentUser?.uid]);
 
   const daysInMonth = getDaysInMonth(year, month);
 
@@ -671,9 +680,29 @@ export default function Page() {
 
   if (isLoadingFirebase && habits.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-600 gap-3">
-        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm font-medium">Syncing HabitBloom Cloud...</p>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white flex flex-col items-center justify-center text-emerald-800 gap-6 relative overflow-hidden">
+        {/* Subtle decorative background elements */}
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-emerald-200/20 rounded-full blur-3xl mix-blend-multiply animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-teal-200/20 rounded-full blur-3xl mix-blend-multiply animate-pulse" style={{ animationDelay: '1s' }} />
+        
+        {/* Main loading container */}
+        <div className="relative z-10 flex flex-col items-center p-8 bg-white/40 backdrop-blur-md rounded-3xl border border-emerald-100 shadow-xl shadow-emerald-900/5">
+          <div className="relative w-16 h-16 flex items-center justify-center mb-4">
+            <div className="absolute inset-0 border-4 border-emerald-100 rounded-full" />
+            <div className="absolute inset-0 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            {/* Inner pulsing dot */}
+            <div className="w-3 h-3 bg-emerald-400 rounded-full animate-ping" />
+          </div>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">HabitBloom</h2>
+          <p className="text-sm font-medium text-emerald-600/80 mt-2 flex items-center gap-2">
+            <span>Syncing your progress</span>
+            <span className="flex gap-1">
+              <span className="w-1 h-1 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1 h-1 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1 h-1 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </span>
+          </p>
+        </div>
       </div>
     );
   }
@@ -965,7 +994,9 @@ export default function Page() {
                     space={userSpaces.find(s => s.id === activeSpaceId)!}
                     role={userRoles[activeSpaceId]}
                     currentUserId={currentUser?.uid || ''}
+                    currentUserName={currentUser?.displayName || 'Member'}
                     personalHabits={habits}
+                    habitLogsArray={habitLogsArray}
                     onBack={() => setActiveSpaceId(null)}
                     onInstallTemplate={(template) => {
                       const newHabit = {

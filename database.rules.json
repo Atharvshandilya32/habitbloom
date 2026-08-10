@@ -61,6 +61,7 @@
     },
     "socialProfiles": {
       ".read": "auth != null",
+      ".indexOn": ["username", "displayName"],
       "$uid": {
         ".read": "auth != null",
         ".write": "$uid === auth.uid"

@@ -13,19 +13,17 @@ import {
   Download,
   ShieldCheck,
   Info,
-  Moon,
-  Sun,
-  Sparkles,
-  Trash2,
 } from 'lucide-react';
-import { useTheme } from './ThemeProvider';
 import UserProfile from './UserProfile';
 import HabitReminderSettings from './HabitReminderSettings';
 import DataExportModal from './DataExportModal';
-import { toast } from 'sonner';
-import { useFeatureFlags } from '../../../lib/FeatureFlagContext';
-import { Star, Sparkles as SparklesIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Star } from 'lucide-react';
+import AppearanceTab from './settings/AppearanceTab';
+import HabitsTab from './settings/HabitsTab';
+import DataTab from './settings/DataTab';
+import UpcomingTab from './settings/UpcomingTab';
+import PrivacyTab from './settings/PrivacyTab';
+import AboutTab from './settings/AboutTab';
 
 interface SettingsViewProps {
   user: FirebaseUser | null;
@@ -56,8 +54,6 @@ export default function SettingsView({
 }: SettingsViewProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [exportModalOpen, setExportModalOpen] = useState(false);
-  const { themeMode, setThemeMode } = useTheme();
-  const { flags, togglePremium } = useFeatureFlags();
 
   const navItems: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: 'Profile', icon: <User size={16} /> },
@@ -121,79 +117,7 @@ export default function SettingsView({
           )}
 
           {/* Appearance Tab */}
-          {activeTab === 'appearance' && (
-            <div className="space-y-8">
-              <div className="space-y-6">
-                <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Appearance & Styling</h2>
-
-                <div className="space-y-4">
-                  <label className="text-xs font-bold text-slate-700 block">Theme Mode</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <button
-                      onClick={() => setThemeMode('light')}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
-                        themeMode === 'light'
-                          ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                          : 'border-emerald-100 text-slate-700 hover:bg-emerald-50/50 hover:border-emerald-300'
-                      }`}
-                    >
-                      <Sun size={20} className="text-amber-500" />
-                      <span>Light Mode</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setThemeMode('dark');
-                        toast.info('Dark mode preset selected');
-                      }}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
-                        themeMode === 'dark'
-                          ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                          : 'border-emerald-100 text-slate-700 hover:bg-emerald-50/50 hover:border-emerald-300'
-                      }`}
-                    >
-                      <Moon size={20} className="text-indigo-500" />
-                      <span>Dark Mode</span>
-                    </button>
-
-                    <button
-                      onClick={() => setThemeMode('system')}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-xs font-bold transition-all ${
-                        themeMode === 'system'
-                          ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                          : 'border-emerald-100 text-slate-700 hover:bg-emerald-50/50 hover:border-emerald-300'
-                      }`}
-                    >
-                      <Sparkles size={20} className="text-emerald-500" />
-                      <span>System Default</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Ambient Soundscapes</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {['None', 'Rain', 'Forest', 'Ocean'].map(sound => (
-                    <button
-                      key={sound}
-                      onClick={() => toast.success(`${sound} ambient audio selected (coming soon)`)}
-                      className={`p-4 rounded-xl border text-xs font-bold transition-all ${
-                        sound === 'None' 
-                          ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                          : 'border-emerald-100 text-slate-700 hover:bg-emerald-50/50 hover:border-emerald-300'
-                      }`}
-                    >
-                      {sound}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[11px] font-medium text-slate-500">
-                  Lightweight browser audio will play in the background when you are in the Habit Garden.
-                </p>
-              </div>
-            </div>
-          )}
+          {activeTab === 'appearance' && <AppearanceTab />}
 
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
@@ -215,62 +139,10 @@ export default function SettingsView({
           )}
 
           {/* Habits Tab */}
-          {activeTab === 'habits' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Habit Management</h2>
-              <p className="text-xs text-slate-500">You currently have {habits.length} active habits configured.</p>
-
-              <div className="divide-y divide-emerald-50 border border-emerald-100 rounded-xl overflow-hidden">
-                {habits.map(h => (
-                  <div key={h.id} className="flex items-center justify-between p-3.5 hover:bg-emerald-50/50 transition-colors">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-base">{h.emoji}</span>
-                      <div>
-                        <div className="text-xs font-bold text-slate-800">{h.name}</div>
-                        <div className="text-[11px] text-slate-500">{h.category || 'General'} • Goal: {h.goal} days/mo</div>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
-                      Active
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {activeTab === 'habits' && <HabitsTab habits={habits} />}
 
           {/* Data Tab */}
-          {activeTab === 'data' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Data Storage & Storage Options</h2>
-              <p className="text-xs text-slate-500">
-                HabitBloom seamlessly mirrors your data between local browser storage and your free Firebase Realtime Database.
-              </p>
-
-              <div className="p-4 rounded-xl bg-emerald-50/30 border border-emerald-100 space-y-2">
-                <div className="text-xs font-bold text-slate-800">Storage Summary</div>
-                <div className="text-xs text-slate-600">Total Habits: <span className="font-bold">{habits.length}</span></div>
-                <div className="text-xs text-slate-600">Logged Entries: <span className="font-bold">{Object.keys(logs).length}</span></div>
-              </div>
-
-              {onClearData && (
-                <div className="pt-4 border-t border-slate-100">
-                  <button
-                    onClick={() => {
-                      if (confirm('Are you sure you want to reset your local habit cache? This cannot be undone.')) {
-                        onClearData();
-                        toast.success('Local cache cleared');
-                      }
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 text-xs font-bold transition-all"
-                  >
-                    <Trash2 size={15} />
-                    Reset Local Habit Cache
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          {activeTab === 'data' && <DataTab habits={habits} logs={logs} onClearData={onClearData} />}
 
           {/* Export Tab */}
           {activeTab === 'export' && (
@@ -291,80 +163,13 @@ export default function SettingsView({
           )}
 
           {/* Upcoming Features Tab */}
-          {activeTab === 'upcoming' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Upcoming Features</h2>
-              <p className="text-xs text-slate-500">
-                Unlock advanced AI heuristics, Team Challenges, and personalized Habit Insights.
-              </p>
-
-              <div className="p-5 rounded-2xl border border-indigo-200 bg-indigo-50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-sm font-extrabold text-indigo-900">HabitBloom Premium</h3>
-                  <p className="text-xs font-medium text-indigo-700 mt-1">
-                    {flags.isPremium ? "You are currently enjoying Premium features!" : "Upgrade to unlock Smart Insights and Team Challenges."}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    togglePremium();
-                    toast.success(flags.isPremium ? "Premium features disabled." : "Premium features unlocked!");
-                  }}
-                  className={`relative px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm overflow-hidden ${
-                    flags.isPremium 
-                      ? 'bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  }`}
-                >
-                  <AnimatePresence>
-                    {!flags.isPremium && (
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                        initial={{ x: '-100%' }}
-                        animate={{ x: '200%' }}
-                        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                      />
-                    )}
-                  </AnimatePresence>
-                  <span className="relative z-10 flex items-center gap-1.5">
-                    {flags.isPremium ? 'Disable Premium' : <><SparklesIcon size={14}/> Unlock Premium (Demo)</>}
-                  </span>
-                </button>
-              </div>
-            </div>
-          )}
+          {activeTab === 'upcoming' && <UpcomingTab />}
 
           {/* Privacy Tab */}
-          {activeTab === 'privacy' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Privacy & Security</h2>
-              <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/80 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-800">
-                  <ShieldCheck size={16} />
-                  Zero Paid APIs & Zero Third-Party Trackers
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  HabitBloom guarantees complete data privacy. Your data remains strictly within your browser and your private Firebase RTDB container.
-                </p>
-              </div>
-            </div>
-          )}
+          {activeTab === 'privacy' && <PrivacyTab />}
 
           {/* About Tab */}
-          {activeTab === 'about' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">About HabitBloom</h2>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🌱</span>
-                  <span className="text-base font-extrabold text-slate-900">HabitBloom v2.0 Premium</span>
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed max-w-lg">
-                  Designed inspired by Linear, Notion, Arc Browser, Todoist, and TickTick. Built to run fast and light on free Vercel + Firebase infrastructure.
-                </p>
-              </div>
-            </div>
-          )}
+          {activeTab === 'about' && <AboutTab />}
         </div>
       </div>
 

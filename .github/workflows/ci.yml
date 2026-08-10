@@ -50,7 +50,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      pull-requests: write
     steps:
       - name: Invoke Jules
         uses: google-labs-code/jules-action@v1

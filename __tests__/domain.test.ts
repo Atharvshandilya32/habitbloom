@@ -41,6 +41,13 @@ function runTests() {
   assert(parsed.entries[0].id === '1001', 'Sanitizes and extracts clean org ID');
   assert(parsed.errors.length > 0, 'Captures duplicate row warnings');
 
+  const emptyParsed = parseCSVText("");
+  assert(emptyParsed.total === 0 && emptyParsed.errors.includes('File is empty.'), 'Handles empty CSV file');
+
+  const largeCsv = "A".repeat(2 * 1024 * 1024 + 1);
+  const largeParsed = parseCSVText(largeCsv);
+  assert(largeParsed.total === 0 && largeParsed.errors.includes('File size exceeds 2MB limit.'), 'Handles large CSV file exceeding 2MB');
+
   // 4. Role Permission Engine Tests
   const adminRole = { id: 'admin', spaceId: 's1', name: 'Admin', description: 'Admin role', color: 'indigo-600', icon: 'shield', order: 1, permissions: createPermissions({ manageMembers: true, deleteSpace: true }) };
   const memberRole = { id: 'member', spaceId: 's1', name: 'Member', description: 'Member role', color: 'blue-500', icon: 'user', order: 2, permissions: createPermissions({ manageMembers: false }) };

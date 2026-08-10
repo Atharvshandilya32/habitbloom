@@ -6,9 +6,10 @@ import { hasPermission } from '../../../../../lib/spacePermissions';
 interface CoachDashboardProps {
   role: CustomRole | null | undefined;
   challenges?: SpaceChallenge[];
+  totalCompletions?: number;
 }
 
-export default function CoachDashboard({ role, challenges = [] }: CoachDashboardProps) {
+export default function CoachDashboard({ role, challenges = [], totalCompletions = 0 }: CoachDashboardProps) {
 
   // Only roles with createChallenges or manageMembers can see this dashboard
   if (!hasPermission(role, 'createChallenges') && !hasPermission(role, 'manageMembers')) {
@@ -34,6 +35,23 @@ export default function CoachDashboard({ role, challenges = [] }: CoachDashboard
       insights.push({ type: 'neutral', text: `${totalParticipants} members are actively participating in ongoing challenges.`, icon: <Users size={20} className="text-indigo-500" /> });
     } else {
       insights.push({ type: 'warning', text: 'You have active challenges, but no participants yet. Make an announcement to invite members!', icon: <Megaphone size={20} className="text-amber-500" /> });
+    }
+  }
+
+  if (totalCompletions > 0) {
+    const milestones = [100, 500, 1000, 2500, 5000, 10000, 25000];
+    let nextMilestone = milestones[0];
+    for (const m of milestones) {
+      if (totalCompletions < m) {
+        nextMilestone = m;
+        break;
+      }
+    }
+    const percent = Math.floor((totalCompletions / nextMilestone) * 100);
+    if (percent >= 80) {
+      insights.push({ type: 'positive', text: `The community has ${totalCompletions} total completions! You are ${percent}% of the way to the next milestone of ${nextMilestone}. Great momentum!`, icon: <Activity size={20} className="text-emerald-500" /> });
+    } else {
+      insights.push({ type: 'neutral', text: `The community has reached ${totalCompletions} total completions so far. The next milestone is ${nextMilestone}.`, icon: <Activity size={20} className="text-indigo-500" /> });
     }
   }
 

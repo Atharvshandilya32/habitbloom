@@ -57,12 +57,25 @@ export default function InvitePage() {
 
         setInviteData(foundInvite);
 
-        // Fetch Space Details
-        const spaceSnapshot = await get(child(dbRef, `spaces/${foundInvite.spaceId}`));
-        if (spaceSnapshot.exists()) {
-          setSpace(spaceSnapshot.val());
+        // Fetch Space Details (Field-level due to Security Rules)
+        const nameSnap = await get(child(dbRef, `spaces/${foundInvite.spaceId}/name`));
+        if (nameSnap.exists()) {
+          const descSnap = await get(child(dbRef, `spaces/${foundInvite.spaceId}/description`));
+          const typeSnap = await get(child(dbRef, `spaces/${foundInvite.spaceId}/type`));
+          const brandingSnap = await get(child(dbRef, `spaces/${foundInvite.spaceId}/branding`));
+          const idConfigSnap = await get(child(dbRef, `spaces/${foundInvite.spaceId}/identityConfig`));
+
+          const partialSpace: Partial<Space> = {
+            id: foundInvite.spaceId,
+            name: nameSnap.val(),
+            description: descSnap.exists() ? descSnap.val() : '',
+            type: typeSnap.exists() ? typeSnap.val() : 'personal',
+            branding: brandingSnap.exists() ? brandingSnap.val() : undefined,
+            identityConfig: idConfigSnap.exists() ? idConfigSnap.val() : undefined,
+          };
+          setSpace(partialSpace as Space);
         } else {
-          setError('The space for this invitation no longer exists.');
+          setError('The space for this invitation no longer exists or is restricted.');
           setCheckingInvite(false);
           return;
         }

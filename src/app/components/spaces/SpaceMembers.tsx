@@ -67,16 +67,16 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
         }
       });
 
-      // Try resolving user profiles from /users/{userId}/profile
+      // Try resolving user profiles from /socialProfiles
       const userProfilesMap: Record<string, { displayName?: string; photoURL?: string; hbId?: string; email?: string }> = {};
       if (database) {
         try {
-          const profilesSnap = await get(child(ref(database), 'users'));
+          const profilesSnap = await get(child(ref(database), 'socialProfiles'));
           if (profilesSnap.exists()) {
-            const usersData = profilesSnap.val();
-            Object.keys(usersData).forEach(uId => {
-              if (usersData[uId]?.profile) {
-                userProfilesMap[uId] = usersData[uId].profile;
+            const profilesData = profilesSnap.val();
+            Object.keys(profilesData).forEach(uId => {
+              if (profilesData[uId]) {
+                userProfilesMap[uId] = profilesData[uId];
               }
             });
           }

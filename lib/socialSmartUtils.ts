@@ -1,18 +1,18 @@
 import { Habit, HabitLog } from './habitTypes';
-import { UserSocialProfile, AiChallengeRecommendation } from './socialTypes';
+import { UserSocialProfile, SmartChallengeRecommendation } from './socialTypes';
 import { formatHbId } from './identityUtils';
 
 /**
- * AI Coach Recommendation Engine
+ * Smart Coach Recommendation Engine
  * Analyzes habit completion logs, streaks, categories, and friends list to generate tailored challenge suggestions.
  */
-export function generateAiChallengeRecommendations(
+export function generateSmartChallengeRecommendations(
   habits: Habit[],
   logs: HabitLog,
   friends: UserSocialProfile[],
   currentStreak: number = 0
-): AiChallengeRecommendation[] {
-  const recommendations: AiChallengeRecommendation[] = [];
+): SmartChallengeRecommendation[] {
+  const recommendations: SmartChallengeRecommendation[] = [];
 
   // 1. Analyze category frequency and identify lowest completion category
   const categoryStats: Record<string, { total: number; completed: number }> = {};
@@ -53,7 +53,7 @@ export function generateAiChallengeRecommendations(
       id: 'ai_rec_recovery',
       title: '7-Day Ignition Recovery Duel ⚡',
       description: 'Your streak was recently broken or is just starting. Kickstart momentum with a 7-day focused streak sprint.',
-      reason: 'AI noticed your current streak is below 3 days. A 7-day duel will reactivate your momentum multiplier!',
+      reason: 'System noticed your current streak is below 3 days. A 7-day duel will reactivate your momentum multiplier!',
       targetDays: 7,
       habitCategory: weakestCategory,
       emoji: '⚡',
@@ -63,7 +63,7 @@ export function generateAiChallengeRecommendations(
       id: 'ai_rec_mastery',
       title: '14-Day Consistency Overdrive 🚀',
       description: `You have a promising ${currentStreak}-day streak! Push into high performance in ${weakestCategory}.`,
-      reason: `AI calculated your ${weakestCategory} category has high growth potential. Challenge yourself to lock in double XP!`,
+      reason: `Data calculated your ${weakestCategory} category has high growth potential. Challenge yourself to lock in double XP!`,
       targetDays: 14,
       habitCategory: weakestCategory,
       emoji: '🚀',
@@ -93,7 +93,7 @@ export function generateAiChallengeRecommendations(
       id: 'ai_rec_find_friends',
       title: 'Connect with Accountability Partners 🤝',
       description: 'Users who share habits with friends are 3.4x more likely to reach a 30-day streak!',
-      reason: 'AI detected 0 active accountability partners. Use your HabitBloom ID to connect with friends!',
+      reason: 'System detected 0 active accountability partners. Use your HabitBloom ID to connect with friends!',
       targetDays: 7,
       habitCategory: 'Social Accountability',
       emoji: '🤝',
@@ -105,7 +105,7 @@ export function generateAiChallengeRecommendations(
     id: 'ai_rec_weekend_defense',
     title: 'Weekend Habit Armor 🛡️',
     description: 'Statistically, habit completion drops 42% on Saturdays & Sundays. Set an automated weekend check-in rule!',
-    reason: 'AI analysis: Weekend focus protection active. Complete all weekend habits to earn the Weekend Sentinel Badge.',
+    reason: 'Data analysis: Weekend focus protection active. Complete all weekend habits to earn the Weekend Sentinel Badge.',
     targetDays: 2,
     habitCategory: '🧘 Wellness',
     emoji: '🛡️',

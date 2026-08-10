@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { User } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth';
+import { ref, update } from 'firebase/database';
+import { database } from '../../../lib/firebase';
 import { Pencil, Check, X, User as UserIcon, Mail, Calendar, Target, Flame, TrendingUp, Share2 } from 'lucide-react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { getLast6MonthsStats, getCurrentStreak } from '../../../lib/habitUtils';
@@ -75,7 +77,17 @@ export default function UserProfile({ user, habits, logs, currentYear, currentMo
     setNameError('');
     try {
       await updateProfile(user, { displayName: newName.trim() });
+      
+      if (database) {
+        // Sync to Realtime Database so changes propagate immediately
+        const updates: Record<string, string> = {};
+        updates[`users/${user.uid}/profile/displayName`] = newName.trim();
+        updates[`socialProfiles/${user.uid}/displayName`] = newName.trim();
+        await update(ref(database), updates);
+      }
+      
       setEditingName(false);
+      toast.success('Name updated successfully!');
     } catch {
       setNameError('Failed to update name. Try again.');
     } finally {

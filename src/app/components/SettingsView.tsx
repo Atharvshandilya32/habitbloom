@@ -24,8 +24,6 @@ import HabitReminderSettings from './HabitReminderSettings';
 import DataExportModal from './DataExportModal';
 import { toast } from 'sonner';
 import { useFeatureFlags } from '../../../lib/FeatureFlagContext';
-import { Star, Sparkles as SparklesIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface SettingsViewProps {
   user: FirebaseUser | null;
@@ -57,6 +55,7 @@ export default function SettingsView({
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const { themeMode, setThemeMode } = useTheme();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { flags, togglePremium } = useFeatureFlags();
 
   const navItems: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
@@ -66,7 +65,6 @@ export default function SettingsView({
     { id: 'habits', label: 'Habits', icon: <SlidersHorizontal size={16} /> },
     { id: 'data', label: 'Data', icon: <Database size={16} /> },
     { id: 'export', label: 'Export', icon: <Download size={16} /> },
-    { id: 'upcoming', label: 'Upcoming Features', icon: <Star size={16} /> },
     { id: 'privacy', label: 'Privacy', icon: <ShieldCheck size={16} /> },
     { id: 'about', label: 'About', icon: <Info size={16} /> },
   ];
@@ -170,28 +168,6 @@ export default function SettingsView({
                   </div>
                 </div>
               </div>
-
-              <div className="space-y-6">
-                <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Ambient Soundscapes</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {['None', 'Rain', 'Forest', 'Ocean'].map(sound => (
-                    <button
-                      key={sound}
-                      onClick={() => toast.success(`${sound} ambient audio selected (coming soon)`)}
-                      className={`p-4 rounded-xl border text-xs font-bold transition-all ${
-                        sound === 'None' 
-                          ? 'border-emerald-600 bg-emerald-50/50 text-emerald-800 ring-2 ring-emerald-500/20'
-                          : 'border-emerald-100 text-slate-700 hover:bg-emerald-50/50 hover:border-emerald-300'
-                      }`}
-                    >
-                      {sound}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[11px] font-medium text-slate-500">
-                  Lightweight browser audio will play in the background when you are in the Habit Garden.
-                </p>
-              </div>
             </div>
           )}
 
@@ -290,49 +266,7 @@ export default function SettingsView({
             </div>
           )}
 
-          {/* Upcoming Features Tab */}
-          {activeTab === 'upcoming' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Upcoming Features</h2>
-              <p className="text-xs text-slate-500">
-                Unlock advanced AI heuristics, Team Challenges, and personalized Habit Insights.
-              </p>
 
-              <div className="p-5 rounded-2xl border border-indigo-200 bg-indigo-50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-sm font-extrabold text-indigo-900">HabitBloom Premium</h3>
-                  <p className="text-xs font-medium text-indigo-700 mt-1">
-                    {flags.isPremium ? "You are currently enjoying Premium features!" : "Upgrade to unlock Smart Insights and Team Challenges."}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    togglePremium();
-                    toast.success(flags.isPremium ? "Premium features disabled." : "Premium features unlocked!");
-                  }}
-                  className={`relative px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm overflow-hidden ${
-                    flags.isPremium 
-                      ? 'bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  }`}
-                >
-                  <AnimatePresence>
-                    {!flags.isPremium && (
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-                        initial={{ x: '-100%' }}
-                        animate={{ x: '200%' }}
-                        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                      />
-                    )}
-                  </AnimatePresence>
-                  <span className="relative z-10 flex items-center gap-1.5">
-                    {flags.isPremium ? 'Disable Premium' : <><SparklesIcon size={14}/> Unlock Premium (Demo)</>}
-                  </span>
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Privacy Tab */}
           {activeTab === 'privacy' && (

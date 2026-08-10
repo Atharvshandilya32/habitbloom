@@ -12,7 +12,13 @@ The 3.0 release represents a massive architectural and design consolidation:
   - **Habit Garden**: Watch your habits literally bloom into beautiful flowers as you maintain streaks.
   - **Behavioral DNA**: Get categorized into unique personas based on your consistency and diversity.
   - **Future Projections**: See where your current trajectory will take you in 90 days or a year.
-- **Social Spaces**: Join shared habits, track real-time activity, and compete on leaderboards.
+- **Spaces 2.0 & Social Hub**: 
+  - Join **Shared Spaces** to collaborate on group habits, install templates, and track real-time activity.
+  - Build your **Social Identity** (Digital ID Pass, Universe Levels) and compete on global leaderboards.
+- **Production Hardened (Phase 7)**:
+  - Robust **Offline-first Sync Engine** for seamless background mutations.
+  - Granular **React Error Boundaries** per-tab.
+  - Strictly typed Firebase Rules preventing unauthorized reads/writes and race conditions.
 
 ## Tech Stack
 

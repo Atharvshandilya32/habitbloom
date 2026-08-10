@@ -62,32 +62,40 @@
     },
     "socialProfiles": {
       ".read": "auth != null",
+      ".indexOn": ["totalXP", "currentStreak", "completedHabitsCount", "hbId", "displayName"],
       "$uid": {
         ".read": "auth != null",
         ".write": "$uid === auth.uid"
       }
     },
+    "spaceChallenges": {
+      "$spaceId": {
+        ".read": "auth != null && root.child('spaceMembers').child($spaceId + '_' + auth.uid).exists()",
+        ".write": "auth != null && root.child('spaceMembers').child($spaceId + '_' + auth.uid).exists()"
+      }
+    },
     "spaceAuditLogs": {
       "$spaceId": {
-        ".read": "auth != null",
+        ".read": "auth != null && (root.child('spaces').child($spaceId).child('createdBy').val() === auth.uid || root.child('spaceMembers').child($spaceId + '_' + auth.uid).child('roleId').val() === 'admin')",
         "$logId": {
-          ".read": "auth != null",
+          ".read": "auth != null && (root.child('spaces').child($spaceId).child('createdBy').val() === auth.uid || root.child('spaceMembers').child($spaceId + '_' + auth.uid).child('roleId').val() === 'admin')",
           ".write": "auth != null && !data.exists()"
         }
       }
     },
     "spaceInvites": {
-      ".read": "auth != null",
+      ".read": "auth != null && query.orderByChild == 'spaceId' && root.child('spaceMembers').child(query.equalTo + '_' + auth.uid).exists()",
+      ".indexOn": ["spaceId"],
       "$inviteCode": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null && (!data.exists() || !newData.exists() || data.child('spaceId').val() === newData.child('spaceId').val())"
       }
     },
     "spaceMembers": {
-      ".read": "auth != null",
+      ".read": "auth != null && ((query.orderByChild == 'userId' && query.equalTo == auth.uid) || (query.orderByChild == 'spaceId' && root.child('spaceMembers').child(query.equalTo + '_' + auth.uid).exists()))",
       ".indexOn": ["userId", "spaceId"],
       "$memberKey": {
-        ".read": "auth != null",
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || root.child('spaceMembers').child(data.child('spaceId').val() + '_' + auth.uid).exists())",
         ".write": "auth != null && (!data.exists() || newData.child('userId').val() === auth.uid || root.child('spaceMembers').child($memberKey).child('userId').val() === auth.uid || root.child('spaces').child(newData.child('spaceId').val()).child('createdBy').val() === auth.uid)"
       }
     },
@@ -99,24 +107,22 @@
     },
     "spaceRosters": {
       "$spaceId": {
-        ".read": "auth != null",
+        ".read": "auth != null && (root.child('spaces').child($spaceId).child('createdBy').val() === auth.uid || root.child('spaceMembers').child($spaceId + '_' + auth.uid).child('roleId').val() === 'admin')",
         ".write": "auth != null && (root.child('spaces').child($spaceId).child('createdBy').val() === auth.uid || root.child('spaceMembers').child($spaceId + '_' + auth.uid).child('roleId').val() === 'admin')"
       }
     },
     "spaces": {
-      ".read": "auth != null",
       "$spaceId": {
-        ".read": "auth != null",
+        ".read": "auth != null && root.child('spaceMembers').child($spaceId + '_' + auth.uid).exists()",
+        "name": { ".read": "auth != null" },
+        "description": { ".read": "auth != null" },
+        "type": { ".read": "auth != null" },
+        "branding": { ".read": "auth != null" },
+        "identityConfig": { ".read": "auth != null" },
         ".write": "auth != null && (!data.exists() || data.child('createdBy').val() === auth.uid)"
       }
     },
-    "teams": {
-      ".read": "auth != null",
-      "$teamId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    },
+
     "users": {
       "$uid": {
         ".read": "$uid === auth.uid",

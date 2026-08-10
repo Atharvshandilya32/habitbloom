@@ -10,7 +10,6 @@ export const migrateLegacySpace = async (space: Space): Promise<boolean> => {
 
   if (!database) return false;
 
-  console.log(`Starting migration for space: ${space.id} (${space.name}) to schemaVersion 2`);
 
   try {
     const dbRef = ref(database);
@@ -72,7 +71,6 @@ export const migrateLegacySpace = async (space: Space): Promise<boolean> => {
     const updatedSpace = { ...space, schemaVersion: 2 };
     await set(ref(database, `spaces/${space.id}`), updatedSpace);
 
-    console.log(`Successfully migrated space: ${space.id}`);
     return true;
 
   } catch (err) {

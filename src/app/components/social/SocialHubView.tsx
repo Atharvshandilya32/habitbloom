@@ -19,13 +19,13 @@ import {
   ActivityFeedItem,
   UserNotification,
   SocialChallenge,
-  AiChallengeRecommendation,
+  SmartChallengeRecommendation,
 } from '../../../../lib/socialTypes';
 import {
   ensureSocialProfile,
   publishActivityItem,
 } from '../../../../lib/socialUtils';
-import { generateAiChallengeRecommendations } from '../../../../lib/socialAiUtils';
+import { generateSmartChallengeRecommendations } from '../../../../lib/socialSmartUtils';
 import { formatHbId } from '../../../../lib/identityUtils';
 import FriendSearchModal from './FriendSearchModal';
 import FriendProfileModal from './FriendProfileModal';
@@ -34,11 +34,11 @@ import NotificationCenter from './NotificationCenter';
 import ShareCardModal from './ShareCardModal';
 import LeaderboardView from './LeaderboardView';
 import ChallengesHub from './ChallengesHub';
-import AiCoachWidget from './AiCoachWidget';
+import SmartCoachWidget from './SmartCoachWidget';
 import DirectMessagesView from './DirectMessagesView';
 import { Habit, HabitLog } from '../../../../lib/habitTypes';
 import { User } from 'firebase/auth';
-import { ref, onValue, set, push, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, onValue, set, push, query, orderByChild, equalTo, limitToLast } from 'firebase/database';
 import { database } from '../../../../lib/firebase';
 
 interface SocialHubViewProps {
@@ -71,7 +71,7 @@ export default function SocialHubView({
   const [activityItems, setActivityItems] = useState<ActivityFeedItem[]>([]);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [challenges, setChallenges] = useState<SocialChallenge[]>([]);
-  const [aiRecs, setAiRecs] = useState<AiChallengeRecommendation[]>([]);
+  const [aiRecs, setAiRecs] = useState<SmartChallengeRecommendation[]>([]);
 
   // Calculate stats
   const completedLogCount = Object.values(logs).filter(Boolean).length;
@@ -95,7 +95,7 @@ export default function SocialHubView({
     ).then((prof) => {
       if (prof) {
         setMySocialProfile(prof);
-        const recs = generateAiChallengeRecommendations(habits, logs, friends, currentStreak);
+        const recs = generateSmartChallengeRecommendations(habits, logs, friends, currentStreak);
         setAiRecs(recs);
       }
     });
@@ -161,9 +161,10 @@ export default function SocialHubView({
       updateRequests();
     });
 
-    // Realtime Activity Feed Listener
+    // Realtime Activity Feed Listener (Limited to 50 for cost control)
     const feedRef = ref(database, 'activityFeed');
-    const unsubFeed = onValue(feedRef, (snap) => {
+    const feedQuery = query(feedRef, limitToLast(50));
+    const unsubFeed = onValue(feedQuery, (snap) => {
       if (snap.exists()) {
         const itemsMap = snap.val() as Record<string, ActivityFeedItem>;
         const list = Object.values(itemsMap).sort(
@@ -175,9 +176,10 @@ export default function SocialHubView({
       }
     });
 
-    // Realtime Notifications Listener
+    // Realtime Notifications Listener (Limited to 50 for cost control)
     const notifRef = ref(database, `notifications/${currentUser.uid}`);
-    const unsubNotifs = onValue(notifRef, (snap) => {
+    const notifQuery = query(notifRef, limitToLast(50));
+    const unsubNotifs = onValue(notifQuery, (snap) => {
       if (snap.exists()) {
         const notifMap = snap.val() as Record<string, UserNotification>;
         const list = Object.values(notifMap).sort(
@@ -189,9 +191,10 @@ export default function SocialHubView({
       }
     });
 
-    // Realtime Challenges Listener
+    // Realtime Challenges Listener (Limited to 20 active for cost control)
     const challengesRef = ref(database, 'socialChallenges');
-    const unsubChallenges = onValue(challengesRef, (snap) => {
+    const challengesQuery = query(challengesRef, limitToLast(20));
+    const unsubChallenges = onValue(challengesQuery, (snap) => {
       if (snap.exists()) {
         const map = snap.val() as Record<string, SocialChallenge>;
         setChallenges(Object.values(map));
@@ -235,34 +238,44 @@ export default function SocialHubView({
       createdAt: now,
     };
 
-    await set(newRef, challenge);
-    onShowToast(`Challenge "${challenge.title}" published!`);
+    try {
+      await set(newRef, challenge);
+      onShowToast(`Challenge "${challenge.title}" published!`);
 
-    // Publish to feed
-    if (mySocialProfile) {
-      await publishActivityItem(
-        mySocialProfile,
-        'challenge_won',
-        `Created Challenge: ${challenge.title}`,
-        challenge.description,
-        '🏆'
-      );
+      // Publish to feed
+      if (mySocialProfile) {
+        await publishActivityItem(
+          mySocialProfile,
+          'challenge_won',
+          `Created Challenge: ${challenge.title}`,
+          challenge.description,
+          '🏆'
+        );
+      }
+    } catch (error) {
+      console.error('Failed to create challenge:', error);
+      onShowToast('Failed to publish challenge. Please try again.');
     }
   };
 
   const handleJoinChallenge = async (challengeId: string) => {
     if (!database || !currentUser || !mySocialProfile) return;
     const path = `socialChallenges/${challengeId}/participants/${currentUser.uid}`;
-    await set(ref(database, path), {
-      uid: currentUser.uid,
-      displayName: currentUser.displayName || 'User',
-      photoURL: currentUser.photoURL || null,
-      progress: 0,
-      completedDays: 0,
-      currentStreak: currentStreak,
-      joinedAt: new Date().toISOString(),
-    });
-    onShowToast('Joined challenge successfully!');
+    try {
+      await set(ref(database, path), {
+        uid: currentUser.uid,
+        displayName: currentUser.displayName || 'User',
+        photoURL: currentUser.photoURL || null,
+        progress: 0,
+        completedDays: 0,
+        currentStreak: currentStreak,
+        joinedAt: new Date().toISOString(),
+      });
+      onShowToast('Joined challenge successfully!');
+    } catch (error) {
+      console.error('Failed to join challenge:', error);
+      onShowToast('Failed to join challenge. Please try again.');
+    }
   };
 
   const unreadNotifCount = notifications.filter((n) => !n.read).length + incomingRequests.length;
@@ -329,7 +342,7 @@ export default function SocialHubView({
           { id: 'messages', label: 'Messages', icon: MessageCircle },
           { id: 'leaderboards', label: 'Leaderboards', icon: Trophy },
           { id: 'challenges', label: `Challenges (${challenges.length})`, icon: Flame },
-          { id: 'ai', label: 'AI Coach', icon: Bot },
+          { id: 'ai', label: 'Smart Coach', icon: Bot },
         ].map((t) => {
           const Icon = t.icon;
           const isActive = activeTab === t.id;
@@ -457,7 +470,7 @@ export default function SocialHubView({
       )}
 
       {activeTab === 'ai' && (
-        <AiCoachWidget
+        <SmartCoachWidget
           recommendations={aiRecs}
           onAcceptRecommendation={(rec) => {
             handleCreateChallenge({

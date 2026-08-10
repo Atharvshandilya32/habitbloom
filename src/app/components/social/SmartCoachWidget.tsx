@@ -3,17 +3,17 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Bot, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
-import { AiChallengeRecommendation } from '../../../../lib/socialTypes';
+import { SmartChallengeRecommendation } from '../../../../lib/socialTypes';
 
-interface AiCoachWidgetProps {
-  recommendations: AiChallengeRecommendation[];
-  onAcceptRecommendation: (rec: AiChallengeRecommendation) => void;
+interface SmartCoachWidgetProps {
+  recommendations: SmartChallengeRecommendation[];
+  onAcceptRecommendation: (rec: SmartChallengeRecommendation) => void;
 }
 
-export default function AiCoachWidget({
+export default function SmartCoachWidget({
   recommendations,
   onAcceptRecommendation,
-}: AiCoachWidgetProps) {
+}: SmartCoachWidgetProps) {
   if (recommendations.length === 0) return null;
 
   return (

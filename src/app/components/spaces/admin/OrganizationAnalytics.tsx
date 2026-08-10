@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Space, CustomRole } from '../../../../../lib/spaceTypes';
 import { TrendingUp, Users, Activity, Target, BrainCircuit, HeartPulse, Loader2 } from 'lucide-react';
-import { generateSpaceWeeklyReport } from '../../../../../lib/spaceAiUtils';
+import { generateSmartSpaceWeeklyReport } from '../../../../../lib/spaceSmartUtils';
 import { hasPermission } from '../../../../../lib/spacePermissions';
 
 interface OrganizationAnalyticsProps {
@@ -18,7 +18,7 @@ export default function OrganizationAnalytics({ space, role }: OrganizationAnaly
     async function fetchReport() {
       setIsGenerating(true);
       try {
-        const explanation = await generateSpaceWeeklyReport(space.type, healthScore, ['Slight drop in weekend logins']);
+        const explanation = await generateSmartSpaceWeeklyReport(space.type, healthScore, ['Slight drop in weekend logins']);
         setHealthExplanation(explanation);
       } finally {
         setIsGenerating(false);

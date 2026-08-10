@@ -5,7 +5,7 @@ import { getSpaceUILabels } from '../../../lib/spaceUILabels';
 import { ref, onValue, set, remove } from 'firebase/database';
 import { database } from '../../../lib/firebase';
 import { Habit } from '../../../lib/habitTypes';
-import { ArrowLeft, Users, Trophy, Target, Settings, Link as LinkIcon, Megaphone, BarChart3, BrainCircuit } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, Target, Settings, Link as LinkIcon, Megaphone, BarChart3, BrainCircuit, Activity } from 'lucide-react';
 import SpaceSettingsModal from './spaces/SpaceSettingsModal';
 import AnnouncementsFeed from './spaces/AnnouncementsFeed';
 import SpaceHabitTemplates from './spaces/SpaceHabitTemplates';
@@ -13,6 +13,7 @@ import SpaceChallenges from './spaces/SpaceChallenges';
 import SpaceMembers from './spaces/SpaceMembers';
 import { CardSkeleton } from './ui/Skeleton';
 import { ErrorBoundary } from './ui/ErrorBoundary';
+import { toast } from 'sonner';
 
 const OrganizationAnalytics = lazy(() => import('./spaces/admin/OrganizationAnalytics'));
 const CoachDashboard = lazy(() => import('./spaces/coach/CoachDashboard'));
@@ -48,12 +49,14 @@ export default function SpaceDashboard({
   const [announcements, setAnnouncements] = useState<SpaceAnnouncement[]>([]);
   const [templates, setTemplates] = useState<SpaceHabitTemplate[]>([]);
   const [challenges, setChallenges] = useState<SpaceChallenge[]>([]);
+  const [totalCompletions, setTotalCompletions] = useState(0);
 
   useEffect(() => {
     if (!database) return;
     const annRef = ref(database, `spaces/${space.id}/announcements`);
     const tplRef = ref(database, `spaces/${space.id}/templates`);
     const chalRef = ref(database, `spaces/${space.id}/challenges`);
+    const progressRef = ref(database, `spaceChallenges/${space.id}`);
 
     const unsubAnn = onValue(annRef, snap => {
       if (snap.exists()) setAnnouncements(Object.values(snap.val()));
@@ -67,11 +70,27 @@ export default function SpaceDashboard({
       if (snap.exists()) setChallenges(Object.values(snap.val()));
       else setChallenges([]);
     });
+    const unsubProgress = onValue(progressRef, snap => {
+      if (snap.exists()) {
+        const challengesData = snap.val();
+        let total = 0;
+        Object.keys(challengesData).forEach(chalId => {
+          const progressData = challengesData[chalId]?.progress || {};
+          Object.keys(progressData).forEach(uid => {
+            total += (progressData[uid]?.count || 0);
+          });
+        });
+        setTotalCompletions(total);
+      } else {
+        setTotalCompletions(0);
+      }
+    });
 
     return () => {
       unsubAnn();
       unsubTpl();
       unsubChal();
+      unsubProgress();
     };
   }, [space.id]);
 
@@ -81,11 +100,17 @@ export default function SpaceDashboard({
       id, spaceId: space.id, title, content, authorId: currentUserId,
       createdAt: new Date().toISOString(), isPinned
     };
-    if (database) set(ref(database, `spaces/${space.id}/announcements/${id}`), newAnnouncement);
+    if (database) {
+      set(ref(database, `spaces/${space.id}/announcements/${id}`), newAnnouncement)
+        .catch(() => toast.error("Failed to post announcement."));
+    }
   };
   
   const handleDeleteAnnouncement = (id: string) => {
-    if (database) remove(ref(database, `spaces/${space.id}/announcements/${id}`));
+    if (database) {
+      remove(ref(database, `spaces/${space.id}/announcements/${id}`))
+        .catch(() => toast.error("Failed to delete announcement."));
+    }
   };
 
   const handleCreateTemplate = (name: string, emoji: string, category: string, description: string) => {
@@ -93,7 +118,10 @@ export default function SpaceDashboard({
     const newTemplate: SpaceHabitTemplate = {
       id, spaceId: space.id, name, emoji, category, description, createdBy: currentUserId
     };
-    if (database) set(ref(database, `spaces/${space.id}/templates/${id}`), newTemplate);
+    if (database) {
+      set(ref(database, `spaces/${space.id}/templates/${id}`), newTemplate)
+        .catch(() => toast.error("Failed to create template."));
+    }
   };
 
   const handleCreateChallenge = (title: string, description: string, type: SpaceChallengeType, totalDays: number) => {
@@ -102,7 +130,10 @@ export default function SpaceDashboard({
       id, spaceId: space.id, title, description, type, totalDays,
       startDate: new Date().toISOString(), createdBy: currentUserId, participants: []
     };
-    if (database) set(ref(database, `spaces/${space.id}/challenges/${id}`), newChallenge);
+    if (database) {
+      set(ref(database, `spaces/${space.id}/challenges/${id}`), newChallenge)
+        .catch(() => toast.error("Failed to create challenge."));
+    }
   };
 
   const handleJoinChallenge = (challengeId: string) => {
@@ -112,12 +143,29 @@ export default function SpaceDashboard({
       ...challenge,
       participants: [...(challenge.participants || []), currentUserId]
     };
-    if (database) set(ref(database, `spaces/${space.id}/challenges/${challengeId}`), updated);
+    if (database) {
+      set(ref(database, `spaces/${space.id}/challenges/${challengeId}`), updated)
+        .catch(() => toast.error("Failed to join challenge."));
+    }
   };
 
   const branding = space.branding || {};
   const themeColorClass = branding.themeColor ? `bg-${branding.themeColor}` : 'bg-emerald-600';
   const labels = getSpaceUILabels(space.type);
+  
+  const getMilestones = (total: number) => {
+    const milestones = [100, 500, 1000, 2500, 5000, 10000, 25000];
+    for (let i = 0; i < milestones.length; i++) {
+      if (total < milestones[i]) {
+        return { current: i > 0 ? milestones[i-1] : 0, next: milestones[i] };
+      }
+    }
+    const highest = milestones[milestones.length - 1];
+    return { current: highest, next: highest * 2 };
+  };
+  
+  const { next: nextMilestone } = getMilestones(totalCompletions);
+  const milestoneProgress = Math.min(100, (totalCompletions / nextMilestone) * 100);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-300">
@@ -275,8 +323,35 @@ export default function SpaceDashboard({
       {/* Main Content Area */}
       <div className="py-2" role="tabpanel" id={`tabpanel-${activeTab}`}>
         {activeTab === 'home' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
+          <div className="space-y-6">
+            
+            {/* Community Progress Banner */}
+            <div className="bg-white dark:bg-slate-900/50 dark:border-slate-800 border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-center gap-6">
+              <div className="flex-1 w-full">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    <Activity size={18} className="text-emerald-500" />
+                    Community Progress
+                  </h3>
+                  <div className="text-sm font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg">
+                    {totalCompletions} / {nextMilestone} completions
+                  </div>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${themeColorClass} transition-all duration-1000 ease-out`}
+                    style={{ width: `${milestoneProgress}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center mt-2 text-xs font-medium text-slate-400">
+                  <span>Growing together</span>
+                  <span>{milestoneProgress.toFixed(1)}% to next milestone</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-2">
               <AnnouncementsFeed 
                 announcements={announcements} 
                 role={role} 
@@ -312,6 +387,7 @@ export default function SpaceDashboard({
                 </button>
               </div>
             </div>
+          </div>
           </div>
         )}
 
@@ -356,7 +432,7 @@ export default function SpaceDashboard({
         {activeTab === 'coach' && (
           <ErrorBoundary fallbackMessage="Failed to load coach dashboard.">
             <Suspense fallback={<CardSkeleton />}>
-              <CoachDashboard role={role} challenges={challenges} />
+              <CoachDashboard role={role} challenges={challenges} totalCompletions={totalCompletions} />
             </Suspense>
           </ErrorBoundary>
         )}
@@ -372,7 +448,7 @@ export default function SpaceDashboard({
             set(ref(database, `spaces/${space.id}`), {
               ...space,
               ...updates
-            });
+            }).catch(() => toast.error("Failed to save space settings."));
           }
         }}
       />

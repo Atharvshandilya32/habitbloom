@@ -3,7 +3,7 @@ import { SpaceHabitTemplate, CustomRole } from '../../../../lib/spaceTypes';
 import { hasPermission } from '../../../../lib/spacePermissions';
 import { Habit } from '../../../../lib/habitTypes';
 import { Target, Plus, CheckCircle2, BrainCircuit, Loader2 } from 'lucide-react';
-import { generateSpaceHabitTemplates } from '../../../../lib/spaceAiUtils';
+import { generateSmartSpaceHabitTemplates } from '../../../../lib/spaceSmartUtils';
 
 interface SpaceHabitTemplatesProps {
   templates: SpaceHabitTemplate[];
@@ -34,7 +34,7 @@ export default function SpaceHabitTemplates({
   const handleGenerateAI = async () => {
     setIsGenerating(true);
     try {
-      const templates = await generateSpaceHabitTemplates(spaceType);
+      const templates = await generateSmartSpaceHabitTemplates(spaceType);
       setAiSuggestions(templates);
     } finally {
       setIsGenerating(false);
@@ -93,7 +93,7 @@ export default function SpaceHabitTemplates({
         <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-3xl p-6 shadow-sm animate-in slide-in-from-top-2">
           <h4 className="font-bold text-indigo-900 mb-4 flex items-center gap-2">
             <BrainCircuit size={18} className="text-indigo-600" />
-            AI Recommended Habit Pack
+            Smart Recommended Habit Pack
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {aiSuggestions.map((tpl, idx) => (
@@ -207,7 +207,7 @@ export default function SpaceHabitTemplates({
                   className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all disabled:opacity-70 flex items-center justify-center gap-2"
                 >
                   {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <BrainCircuit size={16} />}
-                  Auto-Generate
+                  Smart-Generate
                 </button>
                 <button 
                   onClick={() => setShowForm(true)}

@@ -192,7 +192,7 @@ export interface LeaderboardEntry {
   rank?: number;
 }
 
-export interface AiChallengeRecommendation {
+export interface SmartChallengeRecommendation {
   id: string;
   title: string;
   description: string;

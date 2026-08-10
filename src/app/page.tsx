@@ -300,8 +300,9 @@ export default function Page() {
             set(ref(database, `referrals/${pendingRef}/${user.uid}`), {
               joinedAt: new Date().toISOString(),
               uid: user.uid
-            });
-            showToast('Referral applied!');
+            })
+            .then(() => showToast('Referral applied!'))
+            .catch(e => console.error('Failed to apply referral:', e));
           }
           localStorage.removeItem('habitbloom_pending_referral');
         }
@@ -445,6 +446,7 @@ export default function Page() {
     );
 
     return () => unsubscribeMembers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.uid]);
 
   const daysInMonth = getDaysInMonth(year, month);
@@ -809,7 +811,7 @@ export default function Page() {
             )}
 
             {/* Tab Views */}
-            <ErrorBoundary fallbackMessage="An error occurred in this view. Please try again or refresh the page.">
+            <ErrorBoundary key={activeTab} fallbackMessage="An error occurred in this view. Please try again or refresh the page.">
             {activeTab === 'focus' && (
               <DailyFocusView
                 habits={habits}
@@ -1015,20 +1017,24 @@ export default function Page() {
                 <CreateSpaceModal
                   isOpen={createSpaceOpen}
                   onClose={() => setCreateSpaceOpen(false)}
-                  onCreate={(name, desc, type) => {
+                  onCreate={async (name, desc, type) => {
                     if (!currentUser) return;
                     const { space, member } = createNewSpace(name, desc, type, currentUser.uid);
 
                     // Write space to database
                     if (database) {
-                      set(ref(database, `spaces/${space.id}`), space);
-                      set(ref(database, `spaceMembers/${space.id}_${currentUser.uid}`), member);
+                      try {
+                        await set(ref(database, `spaces/${space.id}`), space);
+                        await set(ref(database, `spaceMembers/${space.id}_${currentUser.uid}`), member);
+                        
+                        setActiveSpaceId(space.id);
+                        setCreateSpaceOpen(false);
+                        showToast(`Space '${name}' created successfully.`);
+                      } catch (error) {
+                        console.error("Failed to create space:", error);
+                        showToast("Error creating space. Please try again.");
+                      }
                     }
-
-                    // Note: setUserSpaces is now handled by the real-time listener!
-                    setActiveSpaceId(space.id);
-                    setCreateSpaceOpen(false);
-                    showToast(`Space '${name}' created successfully.`);
                   }}
                 />
               </div>

@@ -10,7 +10,7 @@ import { SpaceType, SpaceChallengeType } from './spaceTypes';
 // Simulate network delay for realistic UX
 const simulateDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export async function generateSpaceWeeklyReport(
+export async function generateSmartSpaceWeeklyReport(
   spaceType: SpaceType,
   healthScore: number,
   recentIssues: string[]
@@ -26,7 +26,7 @@ export async function generateSpaceWeeklyReport(
   }
 }
 
-export async function generateSpaceChallengeIdeas(spaceType: SpaceType) {
+export async function generateSmartSpaceChallengeIdeas(spaceType: SpaceType) {
   await simulateDelay(2000);
 
   const ideas = {
@@ -56,7 +56,7 @@ export async function generateSpaceChallengeIdeas(spaceType: SpaceType) {
   return ideas[spaceType] || ideas.other;
 }
 
-export async function generateSpaceHabitTemplates(spaceType: SpaceType) {
+export async function generateSmartSpaceHabitTemplates(spaceType: SpaceType) {
   await simulateDelay(2000);
 
   const packs = {

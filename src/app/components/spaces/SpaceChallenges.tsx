@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { SpaceChallenge, SpaceChallengeType, CustomRole } from '../../../../lib/spaceTypes';
 import { hasPermission } from '../../../../lib/spacePermissions';
-import { Trophy, Plus, CheckCircle2, Clock, Users, BrainCircuit, Loader2 } from 'lucide-react';
-import { generateSpaceChallengeIdeas } from '../../../../lib/spaceAiUtils';
+import { Trophy, Plus, CheckCircle2, Clock, Users, BrainCircuit, Loader2, EyeOff, Eye } from 'lucide-react';
+import { generateSmartSpaceChallengeIdeas } from '../../../../lib/spaceSmartUtils';
 
 interface SpaceChallengesProps {
   challenges: SpaceChallenge[];
@@ -47,7 +47,7 @@ export default function SpaceChallenges({
   const handleGenerateAI = async () => {
     setIsGenerating(true);
     try {
-      const ideas = await generateSpaceChallengeIdeas(spaceType);
+      const ideas = await generateSmartSpaceChallengeIdeas(spaceType);
       setAiSuggestions(ideas);
     } finally {
       setIsGenerating(false);
@@ -90,9 +90,12 @@ export default function SpaceChallenges({
         // Use dynamic import of firebase to avoid passing it as prop if we can, but since this is client component we can import database
         import('../../../../lib/firebase').then(({ database }) => {
            if (database) {
-             import('firebase/database').then(({ ref, set }) => {
+             import('firebase/database').then(({ ref, get, set }) => {
                const progRef = ref(database, `spaceChallenges/${spaceId}/${challenge.id}/progress/${currentUserId}`);
-               set(progRef, { count, anonymous: false, name: currentUserName, lastUpdated: new Date().toISOString() });
+               get(progRef).then(snap => {
+                 const isAnonymous = snap.exists() ? snap.val().anonymous : false;
+                 set(progRef, { count, anonymous: isAnonymous, name: currentUserName, lastUpdated: new Date().toISOString() });
+               });
              });
            }
         });
@@ -120,6 +123,20 @@ export default function SpaceChallenges({
     });
   }, [challenges, spaceId]);
 
+  const handleToggleAnonymous = (challengeId: string) => {
+    const currentData = challengeProgress[challengeId]?.[currentUserId];
+    const isAnon = currentData?.anonymous || false;
+    
+    import('../../../../lib/firebase').then(({ database }) => {
+       if (database) {
+         import('firebase/database').then(({ ref, update }) => {
+           const progRef = ref(database, `spaceChallenges/${spaceId}/${challengeId}/progress/${currentUserId}`);
+           update(progRef, { anonymous: !isAnon });
+         });
+       }
+    });
+  };
+
   return (
     <div className="space-y-6">
       
@@ -141,7 +158,7 @@ export default function SpaceChallenges({
               className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 text-sm font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-70"
             >
               {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <BrainCircuit size={16} />}
-              Generate AI
+              Generate Suggestions
             </button>
             <button 
               onClick={() => setShowForm(true)}
@@ -158,7 +175,7 @@ export default function SpaceChallenges({
         <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-3xl p-6 shadow-sm animate-in slide-in-from-top-2">
           <h4 className="font-bold text-indigo-900 mb-4 flex items-center gap-2">
             <BrainCircuit size={18} className="text-indigo-600" />
-            AI Recommended Challenges
+            Smart Recommended Challenges
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {aiSuggestions.map((idea, idx) => (
@@ -258,7 +275,7 @@ export default function SpaceChallenges({
                   className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all disabled:opacity-70 flex items-center justify-center gap-2"
                 >
                   {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <BrainCircuit size={16} />}
-                  Auto-Generate
+                  Smart-Generate
                 </button>
                 <button 
                   onClick={() => setShowForm(true)}
@@ -328,6 +345,20 @@ export default function SpaceChallenges({
                            Keep going. {remaining} completions to reach the goal.
                          </div>
                        )}
+                       
+                       <div className="mt-3 pt-3 border-t border-slate-200 flex justify-between items-center">
+                         <span className="text-xs font-medium text-slate-500">Leaderboard Privacy</span>
+                         <button 
+                           onClick={() => handleToggleAnonymous(challenge.id)}
+                           className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs font-bold transition-colors ${progressMap[currentUserId]?.anonymous ? 'bg-slate-200 text-slate-600' : 'bg-emerald-100 text-emerald-700'}`}
+                         >
+                           {progressMap[currentUserId]?.anonymous ? (
+                             <><EyeOff size={12} /> Anonymous</>
+                           ) : (
+                             <><Eye size={12} /> Visible</>
+                           )}
+                         </button>
+                       </div>
                     </div>
                     
                     {/* No Shame Leaderboard */}

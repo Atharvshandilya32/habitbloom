@@ -3,11 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { ref, get, child, set } from 'firebase/database';
+import { ref, get, child } from 'firebase/database';
 import { auth, database } from '../../../../lib/firebase';
 import { CheckCircle2, Users, AlertTriangle } from 'lucide-react';
 import { Space, SpaceInvite } from '../../../../lib/spaceTypes';
-import { logAuditEvent } from '../../../../lib/auditLogger';
 import { toast } from 'sonner';
 
 export default function InvitePage() {
@@ -106,64 +105,28 @@ export default function InvitePage() {
     if (!user || !space || !inviteData || !database) return;
     
     try {
-      const now = new Date().toISOString();
-      // Resolve default member roleId from spaceRoles if available
-      let defaultRoleId = '';
-      const rolesSnapshot = await get(child(ref(database), `spaceRoles/${space.id}`));
-      if (rolesSnapshot.exists()) {
-        const rolesMap = rolesSnapshot.val();
-        const rolesList = Object.values(rolesMap) as import('../../../../lib/spaceTypes').CustomRole[];
-        const memberRole = rolesList.find(r => r.name.toLowerCase().includes('member') || r.name.toLowerCase().includes('student')) || rolesList[rolesList.length - 1];
-        if (memberRole) defaultRoleId = memberRole.id;
+      const token = await user.getIdToken();
+      const response = await fetch('/api/joinSpace', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          inviteCode,
+          orgId: enteredOrgId,
+        }),
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to join space');
       }
 
-      // Check Roster verification
-      const cleanOrgId = enteredOrgId.trim().toUpperCase();
-      let isVerified = false;
-      let verStatus: 'verified' | 'pending' = 'pending';
-
-      if (cleanOrgId) {
-        const rosterSnap = await get(child(ref(database), `spaceRosters/${space.id}/${cleanOrgId}`));
-        if (rosterSnap.exists()) {
-          isVerified = true;
-          verStatus = 'verified';
-          const rosterData = rosterSnap.val();
-          if (rosterData.roleId) defaultRoleId = rosterData.roleId;
-        }
-      }
-
-      // Add user to space
-      const newMember = {
-        spaceId: space.id,
-        userId: user.uid,
-        roleId: defaultRoleId,
-        role: 'member',
-        orgId: cleanOrgId || undefined,
-        verified: isVerified,
-        verificationStatus: verStatus,
-        joinedAt: now,
-      };
-      
-      // Update invite uses
-      const updatedInvite = {
-        ...inviteData,
-        uses: (inviteData.uses || 0) + 1
-      };
-
-      await set(ref(database, `spaceMembers/${space.id}_${user.uid}`), newMember);
-      await set(ref(database, `spaceInvites/${inviteData.id}`), updatedInvite);
-
-      await logAuditEvent(
-        space.id,
-        { id: user.uid, name: user.displayName || user.email || 'Member' },
-        { id: user.uid, name: user.displayName || user.email || 'Member' },
-        'JOIN',
-        `Joined space (${verStatus === 'verified' ? 'Auto-Verified via Roster' : 'Joined as Pending Verification'})`
-      );
-      
-      router.push(`/?joined_space=${space.id}`);
-    } catch {
-      toast.error('Could not join the space. Please try again later or check your connection.');
+      const data = await response.json();
+      router.push(`/?joined_space=${data.spaceId}`);
+    } catch (e: unknown) {
+      toast.error((e as Error).message || 'Could not join the space. Please try again later or check your connection.');
     }
   };
 

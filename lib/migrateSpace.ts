@@ -1,6 +1,6 @@
-import { ref, get, set, child } from 'firebase/database';
+import { ref, get, child, update } from 'firebase/database';
 import { database } from './firebase';
-import { Space, SpaceMember } from './spaceTypes';
+import { Space, SpaceMember, SpaceRole } from './spaceTypes';
 import { getDefaultRolesForSpace, getTemplateForType } from './spaceTemplates';
 
 export const migrateLegacySpace = async (space: Space): Promise<boolean> => {
@@ -55,20 +55,24 @@ export const migrateLegacySpace = async (space: Space): Promise<boolean> => {
     }
 
     // 3. Perform atomic update manually (since Realtime DB allows setting specific paths or we can just run promises)
-    // We will run them sequentially to avoid huge payload size issues, or in parallel.
+    // We will perform a single multi-path update instead of N+1 sequential/parallel calls to avoid rate limits
+
+    const updates: Record<string, SpaceRole[] | SpaceMember | Space> = {};
     
     // A. Write roles
-    await set(ref(database, `spaceRoles/${space.id}`), defaultRoles);
+    updates[`spaceRoles/${space.id}`] = defaultRoles;
     
     // B. Write members
-    const memberUpdatePromises = Object.keys(membersToUpdate).map(key => 
-      set(ref(database, `spaceMembers/${key}`), membersToUpdate[key])
-    );
-    await Promise.all(memberUpdatePromises);
+    Object.keys(membersToUpdate).forEach(key => {
+      updates[`spaceMembers/${key}`] = membersToUpdate[key];
+    });
 
     // C. Update Space document
     const updatedSpace = { ...space, schemaVersion: 2 };
-    await set(ref(database, `spaces/${space.id}`), updatedSpace);
+    updates[`spaces/${space.id}`] = updatedSpace;
+
+    // Perform the multi-path update
+    await update(ref(database), updates);
 
     console.log(`Successfully migrated space: ${space.id}`);
     return true;

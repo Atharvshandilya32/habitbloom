@@ -392,11 +392,12 @@ export default function Page() {
               const mySpaces = mySpaceIds.map(id => allSpaces[id]).filter(Boolean);
 
               // Run silent migrations if necessary
-              mySpaces.forEach(space => {
-                if (space.schemaVersion !== 2) {
-                  import('../../lib/migrateSpace').then(({ migrateLegacySpace }) => migrateLegacySpace(space));
-                }
-              });
+              const spacesToMigrate = mySpaces.filter(space => space.schemaVersion !== 2);
+              if (spacesToMigrate.length > 0) {
+                import('../../lib/migrateSpace').then(({ migrateLegacySpace }) => {
+                  spacesToMigrate.forEach(space => migrateLegacySpace(space));
+                });
+              }
 
               setUserSpaces(mySpaces);
 

@@ -1,14 +1,14 @@
 import { ref, set, update } from 'firebase/database';
 import { database, auth } from './firebase';
 
-export interface OfflineMutation {
+export type OfflineMutation = {
   id: string;
   timestamp: number;
-  type: 'set' | 'update';
   path: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any;
-}
+} & (
+  | { type: 'set'; data: unknown }
+  | { type: 'update'; data: object }
+);
 
 const QUEUE_KEY = 'habitbloom_offline_queue';
 let isReplaying = false;
@@ -33,16 +33,25 @@ function saveQueue(queue: OfflineMutation[]) {
  * If the user is online, it will try to send it immediately.
  * If it fails (offline), it stays in the queue until `replayMutations` succeeds.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function queueMutation(type: 'set' | 'update', path: string, data: any) {
+export async function queueMutation(type: 'set', path: string, data: unknown): Promise<void>;
+export async function queueMutation(type: 'update', path: string, data: object): Promise<void>;
+export async function queueMutation(type: 'set' | 'update', path: string, data: unknown): Promise<void> {
   const queue = getQueue();
-  const mutation: OfflineMutation = {
-    id: `mut_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    timestamp: Date.now(),
-    type,
-    path,
-    data,
-  };
+  const mutation: OfflineMutation = type === 'set'
+    ? {
+        id: `mut_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        type: 'set',
+        path,
+        data,
+      }
+    : {
+        id: `mut_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        type: 'update',
+        path,
+        data: data as object, // We can assert here because of the overload
+      };
   
   queue.push(mutation);
   saveQueue(queue);

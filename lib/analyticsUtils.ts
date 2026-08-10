@@ -503,7 +503,7 @@ export function getCategoryCompletionStats(habits: Habit[], logs: HabitLog) {
       }
     });
 
-    const rate = possible > 0 ? Math.round((completed / possible) * 100) : 0;
+    const rate = possible > 0 ? Math.min(100, Math.max(0, Math.round((completed / possible) * 100))) : 0;
     return {
       ...cat,
       count: catHabits.length,

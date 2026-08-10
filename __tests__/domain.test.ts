@@ -2,7 +2,7 @@ import { formatHbId } from '../lib/identityUtils';
 import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
 import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
-import { getCurrentStreak } from '../lib/habitUtils';
+import { getCurrentStreak, getLast6MonthsStats } from '../lib/habitUtils';
 
 
 /**
@@ -62,6 +62,22 @@ function runTests() {
   };
   const streak = getCurrentStreak(mockHabit, mockLogs, 2026, 8, 31, true);
   assert(typeof streak === 'number' && streak >= 0, 'Streak engine computes valid numeric streak count');
+
+  // 7. 6-Month History Stats Tests
+  const emptyStats = getLast6MonthsStats([], {}, 2024, 3); // Starts March 2024, goes back 6 months (Mar, Feb, Jan, Dec, Nov, Oct)
+  assert(emptyStats.length === 6, 'Returns exactly 6 months of data');
+  assert(emptyStats[0].year === 2023 && emptyStats[0].month === 10, 'Properly wraps year backward on boundary');
+  assert(emptyStats[5].year === 2024 && emptyStats[5].month === 3, 'Ends at the current specified month and year');
+  assert(emptyStats.every(s => !s.hasData && s.pct === 0), 'Empty logs and habits return 0% and false hasData');
+
+  const historyLogs = {
+    'h1_2023_12_15': true,
+    'h1_2024_1_10': true,
+  };
+  const historyStats = getLast6MonthsStats([mockHabit], historyLogs, 2024, 3);
+  assert(historyStats[2].hasData === true && historyStats[2].pct > 0, 'Correctly identifies data in December 2023');
+  assert(historyStats[3].hasData === true && historyStats[3].pct > 0, 'Correctly identifies data in January 2024');
+  assert(historyStats[5].hasData === false && historyStats[5].pct === 0, 'Correctly identifies missing data in March 2024');
 
   console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed.`);
   if (failed > 0) {

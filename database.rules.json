@@ -18,10 +18,11 @@
       }
     },
     "friendRequests": {
-      ".read": "auth != null",
+      ".read": "auth != null && ((query.orderByChild == 'receiverUid' && query.equalTo == auth.uid) || (query.orderByChild == 'senderUid' && query.equalTo == auth.uid))",
+      ".indexOn": ["receiverUid", "senderUid"],
       "$requestId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
+        ".read": "auth != null && (data.child('receiverUid').val() === auth.uid || data.child('senderUid').val() === auth.uid)",
+        ".write": "auth != null && (!data.exists() ? (newData.child('senderUid').val() === auth.uid || newData.child('receiverUid').val() === auth.uid) : (data.child('senderUid').val() === auth.uid || data.child('receiverUid').val() === auth.uid))"
       }
     },
     "friends": {

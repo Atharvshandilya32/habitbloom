@@ -2,7 +2,7 @@ import { formatHbId } from '../lib/identityUtils';
 import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
 import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
-import { getCurrentStreak } from '../lib/habitUtils';
+import { getCurrentStreak, getWeeklyStats } from '../lib/habitUtils';
 
 
 /**
@@ -62,6 +62,44 @@ function runTests() {
   };
   const streak = getCurrentStreak(mockHabit, mockLogs, 2026, 8, 31, true);
   assert(typeof streak === 'number' && streak >= 0, 'Streak engine computes valid numeric streak count');
+
+  // 7. Weekly Stats Tests
+  // August 2026 starts on a Saturday (firstDayOfMonth = 6). Days in month: 31.
+  // Weeks should be:
+  // Week 1: 1-1 (1 day) - Saturday
+  // Week 2: 2-8 (7 days)
+  // Week 3: 9-15 (7 days)
+  // Week 4: 16-22 (7 days)
+  // Week 5: 23-29 (7 days)
+  // Week 6: 30-31 (2 days)
+  const mockHabit2 = { id: 'h2', name: 'Reading', emoji: '📚', goal: 30, category: 'Personal' };
+  const weeklyMockLogs = {
+    'h1_2026_8_1': true,
+    'h1_2026_8_2': true, // Week 2
+    'h2_2026_8_2': true, // Week 2
+    'h1_2026_8_10': true, // Week 3
+    'h2_2026_8_31': true, // Week 6
+  };
+
+  const weeklyStatsWithHabits = getWeeklyStats([mockHabit, mockHabit2], weeklyMockLogs, 2026, 8, 31);
+  assert(weeklyStatsWithHabits.length === 6, 'getWeeklyStats calculates correct number of weeks for Aug 2026');
+  assert(weeklyStatsWithHabits[0].label === '1-1', 'getWeeklyStats week 1 boundary is correct');
+  assert(weeklyStatsWithHabits[0].possible === 2, 'getWeeklyStats week 1 possible is correct (1 day * 2 habits)');
+  assert(weeklyStatsWithHabits[0].done === 1, 'getWeeklyStats week 1 done is correct (1 log)');
+  assert(weeklyStatsWithHabits[0].pct === 50, 'getWeeklyStats week 1 pct is correct (50%)');
+
+  assert(weeklyStatsWithHabits[1].label === '2-8', 'getWeeklyStats week 2 boundary is correct');
+  assert(weeklyStatsWithHabits[1].possible === 14, 'getWeeklyStats week 2 possible is correct (7 days * 2 habits)');
+  assert(weeklyStatsWithHabits[1].done === 2, 'getWeeklyStats week 2 done is correct (2 logs)');
+
+  assert(weeklyStatsWithHabits[5].label === '30-31', 'getWeeklyStats week 6 boundary is correct');
+  assert(weeklyStatsWithHabits[5].possible === 4, 'getWeeklyStats week 6 possible is correct (2 days * 2 habits)');
+  assert(weeklyStatsWithHabits[5].done === 1, 'getWeeklyStats week 6 done is correct (1 log)');
+
+  const weeklyStatsEmpty = getWeeklyStats([], weeklyMockLogs, 2026, 8, 31);
+  assert(weeklyStatsEmpty.length === 6, 'getWeeklyStats works with 0 habits');
+  assert(weeklyStatsEmpty[0].possible === 0, 'getWeeklyStats handles possible=0 with 0 habits');
+  assert(weeklyStatsEmpty[0].pct === 0, 'getWeeklyStats handles pct=0 with 0 habits to avoid division by zero');
 
   console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed.`);
   if (failed > 0) {

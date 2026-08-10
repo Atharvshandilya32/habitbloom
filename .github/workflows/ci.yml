@@ -54,7 +54,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Invoke Jules
-        uses: google-labs-code/jules-action@v1
+        uses: google-labs-code/jules-action@main
         with:
           prompt: ${{ github.event.inputs.jules_prompt }}
           jules_api_key: ${{ secrets.JULES_API_KEY }}

@@ -41,6 +41,20 @@ function runTests() {
   assert(parsed.entries[0].id === '1001', 'Sanitizes and extracts clean org ID');
   assert(parsed.errors.length > 0, 'Captures duplicate row warnings');
 
+  const fallbackCsvText = `ColA,ColB,ColC\n1003,Fallback Name,fallback@example.com`;
+  const fallbackParsed = parseCSVText(fallbackCsvText);
+  assert(fallbackParsed.entries[0].id === '1003', 'Roster parser falls back to 1st column for ID if no header match');
+  assert(fallbackParsed.entries[0].name === 'Fallback Name', 'Roster parser falls back to 2nd column for Name if no header match');
+
+  const singleColCsvText = `SingleCol\n1004`;
+  const singleColParsed = parseCSVText(singleColCsvText);
+  assert(singleColParsed.entries[0].id === '1004', 'Roster parser falls back to 1st column for ID with single col');
+  assert(singleColParsed.entries[0].name === '1004', 'Roster parser falls back to 1st column for Name with single col');
+
+  const missingNameText = `ColA,ColB\n1005,`;
+  const missingNameParsed = parseCSVText(missingNameText);
+  assert(missingNameParsed.entries[0].name === 'Member 1005', 'Roster parser uses Member ID fallback format when name is empty');
+
   // 4. Role Permission Engine Tests
   const adminRole = { id: 'admin', spaceId: 's1', name: 'Admin', description: 'Admin role', color: 'indigo-600', icon: 'shield', order: 1, permissions: createPermissions({ manageMembers: true, deleteSpace: true }) };
   const memberRole = { id: 'member', spaceId: 's1', name: 'Member', description: 'Member role', color: 'blue-500', icon: 'user', order: 2, permissions: createPermissions({ manageMembers: false }) };

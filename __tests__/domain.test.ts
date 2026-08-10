@@ -3,6 +3,7 @@ import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
 import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
 import { getCurrentStreak } from '../lib/habitUtils';
+import { createMonthlyWritingGoal } from '../lib/customWritingGoals';
 
 
 /**
@@ -62,6 +63,15 @@ function runTests() {
   };
   const streak = getCurrentStreak(mockHabit, mockLogs, 2026, 8, 31, true);
   assert(typeof streak === 'number' && streak >= 0, 'Streak engine computes valid numeric streak count');
+
+  // 7. Custom Writing Goals Tests
+  const monthlyGoal = createMonthlyWritingGoal('Write 500 words daily');
+  assert(monthlyGoal.type === 'monthly', 'Monthly goal has correct type');
+  assert(monthlyGoal.content === 'Write 500 words daily', 'Monthly goal stores content correctly');
+  assert(monthlyGoal.id.startsWith('m-'), 'Monthly goal ID starts with m- prefix');
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(monthlyGoal.startDate), 'Monthly goal startDate is YYYY-MM-DD format');
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(monthlyGoal.endDate), 'Monthly goal endDate is YYYY-MM-DD format');
+  assert(!isNaN(new Date(monthlyGoal.createdAt).getTime()), 'Monthly goal createdAt is valid ISO string');
 
   console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed.`);
   if (failed > 0) {

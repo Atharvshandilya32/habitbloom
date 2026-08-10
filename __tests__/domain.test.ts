@@ -2,7 +2,7 @@ import { formatHbId } from '../lib/identityUtils';
 import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
 import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
-import { getCurrentStreak } from '../lib/habitUtils';
+import { getCurrentStreak, makeLogKey, getMonthKeyPrefix } from '../lib/habitUtils';
 
 
 /**
@@ -54,7 +54,15 @@ function runTests() {
   const gymRoles = getTemplateForType('gym');
   assert(gymRoles.some(r => r.name.toLowerCase().includes('trainer')), 'Gym template generates Trainer role');
 
-  // 6. Habit Analytics & Streak Engine Tests
+  // 6. Habit Key Formatting Tests
+  assert(makeLogKey('h1', 2026, 8, 1) === 'h1_2026_8_1', 'makeLogKey correctly formats key for single digit month/day');
+  assert(makeLogKey('h1', 2026, 12, 15) === 'h1_2026_12_15', 'makeLogKey correctly formats key for double digit month/day');
+  assert(makeLogKey('h-1-abc', 2026, 8, 1) === 'h-1-abc_2026_8_1', 'makeLogKey handles complex habit IDs');
+
+  assert(getMonthKeyPrefix(2026, 8) === '_2026_8_', 'getMonthKeyPrefix correctly formats prefix for single digit month');
+  assert(getMonthKeyPrefix(2026, 12) === '_2026_12_', 'getMonthKeyPrefix correctly formats prefix for double digit month');
+
+  // 7. Habit Analytics & Streak Engine Tests
   const mockHabit = { id: 'h1', name: 'Exercise', emoji: '🏃', goal: 30, category: 'Health' };
   const mockLogs = {
     'h1_2026_8_1': true,

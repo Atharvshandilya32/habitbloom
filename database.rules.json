@@ -99,7 +99,7 @@
     "spaceRosters": {
       "$spaceId": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null && (root.child('spaces').child($spaceId).child('createdBy').val() === auth.uid || root.child('spaceMembers').child($spaceId + '_' + auth.uid).child('roleId').val() === 'admin')"
       }
     },
     "spaces": {

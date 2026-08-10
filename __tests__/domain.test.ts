@@ -3,7 +3,7 @@ import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
 import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
 import { getCurrentStreak } from '../lib/habitUtils';
-
+import { getUniverseTitle } from '../lib/xpEngine';
 
 /**
  * HabitBloom Domain Unit & Security Test Suite
@@ -62,6 +62,14 @@ function runTests() {
   };
   const streak = getCurrentStreak(mockHabit, mockLogs, 2026, 8, 31, true);
   assert(typeof streak === 'number' && streak >= 0, 'Streak engine computes valid numeric streak count');
+
+  // 7. XP Engine Universe Title Resolution Tests
+  assert(getUniverseTitle(1).title === 'Seed', 'Resolves exact level 1 to Seed');
+  assert(getUniverseTitle(3).title === 'Sprout', 'Resolves exact level 3 to Sprout');
+  assert(getUniverseTitle(4).title === 'Sprout', 'Resolves intermediate level 4 to Sprout');
+  assert(getUniverseTitle(100).title === 'Cosmic Creator', 'Resolves maximum level 100 correctly');
+  assert(getUniverseTitle(999).title === 'Cosmic Creator', 'Resolves beyond maximum tier correctly');
+  assert(getUniverseTitle(-5).title === 'Seed', 'Defaults negative levels to Seed');
 
   console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed.`);
   if (failed > 0) {

@@ -3,6 +3,7 @@ import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
 import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
 import { getCurrentStreak } from '../lib/habitUtils';
+import { getLevelFromXp } from '../lib/xpEngine';
 
 
 /**
@@ -62,6 +63,14 @@ function runTests() {
   };
   const streak = getCurrentStreak(mockHabit, mockLogs, 2026, 8, 31, true);
   assert(typeof streak === 'number' && streak >= 0, 'Streak engine computes valid numeric streak count');
+
+  // 7. XP Engine Tests
+  assert(getLevelFromXp(0) === 1, 'XP Engine: 0 XP is level 1');
+  assert(getLevelFromXp(99) === 1, 'XP Engine: 99 XP is level 1');
+  assert(getLevelFromXp(100) === 2, 'XP Engine: 100 XP is level 2');
+  assert(getLevelFromXp(299) === 2, 'XP Engine: 299 XP is level 2');
+  assert(getLevelFromXp(300) === 3, 'XP Engine: 300 XP is level 3');
+  assert(getLevelFromXp(1000) === 5, 'XP Engine: 1000 XP is level 5');
 
   console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed.`);
   if (failed > 0) {

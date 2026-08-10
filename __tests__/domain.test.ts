@@ -2,7 +2,7 @@ import { formatHbId } from '../lib/identityUtils';
 import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
 import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
-import { getCurrentStreak } from '../lib/habitUtils';
+import { getCurrentStreak, getMonthOverMonthTrends } from '../lib/habitUtils';
 
 
 /**
@@ -62,6 +62,33 @@ function runTests() {
   };
   const streak = getCurrentStreak(mockHabit, mockLogs, 2026, 8, 31, true);
   assert(typeof streak === 'number' && streak >= 0, 'Streak engine computes valid numeric streak count');
+
+  // 7. Month-over-Month Trends Test
+  // Goal: 10 per month to make percentages easy (3 logs = 30%, 5 logs = 50%)
+  const trendHabit = { id: 'trend1', name: 'Read', emoji: '📚', goal: 10, category: 'Education' };
+
+  // Previous month (July 2026) - 3 logs (30%)
+  // Current month (August 2026) - 5 logs (50%)
+  const trendLogs = {
+    'trend1_2026_7_1': true,
+    'trend1_2026_7_5': true,
+    'trend1_2026_7_10': true,
+
+    'trend1_2026_8_1': true,
+    'trend1_2026_8_2': true,
+    'trend1_2026_8_3': true,
+    'trend1_2026_8_4': true,
+    'trend1_2026_8_5': true,
+  };
+
+  const trends = getMonthOverMonthTrends([trendHabit], trendLogs, 2026, 8);
+  assert(trends.length === 1, 'Returns trend data for the given habit');
+  const trend = trends[0];
+  assert(trend.habitId === 'trend1', 'Trend data matches habit ID');
+  assert(trend.prevPct === 30, 'Calculates previous month percentage correctly');
+  assert(trend.currentPct === 50, 'Calculates current month percentage correctly');
+  assert(trend.delta === 20, 'Calculates month-over-month delta correctly');
+
 
   console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed.`);
   if (failed > 0) {

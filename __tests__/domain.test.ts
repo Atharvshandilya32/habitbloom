@@ -3,6 +3,7 @@ import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
 import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
 import { getCurrentStreak } from '../lib/habitUtils';
+import { generateMilestoneMessage } from '../lib/storyEngine';
 
 
 /**
@@ -62,6 +63,14 @@ function runTests() {
   };
   const streak = getCurrentStreak(mockHabit, mockLogs, 2026, 8, 31, true);
   assert(typeof streak === 'number' && streak >= 0, 'Streak engine computes valid numeric streak count');
+
+  // 7. Milestone Message Tests
+  assert(generateMilestoneMessage(1, "Reading") === "You planted your first seed.", "Generates correct message for 1 day streak");
+  assert(generateMilestoneMessage(7, "Reading") === "One week of showing up.", "Generates correct message for 7 days streak");
+  assert(generateMilestoneMessage(30, "Reading") === "Your habits are beginning to take root.", "Generates correct message for 30 days streak");
+  assert(generateMilestoneMessage(100, "Reading") === "Consistency has become part of your identity.", "Generates correct message for 100 days streak");
+  assert(generateMilestoneMessage(365, "Reading") === "You've cultivated something extraordinary.", "Generates correct message for 365 days streak");
+  assert(generateMilestoneMessage(42, "Reading") === "You have reached an incredible milestone for Reading.", "Generates fallback message for other streak lengths");
 
   console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed.`);
   if (failed > 0) {

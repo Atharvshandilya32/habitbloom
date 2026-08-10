@@ -3,6 +3,7 @@ import { parseCSVText, sanitizeCSVCell } from '../lib/rosterParser';
 import { hasPermission } from '../lib/spacePermissions';
 import { getTemplateForType, createPermissions } from '../lib/spaceTemplates';
 import { getCurrentStreak } from '../lib/habitUtils';
+import { calculateTotalXp, XP_CONSTANTS } from '../lib/xpEngine';
 
 
 /**
@@ -76,6 +77,28 @@ function runTests() {
   };
   const streak = getCurrentStreak(mockHabit, mockLogs, 2026, 8, 31, true);
   assert(typeof streak === 'number' && streak >= 0, 'Streak engine computes valid numeric streak count');
+
+  // 7. XP Engine Tests
+  assert(calculateTotalXp([], {}) === 0, 'XP engine handles empty habits and logs');
+  assert(calculateTotalXp([], null as any) === 0, 'XP engine handles null logs gracefully');
+  assert(calculateTotalXp([], mockLogs) === Object.keys(mockLogs).length * XP_CONSTANTS.HABIT_COMPLETION, 'XP engine calculates XP for logs without habits (no streak bonus)');
+
+  const logsWithStreak = {
+    'h1_2026_8_1': true,
+    'h1_2026_8_2': true,
+    'h1_2026_8_3': true,
+    'h1_2026_8_4': true,
+  };
+
+  // Create a predictable date context by overriding getCurrentStreak behavior directly or just relying on base completion if mocking isn't needed.
+  // We can calculate base XP.
+  const baseXP = Object.keys(logsWithStreak).length * XP_CONSTANTS.HABIT_COMPLETION;
+
+  // In `calculateTotalXp`, streak is calculated relative to `new Date()`. This might cause tests to be flaky depending on current date,
+  // but we can at least test that base calculation is correct for basic logs.
+
+  const xpWithEmptyHabitsAndNoStreak = calculateTotalXp([], logsWithStreak);
+  assert(xpWithEmptyHabitsAndNoStreak === baseXP, 'XP engine correctly calculates base XP for empty habits array');
 
   console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed.`);
   if (failed > 0) {

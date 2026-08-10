@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, Download, FileSpreadsheet, FileJson, Printer, CheckCircle2 } from 'lucide-react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { calculatePersonalRecords, calculateWeeklyReview, calculateActiveDaysCount } from '../../../lib/analyticsUtils';
+import { escapeHtml } from '../../../lib/utils';
 import { toast } from 'sonner';
 
 interface DataExportModalProps {
@@ -141,8 +142,8 @@ export default function DataExportModal({ isOpen, onClose, habits, logs }: DataE
             <div class="grid">
               <div class="card"><div class="card-title">Weekly Completion Rate</div><div class="card-val">${review.completionRate}%</div></div>
               <div class="card"><div class="card-title">Most Productive Day</div><div class="card-val">${review.mostProductiveDay}</div></div>
-              <div class="card"><div class="card-title">Best Habit</div><div class="card-val">${review.bestHabit ? review.bestHabit.emoji + ' ' + review.bestHabit.name : 'N/A'}</div></div>
-              <div class="card"><div class="card-title">Weakest Habit</div><div class="card-val">${review.weakestHabit ? review.weakestHabit.emoji + ' ' + review.weakestHabit.name : 'N/A'}</div></div>
+              <div class="card"><div class="card-title">Best Habit</div><div class="card-val">${review.bestHabit ? escapeHtml(review.bestHabit.emoji) + ' ' + escapeHtml(review.bestHabit.name) : 'N/A'}</div></div>
+              <div class="card"><div class="card-title">Weakest Habit</div><div class="card-val">${review.weakestHabit ? escapeHtml(review.weakestHabit.emoji) + ' ' + escapeHtml(review.weakestHabit.name) : 'N/A'}</div></div>
             </div>
 
             <h2>Active Habits</h2>
@@ -157,8 +158,8 @@ export default function DataExportModal({ isOpen, onClose, habits, logs }: DataE
               <tbody>
                 ${habits.map(h => `
                   <tr>
-                    <td>${h.emoji} <strong>${h.name}</strong></td>
-                    <td><span class="badge">${h.category || 'General'}</span></td>
+                    <td>${escapeHtml(h.emoji)} <strong>${escapeHtml(h.name)}</strong></td>
+                    <td><span class="badge">${escapeHtml(h.category || 'General')}</span></td>
                     <td>${h.goal} days / month</td>
                   </tr>
                 `).join('')}

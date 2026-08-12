@@ -43,7 +43,7 @@ const SpaceDashboard = dynamic(() => import('./components/SpaceDashboard'), { ss
 import CreateSpaceModal from './components/CreateSpaceModal';
 import { Space, SpaceInvite } from '../../lib/spaceTypes';
 import { getLevelFromXp, calculateTotalXp } from '../../lib/xpEngine';
-import BeautifulDayStart from './components/BeautifulDayStart';
+const BeautifulDayStart = dynamic(() => import('./components/BeautifulDayStart'), { ssr: false });
 import { generateDailyStory, generateMilestoneMessage } from '../../lib/storyEngine';
 import { calculateBloomScore } from '../../lib/bloomScoreUtils';
 import { initOfflineSync, queueMutation } from '../../lib/offlineSyncEngine';
@@ -63,16 +63,16 @@ import { auth, database } from '../../lib/firebase';
 const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
 
 export default function Page() {
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [logs, setLogs] = useState<HabitLog>({});
-  const [habitLogsArray, setHabitLogsArray] = useState<Record<string, number[]>>({});
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [habits, setHabits] = useState<Habit[]>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_habits') || '[]') : []);
+  const [logs, setLogs] = useState<HabitLog>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_logs') || '{}') : {});
+  const [habitLogsArray, setHabitLogsArray] = useState<Record<string, number[]>>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_logs_array') || '{}') : {});
+  const [year, setYear] = useState(() => new Date().getFullYear());
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1);
 
   // Data State
-  const [goals, setGoals] = useState<GoalType[]>([]);
-  const [challenges, setChallenges] = useState<Challenge[]>([]);
-  const [journals, setJournals] = useState<JournalEntry[]>([]);
+  const [goals, setGoals] = useState<GoalType[]>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_goals') || '[]') : []);
+  const [challenges, setChallenges] = useState<Challenge[]>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_challenges') || '[]') : []);
+  const [journals, setJournals] = useState<JournalEntry[]>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_journals') || '[]') : []);
 
   // Spaces State
   const [userSpaces, setUserSpaces] = useState<Space[]>([]);
@@ -139,6 +139,11 @@ export default function Page() {
   }, []);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [migrationStatus, setMigrationStatus] = useState<'idle' | 'migrating' | 'done' | 'failed'>('idle');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Open guide on first visit
   useEffect(() => {
@@ -785,7 +790,10 @@ export default function Page() {
     };
   }, [habits, logs, hasSeenWelcomeToday, isLoadingFirebase, year, month]);
 
-  if (isLoadingFirebase && habits.length === 0) {
+  const isGuest = typeof window !== 'undefined' && localStorage.getItem('habitbloom_is_guest') === 'true';
+  const shouldBlockForAuth = isLoadingFirebase && !isGuest && habits.length === 0;
+
+  if (!mounted || shouldBlockForAuth) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white flex flex-col items-center justify-center text-emerald-800 gap-6 relative overflow-hidden">
         {/* Subtle decorative background elements */}
@@ -802,7 +810,7 @@ export default function Page() {
           </div>
           <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">HabitBloom</h2>
           <p className="text-sm font-medium text-emerald-600/80 mt-2 flex items-center gap-2">
-            <span>Syncing your progress</span>
+            <span>{!mounted ? "Preparing your garden" : "Syncing your progress"}</span>
             <span className="flex gap-1">
               <span className="w-1 h-1 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-1 h-1 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />

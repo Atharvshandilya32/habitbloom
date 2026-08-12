@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { IntelligenceEngine } from '../../../lib/intelligence/intelligenceEngine';
 import { Sparkles, TrendingUp, Zap, Target } from 'lucide-react';
 import { NavTab } from './charts/TitleBanner';
 import { User } from 'firebase/auth';
-import { canAccessFeature } from '../../../lib/featureAccess';
+import { canAccessFeature, getUserPlan, UserPlan } from '../../../lib/featureAccess';
 import { PremiumInterestPreview } from './social/PremiumInterestPreview';
 
 interface BloomInsightsViewProps {
@@ -23,6 +23,12 @@ export const BloomInsightsView: React.FC<BloomInsightsViewProps> = ({ user, habi
       trends: IntelligenceEngine.generateTrends(habits, logs, targetDate)
     };
   }, [habits, logs]);
+
+  const [userPlan, setUserPlan] = useState<UserPlan>('FREE');
+  
+  useEffect(() => {
+    getUserPlan(user).then(setUserPlan);
+  }, [user]);
 
   const improvingTrends = trends.filter(t => t.status === 'IMPROVING');
   const decliningTrends = trends.filter(t => t.status === 'DECLINING');
@@ -155,17 +161,16 @@ export const BloomInsightsView: React.FC<BloomInsightsViewProps> = ({ user, habi
         </section>
       )}
 
-      {/* Phase 10: Premium Research Wedge */}
-      {canAccessFeature(user, 'advanced_insights') === 'COMING_LATER' && (
-        <section className="pt-8">
-          <PremiumInterestPreview 
-            user={user}
-            featureId="advanced_insights"
-            featureName="Advanced Growth Insights"
-            description="Go deeper into your habit history, patterns, and long-term progress with AI-powered personalized analysis."
-          />
-        </section>
-      )}
+      {/* Phase 11: Premium Validation Wedge */}
+      <section className="pt-8">
+        <PremiumInterestPreview 
+          user={user}
+          featureId="advanced_insights"
+          featureName="Advanced Growth Insights"
+          description="Go deeper into your habit history, patterns, and long-term progress with AI-powered personalized analysis."
+          accessState={canAccessFeature(userPlan, 'advanced_insights')}
+        />
+      </section>
 
     </div>
   );

@@ -2,6 +2,7 @@ import { User } from 'firebase/auth';
 import { ref, get, set } from 'firebase/database';
 import { database } from './firebase';
 import { generateUniqueHbId } from './identityUtils';
+import { UserPlan } from './featureAccess';
 
 export interface UserProfile {
   uid: string;
@@ -13,6 +14,7 @@ export interface UserProfile {
   hbId?: string | null; // Reserved for future Universal HabitBloom ID
   experiencePoints?: number;
   currentLevel?: number;
+  plan?: UserPlan;
   metadata?: Record<string, unknown>;
 }
 

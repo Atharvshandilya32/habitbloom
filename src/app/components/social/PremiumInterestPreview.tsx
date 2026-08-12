@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { Sparkles, Lock, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { logInfo } from '../../../../lib/logger';
+import { AccessState } from '../../../../lib/featureAccess';
 
 interface PremiumInterestPreviewProps {
   user: User | null | undefined;
   featureName: string;
   description: string;
   featureId: string;
+  accessState: AccessState;
 }
 
-export const PremiumInterestPreview: React.FC<PremiumInterestPreviewProps> = ({ user, featureName, description, featureId }) => {
+export const PremiumInterestPreview: React.FC<PremiumInterestPreviewProps> = ({ user, featureName, description, featureId, accessState }) => {
   const [interestState, setInterestState] = useState<'IDLE' | 'INTERESTED'>('IDLE');
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -41,17 +43,34 @@ export const PremiumInterestPreview: React.FC<PremiumInterestPreviewProps> = ({ 
       </div>
       
       <div className="relative z-10">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-xs font-black uppercase tracking-widest text-emerald-300 mb-4 border border-white/10 backdrop-blur-sm">
-          <Lock size={12} />
-          Coming in 2027
-        </div>
+        {(accessState === AccessState.COMING_LATER || accessState === AccessState.FREE) && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-xs font-black uppercase tracking-widest text-emerald-300 mb-4 border border-white/10 backdrop-blur-sm">
+            <Lock size={12} />
+            Coming in 2027
+          </div>
+        )}
+        
+        {(accessState === AccessState.EARLY_ACCESS || accessState === AccessState.PREMIUM) && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-xs font-black uppercase tracking-widest text-emerald-300 mb-4 border border-white/10 backdrop-blur-sm">
+            <CheckCircle2 size={12} />
+            {accessState === AccessState.EARLY_ACCESS ? 'Early Access' : 'Premium Feature'}
+          </div>
+        )}
         
         <h2 className="text-2xl font-black mb-2">{featureName}</h2>
         <p className="text-slate-300 font-medium max-w-lg mb-6">
           {description}
         </p>
         
-        {interestState === 'IDLE' ? (
+        {accessState === AccessState.EARLY_ACCESS || accessState === AccessState.PREMIUM ? (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <button 
+              className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold transition shadow-sm hover:shadow-md flex items-center gap-2"
+            >
+              Use Feature <ArrowRight size={16} />
+            </button>
+          </div>
+        ) : interestState === 'IDLE' ? (
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <button 
               onClick={handleInterest}
@@ -78,7 +97,7 @@ export const PremiumInterestPreview: React.FC<PremiumInterestPreviewProps> = ({ 
           </div>
         )}
         
-        {isExpanded && interestState === 'IDLE' && (
+        {isExpanded && interestState === 'IDLE' && (accessState === AccessState.COMING_LATER || accessState === AccessState.FREE) && (
           <div className="mt-6 pt-6 border-t border-white/10 animate-in fade-in slide-in-from-top-4 duration-500 text-sm text-slate-300 max-w-xl space-y-3">
             <p>
               HabitBloom is currently free during our validation phase. In 2027, we plan to introduce <strong>HabitBloom Premium</strong> to support sustainable development.

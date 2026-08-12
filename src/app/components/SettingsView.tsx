@@ -23,6 +23,9 @@ import { useTheme } from './ThemeProvider';
 import UserProfile from './UserProfile';
 import HabitReminderSettings from './HabitReminderSettings';
 import DataExportModal from './DataExportModal';
+import PlanSettingsView from './PlanSettingsView';
+import { UserPlan, getUserPlan } from '../../../lib/featureAccess';
+import { CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFeatureFlags } from '../../../lib/FeatureFlagContext';
 
@@ -39,7 +42,7 @@ interface SettingsViewProps {
   onClearData?: () => void;
 }
 
-type SettingsTab = 'profile' | 'appearance' | 'notifications' | 'habits' | 'data' | 'export' | 'privacy' | 'about' | 'upcoming';
+type SettingsTab = 'profile' | 'appearance' | 'notifications' | 'habits' | 'data' | 'export' | 'privacy' | 'about' | 'plan' | 'upcoming';
 
 export default function SettingsView({
   user,
@@ -58,6 +61,13 @@ export default function SettingsView({
   const { themeMode, setThemeMode } = useTheme();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { flags, togglePremium } = useFeatureFlags();
+  const [userPlan, setUserPlan] = useState<UserPlan>('FREE');
+
+  React.useEffect(() => {
+    if (user) {
+      getUserPlan(user).then(setUserPlan);
+    }
+  }, [user]);
 
   const navItems: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: 'Profile', icon: <User size={16} /> },
@@ -66,6 +76,7 @@ export default function SettingsView({
     { id: 'habits', label: 'Habits', icon: <SlidersHorizontal size={16} /> },
     { id: 'data', label: 'Data', icon: <Database size={16} /> },
     { id: 'export', label: 'Export', icon: <Download size={16} /> },
+    { id: 'plan', label: 'Plan & Billing', icon: <CreditCard size={16} /> },
     { id: 'privacy', label: 'Privacy', icon: <ShieldCheck size={16} /> },
     { id: 'about', label: 'About', icon: <Info size={16} /> },
   ];
@@ -117,6 +128,11 @@ export default function SettingsView({
                 currentMonth={currentMonth}
               />
             </div>
+          )}
+          
+          {/* Plan & Billing Tab */}
+          {activeTab === 'plan' && (
+            <PlanSettingsView user={user} plan={userPlan} />
           )}
 
           {/* Appearance Tab */}

@@ -153,7 +153,7 @@ export default function PlanSettingsView({ plan }: PlanSettingsViewProps) {
                   <div className="space-y-3">
                     <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl flex items-center gap-2 justify-center text-sm font-bold border border-emerald-100">
                       <CheckCircle2 size={16} />
-                      You're on the list!
+                      You&apos;re on the list!
                     </div>
                     <button 
                       onClick={() => setShowUpgradeModal(false)}

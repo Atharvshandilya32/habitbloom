@@ -11,6 +11,28 @@ import CalendarSettings from './components/CalendarSettings';
 
 
 import dynamic from 'next/dynamic';
+import CelebrationOverlay from './components/CelebrationOverlay';
+import { OnboardingGuide } from './components/OnboardingGuide';
+import Toast from './components/Toast';
+import JournalModal from './components/JournalModal';
+import { useKeyboardShortcuts } from '../../lib/keyboardShortcuts';
+import SpacesHub from './components/SpacesHub';
+import CreateSpaceModal from './components/CreateSpaceModal';
+import { Space, SpaceInvite } from '../../lib/spaceTypes';
+import { getLevelFromXp, calculateTotalXp } from '../../lib/xpEngine';
+import { generateDailyStory, generateMilestoneMessage } from '../../lib/storyEngine';
+import { calculateBloomScore } from '../../lib/bloomScoreUtils';
+import { initOfflineSync, queueMutation } from '../../lib/offlineSyncEngine';
+import { createNewSpace } from '../../lib/spaceUtils';
+import { ensureUserProfile, UserProfile } from '../../lib/userProfile';
+import { Habit, HabitLog, Goal as GoalType, Challenge, JournalEntry } from '../../lib/habitTypes';
+import { makeLogKey, getMonthKeyPrefix, getCurrentStreak } from '../../lib/habitUtils';
+import { useHabitReminders } from '../../lib/useHabitReminders';
+
+// Firebase imports
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { ref, onValue, set, get, query, orderByChild, equalTo, child } from 'firebase/database';
+import { auth, database } from '../../lib/firebase';
 
 const DailyFocusView = dynamic(() => import('./components/DailyFocusView'), { ssr: false });
 const DashboardView = dynamic(() => import('./components/DashboardView'), { ssr: false });
@@ -22,57 +44,42 @@ const FutureProjectionView = dynamic(() => import('./components/FutureProjection
 const WeeklyReflectionView = dynamic(() => import('./components/WeeklyReflectionView').then(mod => mod.WeeklyReflectionView), { ssr: false });
 const WrappedView = dynamic(() => import('./components/WrappedView'), { ssr: false });
 const BloomInsightsView = dynamic(() => import('./components/BloomInsightsView').then(mod => mod.BloomInsightsView), { ssr: false });
-import CelebrationOverlay from './components/CelebrationOverlay';
-import { OnboardingGuide } from './components/OnboardingGuide';
-
-// Dynamic Lazy Loaded Sub-Views for optimal initial bundle performance
 const AnalyticsView = dynamic(() => import('./components/AnalyticsView'), { ssr: false });
 const WeeklyReviewView = dynamic(() => import('./components/WeeklyReviewView'), { ssr: false });
 const PersonalRecordsView = dynamic(() => import('./components/PersonalRecordsView'), { ssr: false });
 const TimelineView = dynamic(() => import('./components/TimelineView'), { ssr: false });
 const SettingsView = dynamic(() => import('./components/SettingsView'), { ssr: false });
 const SocialHubView = dynamic(() => import('./components/social/SocialHubView'), { ssr: false });
-
 const CommandPalette = dynamic(() => import('./components/CommandPalette'), { ssr: false });
-import Toast from './components/Toast';
-import JournalModal from './components/JournalModal';
-import { useKeyboardShortcuts } from '../../lib/keyboardShortcuts';
-
-import SpacesHub from './components/SpacesHub';
 const SpaceDashboard = dynamic(() => import('./components/SpaceDashboard'), { ssr: false });
-import CreateSpaceModal from './components/CreateSpaceModal';
-import { Space, SpaceInvite } from '../../lib/spaceTypes';
-import { getLevelFromXp, calculateTotalXp } from '../../lib/xpEngine';
 const BeautifulDayStart = dynamic(() => import('./components/BeautifulDayStart'), { ssr: false });
-import { generateDailyStory, generateMilestoneMessage } from '../../lib/storyEngine';
-import { calculateBloomScore } from '../../lib/bloomScoreUtils';
-import { initOfflineSync, queueMutation } from '../../lib/offlineSyncEngine';
-import { createNewSpace } from '../../lib/spaceUtils';
-import { ensureUserProfile, UserProfile } from '../../lib/userProfile';
 const IdentityModal = dynamic(() => import('./components/identity/IdentityModal'), { ssr: false });
 
-import { Habit, HabitLog, Goal as GoalType, Challenge, JournalEntry } from '../../lib/habitTypes';
-import { makeLogKey, getMonthKeyPrefix, getCurrentStreak } from '../../lib/habitUtils';
-import { useHabitReminders } from '../../lib/useHabitReminders';
-
-// Firebase imports
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { ref, onValue, set, get, query, orderByChild, equalTo, child } from 'firebase/database';
-import { auth, database } from '../../lib/firebase';
 
 const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
 
+const safeParse = <T,>(key: string, fallback: T): T => {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const item = localStorage.getItem(key);
+    return item && item !== 'undefined' ? JSON.parse(item) : fallback;
+  } catch (e) {
+    console.error(`Error parsing ${key} from localStorage`, e);
+    return fallback;
+  }
+};
+
 export default function Page() {
-  const [habits, setHabits] = useState<Habit[]>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_habits') || '[]') : []);
-  const [logs, setLogs] = useState<HabitLog>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_logs') || '{}') : {});
-  const [habitLogsArray, setHabitLogsArray] = useState<Record<string, number[]>>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_logs_array') || '{}') : {});
+  const [habits, setHabits] = useState<Habit[]>(() => safeParse('habitbloom_habits', []));
+  const [logs, setLogs] = useState<HabitLog>(() => safeParse('habitbloom_logs', {}));
+  const [habitLogsArray, setHabitLogsArray] = useState<Record<string, number[]>>(() => safeParse('habitbloom_logs_array', {}));
   const [year, setYear] = useState(() => new Date().getFullYear());
   const [month, setMonth] = useState(() => new Date().getMonth() + 1);
 
   // Data State
-  const [goals, setGoals] = useState<GoalType[]>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_goals') || '[]') : []);
-  const [challenges, setChallenges] = useState<Challenge[]>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_challenges') || '[]') : []);
-  const [journals, setJournals] = useState<JournalEntry[]>(() => typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('habitbloom_journals') || '[]') : []);
+  const [goals, setGoals] = useState<GoalType[]>(() => safeParse('habitbloom_goals', []));
+  const [challenges, setChallenges] = useState<Challenge[]>(() => safeParse('habitbloom_challenges', []));
+  const [journals, setJournals] = useState<JournalEntry[]>(() => safeParse('habitbloom_journals', []));
 
   // Spaces State
   const [userSpaces, setUserSpaces] = useState<Space[]>([]);

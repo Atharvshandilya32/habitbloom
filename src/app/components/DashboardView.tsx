@@ -174,7 +174,7 @@ const DashboardView = React.memo(function DashboardView({
               Your progress is ready.
             </h2>
             <p className="text-emerald-50 font-medium mt-2 max-w-xl text-sm md:text-base">
-              You're doing great! Create a free account to save your habits securely to the cloud, unlock Spaces, and sync across all your devices.
+              You&apos;re doing great! Create a free account to save your habits securely to the cloud, unlock Spaces, and sync across all your devices.
             </p>
           </div>
           

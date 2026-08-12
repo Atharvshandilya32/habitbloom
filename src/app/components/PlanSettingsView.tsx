@@ -10,6 +10,7 @@ interface PlanSettingsViewProps {
 
 export default function PlanSettingsView({ plan }: PlanSettingsViewProps) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [prebookState, setPrebookState] = useState<'IDLE' | 'INTERESTED'>('IDLE');
 
   const handleUpgradeClick = () => {
     setShowUpgradeModal(true);
@@ -133,12 +134,35 @@ export default function PlanSettingsView({ plan }: PlanSettingsViewProps) {
               </p>
               <div className="pt-4 border-t border-slate-100 mt-4">
                 <p className="text-xs text-slate-500 font-medium mb-3">Proposed 2027 Price: <span className="font-bold text-slate-800 line-through">₹999/year</span></p>
-                <button 
-                  onClick={() => setShowUpgradeModal(false)}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2"
-                >
-                  Got it <ArrowRight size={16} />
-                </button>
+                {prebookState === 'IDLE' ? (
+                  <div className="space-y-2">
+                    <button 
+                      onClick={() => setPrebookState('INTERESTED')}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-bold transition shadow-sm flex items-center justify-center gap-2"
+                    >
+                      Pre-book Premium (Free)
+                    </button>
+                    <button 
+                      onClick={() => setShowUpgradeModal(false)}
+                      className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2"
+                    >
+                      Maybe Later
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl flex items-center gap-2 justify-center text-sm font-bold border border-emerald-100">
+                      <CheckCircle2 size={16} />
+                      You're on the list!
+                    </div>
+                    <button 
+                      onClick={() => setShowUpgradeModal(false)}
+                      className="w-full bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2"
+                    >
+                      Close <ArrowRight size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

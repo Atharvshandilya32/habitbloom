@@ -36,14 +36,6 @@ export default function LoginPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
-
-  // UI mount state for graceful fade-in
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const provider = useMemo(() => new GoogleAuthProvider(), []);
 
   useEffect(() => {
@@ -126,9 +118,6 @@ export default function LoginPage() {
     }
   };
 
-  // Smoothly fade in the main interface once mounted
-  const uiOpacity = mounted ? 1 : 0;
-
   return (
     <div className="relative min-h-screen w-full bg-slate-950 flex items-center justify-center font-sans antialiased select-none p-4 sm:p-6 lg:p-10 overflow-x-hidden overflow-y-auto">
       {/* 60fps Dynamic Procedural Canvas Background */}
@@ -138,8 +127,7 @@ export default function LoginPage() {
 
       {/* Main SaaS Interface Overlay */}
       <main
-        className="relative z-20 w-full max-w-7xl my-auto transition-opacity duration-700 ease-out"
-        style={{ opacity: uiOpacity }}
+        className="relative z-20 w-full max-w-7xl my-auto animate-in fade-in duration-700 ease-out"
       >
         <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-14 py-6">
           
@@ -211,6 +199,7 @@ export default function LoginPage() {
                         : 'hover:bg-white/10 text-slate-300 hover:text-white'
                     }`}
                     title="Notifications"
+                    aria-label="Notifications"
                   >
                     <Bell className="w-4.5 h-4.5" />
                     <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400 animate-pulse ring-2 ring-slate-950" />
@@ -229,6 +218,7 @@ export default function LoginPage() {
                         : 'hover:bg-white/10 text-slate-300 hover:text-white'
                     }`}
                     title="Navigation Menu"
+                    aria-label="Navigation Menu"
                   >
                     <Menu className="w-4.5 h-4.5" />
                   </button>
@@ -377,12 +367,13 @@ export default function LoginPage() {
               {/* Email / Password Form */}
               <form onSubmit={handleEmail} className="space-y-4 mt-5">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1">
+                  <label htmlFor="email" className="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1">
                     EMAIL
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
+                      id="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -395,12 +386,13 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1">
+                  <label htmlFor="password" className="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1">
                     PASSWORD
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
+                      id="password"
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -411,6 +403,7 @@ export default function LoginPage() {
                     />
                     <button
                       type="button"
+                      aria-label="Toggle password visibility"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
                     >

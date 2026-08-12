@@ -1,0 +1,16 @@
+# HabitBloom AI Documentation
+
+## Overview
+HabitBloom is a personal habit-tracking and goal-setting service designed to help users build daily discipline and make micro progress toward goals. Our core features include streak counters, smart reminders, visual analytics, and shared "Spaces" for groups.
+
+## Pricing and Plans
+HabitBloom is currently 100% free to use for all users. We plan to introduce premium paid plans with advanced features after December.
+
+## Customer Support
+We offer dedicated customer support via email. You can reach us at support@habitbloom.in. Our standard response time is 24-48 hours.
+
+## Cancellation and Refund Terms
+Because HabitBloom is currently completely free to use, there are no charges or subscriptions to refund. Users can cancel or delete their accounts at any time without any fees. A formal refund policy will be published when paid plans are introduced.
+
+## Privacy and Data
+HabitBloom has a strong privacy-first stance. We emphasize that habit data is personal and commit to strict privacy protections under the Digital Personal Data Protection (DPDP) Act, 2023. Users have full rights to access, correct, and erase their data.

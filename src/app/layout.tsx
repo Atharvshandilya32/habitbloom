@@ -26,6 +26,31 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <FeatureFlagProvider>
+            {/* JSON-LD Schema.org Data for AI Bots and SEO */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "SoftwareApplication",
+                  "name": "HabitBloom",
+                  "operatingSystem": "Web",
+                  "applicationCategory": "HealthAndFitnessApplication",
+                  "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "USD"
+                  },
+                  "description": "Turn long-term goals into daily habits. HabitBloom helps you track micro-progress and maintain daily discipline.",
+                  "url": "https://habitbloom.in",
+                  "contactPoint": {
+                    "@type": "ContactPoint",
+                    "email": "support@habitbloom.in",
+                    "contactType": "customer support"
+                  }
+                })
+              }}
+            />
             {children}
           </FeatureFlagProvider>
         </ThemeProvider>

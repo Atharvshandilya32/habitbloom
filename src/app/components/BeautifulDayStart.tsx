@@ -58,6 +58,9 @@ export const BeautifulDayStart: React.FC<BeautifulDayStartProps> = ({
             <p className="text-xl md:text-2xl font-medium text-slate-600 max-w-lg mx-auto leading-relaxed">
               {storySentence}
             </p>
+            <p className="text-sm font-medium text-slate-500 max-w-md mx-auto mt-4 leading-relaxed">
+              HabitBloom is a personal growth environment that helps you build habits, see your progress, and turn consistency into visible growth.
+            </p>
           </motion.div>
 
           <motion.div 

@@ -32,6 +32,7 @@ import { Badge } from './ui/Badge';
 interface DashboardViewProps extends HabitGridProps {
   user: FirebaseUser | null;
   onNavigateTab: (tab: NavTab) => void;
+  onOpenAuthModal?: () => void;
 }
 
 const DashboardView = React.memo(function DashboardView({
@@ -46,6 +47,7 @@ const DashboardView = React.memo(function DashboardView({
   onDeleteHabit,
   onUpdateHabit,
   onNavigateTab,
+  onOpenAuthModal,
 }: DashboardViewProps) {
   const [isBloomModalOpen, setIsBloomModalOpen] = useState(false);
   const today = new Date();
@@ -158,6 +160,33 @@ const DashboardView = React.memo(function DashboardView({
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8 animate-in fade-in duration-500">
       
+      {/* ─────────────────────────────────────────────────────────────
+          GUEST CALL TO ACTION
+      ───────────────────────────────────────────────────────────── */}
+      {!user && logCount > 0 && onOpenAuthModal && (
+        <div className="w-full relative overflow-hidden bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-emerald-900/10 animate-in slide-in-from-top-4 duration-500">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl pointer-events-none translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl pointer-events-none -translate-x-1/2 translate-y-1/2" />
+          
+          <div className="relative z-10">
+            <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2">
+              <Sparkles className="text-yellow-300" />
+              Your progress is ready.
+            </h2>
+            <p className="text-emerald-50 font-medium mt-2 max-w-xl text-sm md:text-base">
+              You're doing great! Create a free account to save your habits securely to the cloud, unlock Spaces, and sync across all your devices.
+            </p>
+          </div>
+          
+          <button 
+            onClick={onOpenAuthModal}
+            className="relative z-10 w-full md:w-auto shrink-0 bg-white text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 font-black px-6 py-3 rounded-2xl shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+          >
+            Save My Progress <ArrowRight size={18} />
+          </button>
+        </div>
+      )}
+
       {/* ─────────────────────────────────────────────────────────────
           1. TOP COMMAND HUB (Welcome, Streak, Bloom Score)
       ───────────────────────────────────────────────────────────── */}

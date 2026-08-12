@@ -1,6 +1,8 @@
 import { Habit, HabitLog, WeeklyReviewSummary, HeatmapCell, HABIT_CATEGORIES } from './habitTypes';
 import { makeLogKey } from './habitUtils';
 import { subDays, format, startOfWeek, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth, getDaysInMonth } from 'date-fns';
+import { ref, set } from 'firebase/database';
+import { database } from './firebase';
 
 /**
  * Calculates total completed habit logs across all time.
@@ -513,3 +515,21 @@ export function getCategoryCompletionStats(habits: Habit[], logs: HabitLog) {
     };
   });
 }
+
+/**
+ * Logs usage events to Firebase RTDB for Beta telemetry
+ */
+export async function logUsageEvent(uid: string, eventName: string, eventData: Record<string, unknown> = {}) {
+  if (!database || !uid) return;
+  try {
+    const timestamp = Date.now();
+    const eventRef = ref(database, `analytics/${uid}/${eventName}_${timestamp}`);
+    await set(eventRef, {
+      ...eventData,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Failed to log telemetry event', error);
+  }
+}
+

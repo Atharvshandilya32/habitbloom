@@ -17,6 +17,7 @@ import {
   Sun,
   Sparkles,
   Trash2,
+  MessageSquare
 } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import UserProfile from './UserProfile';
@@ -291,11 +292,27 @@ export default function SettingsView({
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">🌱</span>
-                  <span className="text-base font-extrabold text-slate-900">HabitBloom v2.0 Premium</span>
+                  <span className="text-base font-extrabold text-slate-900">HabitBloom Beta</span>
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed max-w-lg">
                   Designed inspired by Linear, Notion, Arc Browser, Todoist, and TickTick. Built to run fast and light on free Vercel + Firebase infrastructure.
                 </p>
+              </div>
+
+              <div className="pt-6 border-t border-slate-100 space-y-4">
+                <h3 className="text-sm font-bold text-slate-900">Beta Feedback</h3>
+                <p className="text-xs text-slate-500 max-w-lg leading-relaxed">
+                  Help us improve HabitBloom. Tell us what you liked, what confused you, or what felt unnecessary. Your feedback directly shapes the product.
+                </p>
+                <a
+                  href={`mailto:hello@habitbloom.com?subject=HabitBloom Beta Feedback&body=What I liked:%0A%0AWhat confused me:%0A%0AWhat felt unnecessary:%0A%0AAny other thoughts:%0A`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all text-xs font-bold"
+                >
+                  <MessageSquare size={16} />
+                  Send Feedback
+                </a>
               </div>
             </div>
           )}

@@ -10,6 +10,7 @@ interface SpacesHubProps {
   onCreateSpaceClick: () => void;
   onEnterSpace: (spaceId: string) => void;
   onAcceptInvite: (inviteId: string) => void;
+  onJoinWithCode?: (code: string) => void;
 }
 
 export default function SpacesHub({
@@ -17,14 +18,19 @@ export default function SpacesHub({
   pendingInvites,
   onCreateSpaceClick,
   onEnterSpace,
-  onAcceptInvite
+  onAcceptInvite,
+  onJoinWithCode
 }: SpacesHubProps) {
   const [joinCode, setJoinCode] = useState('');
   const router = useRouter();
 
   const handleJoin = () => {
     if (joinCode.trim()) {
-      router.push(`/invite/${joinCode.trim()}`);
+      if (onJoinWithCode) {
+        onJoinWithCode(joinCode.trim());
+      } else {
+        router.push(`/invite/${joinCode.trim()}`);
+      }
     }
   };
 

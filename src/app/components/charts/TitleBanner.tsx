@@ -39,9 +39,10 @@ interface NavbarProps {
   onOpenSearch?: () => void;
   onOpenIdentityModal?: () => void;
   onOpenWrapped?: () => void;
+  onOpenAuthModal?: () => void;
 }
 
-export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOpenSearch, onOpenIdentityModal, onOpenWrapped }: NavbarProps) {
+export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOpenSearch, onOpenIdentityModal, onOpenWrapped, onOpenAuthModal }: NavbarProps) {
   const [signingOut, setSigningOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { themeMode, setThemeMode } = useTheme();
@@ -115,7 +116,7 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
           </div>
           <span className="text-base font-extrabold text-slate-900 tracking-tight">
             Habit<span className="text-emerald-600">Bloom</span>
-            <span className="ml-1.5 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">v2.5</span>
+            <span className="ml-1.5 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">Beta</span>
           </span>
         </button>
 
@@ -280,6 +281,16 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
             </div>
           )}
 
+          {!user && onOpenAuthModal && (
+            <button
+              onClick={onOpenAuthModal}
+              className="hidden md:flex items-center gap-1.5 rounded-xl border border-emerald-500 bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 hover:scale-105 transition-all shadow-sm"
+              title="Log into your account or create a new one"
+            >
+              <span className="hidden sm:inline">Log In / Sign Up</span>
+            </button>
+          )}
+
           {/* Mobile Menu Toggle Button */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -416,6 +427,14 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
               >
                 <LogOut size={14} />
                 Logout
+              </button>
+            )}
+            {!user && onOpenAuthModal && (
+              <button
+                onClick={() => { setMobileOpen(false); onOpenAuthModal(); }}
+                className="col-span-2 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500 bg-emerald-600 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition-all shadow-sm"
+              >
+                Log In / Sign Up
               </button>
             )}
           </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { MotionConfig } from 'framer-motion';
 import Navbar, { NavTab } from './components/charts/TitleBanner';
-import RequireAuth from './auth/RequireAuth';
+import AuthModal from './components/AuthModal';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { toast } from 'sonner';
 import GuideModal, { shouldShowGuide } from './components/GuideModal';
@@ -137,11 +137,42 @@ export default function Page() {
   useEffect(() => {
     initOfflineSync();
   }, []);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [migrationStatus, setMigrationStatus] = useState<'idle' | 'migrating' | 'done' | 'failed'>('idle');
 
   // Open guide on first visit
   useEffect(() => {
-    if (shouldShowGuide()) setGuideOpen(true);
+    if (shouldShowGuide()) {
+      setGuideOpen(true);
+    }
   }, []);
+
+  // Guest Local Storage Toast
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !currentUser && !isLoadingFirebase) {
+      const hasSeenToast = localStorage.getItem('habitbloom_guest_toast');
+      if (!hasSeenToast) {
+        // Short delay to let the app render first
+        setTimeout(() => {
+          toast('Playing as a Guest', {
+            description: 'Your progress is saved locally. Create an account when you are ready to sync to the cloud!',
+            duration: 8000,
+            icon: '👋',
+          });
+          localStorage.setItem('habitbloom_guest_toast', 'true');
+        }, 1500);
+      }
+    }
+  }, [currentUser, isLoadingFirebase]);
+
+  // Track feature usage when tab changes
+  useEffect(() => {
+    if (currentUser && activeTab) {
+      import('../../lib/analyticsUtils').then(({ logUsageEvent }) => {
+        logUsageEvent(currentUser.uid, 'feature_used', { feature: activeTab });
+      });
+    }
+  }, [activeTab, currentUser?.uid]);
 
   useEffect(() => {
     const todayStr = new Date().toDateString();
@@ -288,7 +319,16 @@ export default function Page() {
       if (!user) {
         setIsLoadingFirebase(false);
         setUserProfileData(null);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('habitbloom_is_guest', 'true');
+        }
       } else {
+        if (typeof window !== 'undefined' && localStorage.getItem('habitbloom_is_guest') === 'true') {
+          setMigrationStatus('migrating');
+        } else {
+          setMigrationStatus('done');
+        }
+        
         ensureUserProfile(user).then(p => {
           if (p) setUserProfileData(p);
         });
@@ -311,9 +351,82 @@ export default function Page() {
     return () => unsub();
   }, []);
 
-  // 4. Real-time Firebase Sync
+  // 4. Migration Logic
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !database || migrationStatus !== 'migrating') return;
+
+    const performMigration = async () => {
+      try {
+        const userRef = ref(database, `users/${currentUser.uid}`);
+        const snapshot = await get(userRef);
+        const data = snapshot.exists() ? snapshot.val() : null;
+
+        const savedHabits = JSON.parse(localStorage.getItem('habitbloom_habits') || '[]');
+        const savedLogs = JSON.parse(localStorage.getItem('habitbloom_logs') || '{}');
+        const savedHabitLogsArray = JSON.parse(localStorage.getItem('habitbloom_logs_array') || '{}');
+        const savedGoals = JSON.parse(localStorage.getItem('habitbloom_goals') || '[]');
+        const savedChallenges = JSON.parse(localStorage.getItem('habitbloom_challenges') || '[]');
+        const savedJournals = JSON.parse(localStorage.getItem('habitbloom_journals') || '[]');
+
+        if (!data) {
+          const habitsMap = savedHabits.reduce((acc: Record<string, Habit>, h: Habit) => { acc[h.id] = h; return acc; }, {});
+          await set(userRef, {
+            habits: habitsMap,
+            logs: savedLogs,
+            habitLogsArray: savedHabitLogsArray,
+            goals: savedGoals,
+            challenges: savedChallenges,
+            journals: savedJournals,
+          });
+        } else {
+          const cloudHabits = data.habits ? (Array.isArray(data.habits) ? data.habits : Object.values(data.habits)) : [];
+          
+          const dedupeById = <T extends { id: string }>(arr1: T[], arr2: T[]) => {
+            const map = new Map<string, T>();
+            arr1.forEach(item => map.set(item.id, item));
+            arr2.forEach(item => {
+              const existing = map.get(item.id);
+              map.set(item.id, existing ? { ...existing, ...item } : item);
+            });
+            return Array.from(map.values());
+          };
+
+          const mergedHabits = dedupeById(cloudHabits, savedHabits);
+          const mergedLogs = { ...(data.logs || {}), ...savedLogs };
+          const mergedHabitLogsArray = { ...(data.habitLogsArray || {}), ...savedHabitLogsArray };
+          const mergedGoals = dedupeById(data.goals ? (Array.isArray(data.goals) ? data.goals : Object.values(data.goals)) : [], savedGoals);
+          const mergedChallenges = dedupeById(data.challenges ? (Array.isArray(data.challenges) ? data.challenges : Object.values(data.challenges)) : [], savedChallenges);
+          const mergedJournals = dedupeById(data.journals ? (Array.isArray(data.journals) ? data.journals : Object.values(data.journals)) : [], savedJournals);
+
+          const habitsMap = mergedHabits.reduce((acc: Record<string, Habit>, h: Habit) => { acc[h.id] = h; return acc; }, {});
+          
+          await set(userRef, {
+            ...data,
+            habits: habitsMap,
+            logs: mergedLogs,
+            habitLogsArray: mergedHabitLogsArray,
+            goals: mergedGoals,
+            challenges: mergedChallenges,
+            journals: mergedJournals,
+          });
+        }
+
+        localStorage.removeItem('habitbloom_is_guest');
+        setMigrationStatus('done');
+        toast.success('Your local progress was successfully saved to the cloud!');
+      } catch (error) {
+        console.error('Migration failed:', error);
+        toast.error('Failed to migrate data. You can try again later.');
+        setMigrationStatus('failed');
+      }
+    };
+
+    performMigration();
+  }, [currentUser, database, migrationStatus]);
+
+  // 5. Real-time Firebase Sync
+  useEffect(() => {
+    if (!currentUser || migrationStatus === 'migrating') return;
     if (!database) {
       setIsLoadingFirebase(false);
       return;
@@ -340,21 +453,7 @@ export default function Page() {
           if (data.goals) setGoals(dedupeById(Array.isArray(data.goals) ? data.goals : Object.values(data.goals)));
           if (data.challenges) setChallenges(dedupeById(Array.isArray(data.challenges) ? data.challenges : Object.values(data.challenges)));
           if (data.journals) setJournals(dedupeById(Array.isArray(data.journals) ? data.journals : Object.values(data.journals)));
-        } else {
-          const initialHabits = habits.length > 0 ? habits : [
-            { id: 'habit-1', name: 'Drink water', emoji: '💧', goal: 10, category: '🏃 Fitness' },
-            { id: 'habit-2', name: 'Read books', emoji: '📚', goal: 5, category: '📚 Learning' },
-          ];
-          const habitsMap = initialHabits.reduce((acc: Record<string, typeof initialHabits[0]>, h) => { acc[h.id] = h; return acc; }, {});
-          
-          set(userRef, {
-            habits: habitsMap,
-            logs,
-            habitLogsArray,
-            goals,
-            challenges,
-            journals,
-          });
+          if (data.journals) setJournals(dedupeById(Array.isArray(data.journals) ? data.journals : Object.values(data.journals)));
         }
         setIsLoadingFirebase(false);
       },
@@ -370,7 +469,7 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.uid, database]);
 
-  // 5. Real-time Firebase Sync for Spaces
+  // 6. Real-time Firebase Sync for Spaces
   useEffect(() => {
     if (!database || !currentUser) return;
 
@@ -479,7 +578,10 @@ export default function Page() {
           const dbRef = ref(database, `users/${currentUser.uid}/logs/${key}`);
           if (navigator.onLine) {
             if (isCurrentlyDone) await set(dbRef, null);
-            else await set(dbRef, true);
+            else {
+              await set(dbRef, true);
+              import('../../lib/analyticsUtils').then(({ logUsageEvent }) => logUsageEvent(currentUser.uid, 'habit_completed', { habitId }));
+            }
           } else {
             queueMutation('set', `users/${currentUser.uid}/logs/${key}`, isCurrentlyDone ? null : true);
           }
@@ -562,6 +664,9 @@ export default function Page() {
     setHabits(prev => {
       const updated = [...prev, newHabit];
       syncToFirebase(`habits/${newHabit.id}`, newHabit);
+      if (currentUser) {
+        import('../../lib/analyticsUtils').then(({ logUsageEvent }) => logUsageEvent(currentUser.uid, 'habit_created'));
+      }
       return updated;
     });
     showToast('Habit created successfully.');
@@ -734,7 +839,11 @@ export default function Page() {
 
   return (
     <MotionConfig reducedMotion="always">
-      <RequireAuth>
+      <>
+        <AuthModal 
+          isOpen={authModalOpen} 
+          onClose={() => setAuthModalOpen(false)} 
+        />
         <CommandPalette
           isOpen={cmdOpen}
           onClose={() => setCmdOpen(false)}
@@ -785,6 +894,7 @@ export default function Page() {
           onOpenSearch={() => setCmdOpen(true)}
           onOpenIdentityModal={() => setIdentityModalOpen(true)}
           onOpenWrapped={() => setWrappedOpen(true)}
+          onOpenAuthModal={() => setAuthModalOpen(true)}
         />
 
         <main className="min-h-screen bg-slate-50 dark:bg-black p-4 sm:p-6 text-slate-950 dark:text-slate-50 pb-20">
@@ -922,6 +1032,7 @@ export default function Page() {
                 onDeleteHabit={handleDeleteHabit}
                 onUpdateHabit={handleUpdateHabit}
                 onNavigateTab={setActiveTab}
+                onOpenAuthModal={() => setAuthModalOpen(true)}
               />
             )}
 
@@ -985,10 +1096,17 @@ export default function Page() {
                     userSpaces={userSpaces}
                     publicSpaces={publicSpaces}
                     pendingInvites={pendingInvites}
-                    onCreateSpaceClick={() => setCreateSpaceOpen(true)}
+                    onCreateSpaceClick={() => {
+                      if (!currentUser) setAuthModalOpen(true);
+                      else setCreateSpaceOpen(true);
+                    }}
                     onEnterSpace={setActiveSpaceId}
                     onAcceptInvite={() => {
                       showToast('Welcome to the Space!');
+                    }}
+                    onJoinWithCode={(code) => {
+                      if (!currentUser) setAuthModalOpen(true);
+                      else window.location.href = `/invite/${code}`;
                     }}
                   />
                 ) : (
@@ -1073,7 +1191,7 @@ export default function Page() {
         >
           <span className="text-xl leading-none">✍️</span>
         </button>
-      </RequireAuth>
+      </>
     </MotionConfig>
   );
 }

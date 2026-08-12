@@ -233,7 +233,7 @@ export default function HabitGrid({
           <span className="font-bold text-[10px] uppercase bg-white px-2 py-0.5 rounded-full border border-emerald-200">{daysInMonth} Days</span>
         </div>
 
-        <table className="w-full border-collapse" style={{ minWidth: `${260 + daysInMonth * 34}px` }}>
+        <table className="w-full border-collapse" style={{ minWidth: `${260 + daysInMonth * 44}px` }}>
           <thead>
             <tr className="bg-slate-50/90 text-xs font-semibold text-slate-500 border-b border-slate-200/80">
               <th className="sticky left-0 z-20 bg-slate-50 px-4 py-2.5 text-left border-r border-slate-200/80 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.06)] min-w-[200px] uppercase tracking-wider text-[11px]">
@@ -245,7 +245,7 @@ export default function HabitGrid({
                 return (
                   <th
                     key={`day-header-${d}`}
-                    className={`px-0 py-2 text-center min-w-[34px] w-[34px] border-r border-slate-200/50 ${
+                    className={`px-0 py-2 text-center min-w-[44px] w-[44px] border-r border-slate-200/50 ${
                       isToday ? 'bg-emerald-50/80 border-emerald-300' : ''
                     }`}
                   >
@@ -478,7 +478,7 @@ export default function HabitGrid({
                         <button
                           onClick={() => handleToggle(habit.id, d)}
                           aria-label={`${checked ? 'Uncheck' : 'Check'} ${habit.name} on day ${d}`}
-                          className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs transition-all duration-150 ${
+                          className={`inline-flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl text-xs transition-all duration-150 ${
                             isPulsing ? 'scale-125 shadow-md ring-2 ring-emerald-400' : ''
                           } ${
                             checked
@@ -487,7 +487,7 @@ export default function HabitGrid({
                           } ${isToggling[cellKey] ? 'opacity-50 pointer-events-none cursor-wait' : ''}`}
                           disabled={isToggling[cellKey]}
                         >
-                          <Check className="h-4 w-4 stroke-[3]" />
+                          <Check className="h-5 w-5 stroke-[3]" />
                         </button>
                       </td>
                     );

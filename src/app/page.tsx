@@ -140,6 +140,10 @@ export default function Page() {
     setToastOpen(true);
   };
 
+  const userLevel = useMemo(() => {
+    return getLevelFromXp(calculateTotalXp(habits, logs));
+  }, [habits, logs]);
+
   // Initialize offline sync listeners
   useEffect(() => {
     initOfflineSync();
@@ -903,6 +907,7 @@ export default function Page() {
         {/* Sticky Navbar */}
         <Navbar
           user={currentUser}
+          userLevel={userLevel}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           onOpenGuide={() => setGuideOpen(true)}
@@ -1068,6 +1073,7 @@ export default function Page() {
 
             {activeTab === 'insights' && (
               <BloomInsightsView 
+                user={currentUser}
                 habits={habits}
                 logs={logs}
                 onNavigateTab={setActiveTab}

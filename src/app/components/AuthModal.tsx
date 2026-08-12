@@ -22,8 +22,8 @@ interface AuthModalProps {
 export default function AuthModal({
   isOpen,
   onClose,
-  title = "Save your progress 🌱",
-  subtitle = "Your habits are currently saved on this device. Create a free account to keep your progress safe, sync across devices, and access HabitBloom Spaces."
+  title = "Build habits. See yourself grow.",
+  subtitle = "Create a free account to keep your progress safe and sync across devices."
 }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('signup');
   const [email, setEmail] = useState('');

@@ -3,14 +3,18 @@ import { Habit, HabitLog } from '../../../lib/habitTypes';
 import { IntelligenceEngine } from '../../../lib/intelligence/intelligenceEngine';
 import { Sparkles, TrendingUp, Zap, Target } from 'lucide-react';
 import { NavTab } from './charts/TitleBanner';
+import { User } from 'firebase/auth';
+import { canAccessFeature } from '../../../lib/featureAccess';
+import { PremiumInterestPreview } from './social/PremiumInterestPreview';
 
 interface BloomInsightsViewProps {
+  user: User | null | undefined;
   habits: Habit[];
   logs: HabitLog;
   onNavigateTab: (tab: NavTab) => void;
 }
 
-export const BloomInsightsView: React.FC<BloomInsightsViewProps> = ({ habits, logs, onNavigateTab }) => {
+export const BloomInsightsView: React.FC<BloomInsightsViewProps> = ({ user, habits, logs, onNavigateTab }) => {
   const { insights, recommendations, trends } = useMemo(() => {
     const targetDate = new Date();
     return {
@@ -148,6 +152,18 @@ export const BloomInsightsView: React.FC<BloomInsightsViewProps> = ({ habits, lo
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Phase 10: Premium Research Wedge */}
+      {canAccessFeature(user, 'advanced_insights') === 'COMING_LATER' && (
+        <section className="pt-8">
+          <PremiumInterestPreview 
+            user={user}
+            featureId="advanced_insights"
+            featureName="Advanced Growth Insights"
+            description="Go deeper into your habit history, patterns, and long-term progress with AI-powered personalized analysis."
+          />
         </section>
       )}
 

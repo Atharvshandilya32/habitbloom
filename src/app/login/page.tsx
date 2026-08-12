@@ -142,7 +142,7 @@ export default function LoginPage() {
               </Link>
 
               <p className="text-sm sm:text-base font-medium text-slate-200/90 leading-snug max-w-sm drop-shadow">
-                Link the smart habits and elevate your goals.
+                Build habits. See yourself grow.
               </p>
             </div>
 

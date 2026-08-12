@@ -62,7 +62,8 @@ const DailyFocusView = React.memo(function DailyFocusView({
 
   const activeHabits = habits; // For daily focus, we use all habits.
   
-  const { completedCount, totalCount, progressPercent, remainingCount, nextIncompleteHabit, xpEarnedToday } = React.useMemo(() => {
+  const { completedCount, totalCount, progressPercent, remainingCount, nextIncompleteHabit, xpEarnedToday, totalCompletedHabits } = React.useMemo(() => {
+    const totalCompletedHabits = Object.values(logs).filter(Boolean).length;
     let completed = 0;
     let xp = 0;
     let nextHabit: Habit | undefined = undefined;
@@ -89,7 +90,8 @@ const DailyFocusView = React.memo(function DailyFocusView({
       progressPercent: percent,
       remainingCount: total - completed,
       nextIncompleteHabit: nextHabit,
-      xpEarnedToday: xp
+      xpEarnedToday: xp,
+      totalCompletedHabits
     };
   }, [activeHabits, logs, year, month, day]);
 
@@ -350,7 +352,7 @@ const DailyFocusView = React.memo(function DailyFocusView({
               <button 
                 key={`${habit.id}-${idx}`}
                 type="button"
-                className={`w-full text-left group flex items-center p-4 rounded-2xl border transition-all duration-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
+                className={`w-full text-left group flex items-center p-5 sm:p-6 rounded-2xl border transition-all duration-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
                   isCompleted 
                     ? 'bg-slate-50 border-slate-200/80 shadow-xs' 
                     : 'bg-white border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-300'
@@ -429,12 +431,22 @@ const DailyFocusView = React.memo(function DailyFocusView({
                       <span>Reflection</span> ✍️
                     </div>
                   )}
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                  <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-all duration-200 relative ${
                     isCompleted 
                       ? 'bg-emerald-500 text-white scale-100 shadow-sm' 
                       : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 scale-95 group-hover:scale-100'
                   }`}>
-                    <Check strokeWidth={isCompleted ? 3 : 2} size={20} />
+                    <Check strokeWidth={isCompleted ? 3 : 2} size={24} />
+                    {totalCompletedHabits === 0 && idx === 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="absolute right-[115%] top-1/2 -translate-y-1/2 whitespace-nowrap bg-emerald-600 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-lg pointer-events-none z-10 hidden sm:block"
+                      >
+                        Click here to complete your first habit!
+                        <div className="absolute top-1/2 -right-1 -translate-y-1/2 border-y-4 border-y-transparent border-l-4 border-l-emerald-600"></div>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
               </button>

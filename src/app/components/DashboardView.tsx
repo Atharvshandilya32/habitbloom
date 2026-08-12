@@ -14,6 +14,7 @@ import { calculateBloomScore } from '../../../lib/bloomScoreUtils';
 import HabitGrid, { HabitGridProps } from './habitGrid';
 import HabitGardenView from './HabitGardenView';
 import BloomScoreModal from './BloomScoreModal';
+import ShareMilestoneModal from './social/ShareMilestoneModal';
 import {
   Sparkles,
   Flame,
@@ -23,7 +24,8 @@ import {
   ArrowRight,
   Quote,
   Users,
-  Star
+  Star,
+  Share2
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from './ui/Card';
@@ -50,6 +52,8 @@ const DashboardView = React.memo(function DashboardView({
   onOpenAuthModal,
 }: DashboardViewProps) {
   const [isBloomModalOpen, setIsBloomModalOpen] = useState(false);
+  const [activeMilestone, setActiveMilestone] = useState<string | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const today = new Date();
   const todayDay = today.getDate();
 
@@ -76,6 +80,44 @@ const DashboardView = React.memo(function DashboardView({
       bloom: calculateBloomScore(habits, logs)
     };
   }, [habits, logs, currentYear, currentMonth, todayDay]);
+
+  // Milestone Detection
+  React.useEffect(() => {
+    if (!metrics.streak && metrics.bloom.totalBloomScore === 0) return;
+    const shared = JSON.parse(localStorage.getItem('habitbloom_shared_milestones') || '[]');
+    
+    if (metrics.streak >= 30 && !shared.includes('streak_30')) {
+      setActiveMilestone('30 Day Streak!');
+    } else if (metrics.streak >= 14 && !shared.includes('streak_14')) {
+      setActiveMilestone('14 Day Streak!');
+    } else if (metrics.streak >= 7 && !shared.includes('streak_7')) {
+      setActiveMilestone('7 Day Streak!');
+    } else if (metrics.bloom.totalBloomScore >= 500 && !shared.includes('bloom_500')) {
+      setActiveMilestone('500 Bloom Score!');
+    } else if (metrics.bloom.totalBloomScore >= 100 && !shared.includes('bloom_100')) {
+      setActiveMilestone('100 Bloom Score!');
+    } else {
+      setActiveMilestone(null);
+    }
+  }, [metrics.streak, metrics.bloom.totalBloomScore]);
+
+  const handleMilestoneShared = () => {
+    if (!activeMilestone) return;
+    const shared = JSON.parse(localStorage.getItem('habitbloom_shared_milestones') || '[]');
+    const keyMap: Record<string, string> = {
+      '30 Day Streak!': 'streak_30',
+      '14 Day Streak!': 'streak_14',
+      '7 Day Streak!': 'streak_7',
+      '500 Bloom Score!': 'bloom_500',
+      '100 Bloom Score!': 'bloom_100',
+    };
+    const key = keyMap[activeMilestone];
+    if (key && !shared.includes(key)) {
+      shared.push(key);
+      localStorage.setItem('habitbloom_shared_milestones', JSON.stringify(shared));
+    }
+    setActiveMilestone(null);
+  };
 
   const userName = user?.displayName ? user.displayName.split(' ')[0] : 'Blooming Star';
 
@@ -202,9 +244,20 @@ const DashboardView = React.memo(function DashboardView({
                 <Sparkles size={14} className="mr-1.5" />
                 Daily Overview
               </Badge>
-              <Button onClick={onAddHabit} size="sm" className="font-extrabold bg-emerald-500 hover:bg-emerald-600 text-white hover:scale-105 transition-all duration-300">
-                <Plus size={16} className="mr-1.5" /> Quick Add
-              </Button>
+              <div className="flex gap-2 items-center">
+                {activeMilestone && (
+                  <Button 
+                    onClick={() => setShareModalOpen(true)}
+                    size="sm" 
+                    className="hidden sm:flex font-extrabold bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white shadow-md hover:scale-105 transition-all duration-300"
+                  >
+                    <Share2 size={14} className="mr-1.5" /> Share Milestone
+                  </Button>
+                )}
+                <Button onClick={onAddHabit} size="sm" className="font-extrabold bg-emerald-500 hover:bg-emerald-600 text-white hover:scale-105 transition-all duration-300">
+                  <Plus size={16} className="mr-1.5" /> Quick Add
+                </Button>
+              </div>
             </div>
           </CardHeader>
           
@@ -290,6 +343,15 @@ const DashboardView = React.memo(function DashboardView({
         isOpen={isBloomModalOpen} 
         onClose={() => setIsBloomModalOpen(false)} 
         breakdown={metrics.bloom} 
+      />
+
+      <ShareMilestoneModal 
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        consistency={metrics.consistency}
+        bestStreak={metrics.streak}
+        bloomScore={metrics.bloom.totalBloomScore}
+        milestoneTitle={activeMilestone || ''}
       />
 
       {/* ─────────────────────────────────────────────────────────────

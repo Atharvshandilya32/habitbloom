@@ -40,9 +40,10 @@ interface NavbarProps {
   onOpenIdentityModal?: () => void;
   onOpenWrapped?: () => void;
   onOpenAuthModal?: () => void;
+  userLevel?: number;
 }
 
-export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOpenSearch, onOpenIdentityModal, onOpenWrapped, onOpenAuthModal }: NavbarProps) {
+export default function Navbar({ user, userLevel = 1, activeTab, onTabChange, onOpenGuide, onOpenSearch, onOpenIdentityModal, onOpenWrapped, onOpenAuthModal }: NavbarProps) {
   const [signingOut, setSigningOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { themeMode, setThemeMode } = useTheme();
@@ -138,11 +139,8 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
             className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto hide-scrollbar scroll-smooth w-full"
           >
             {[
-              { id: 'dashboard' as NavTab, label: 'Dashboard', icon: LayoutDashboard },
+              { id: 'dashboard' as NavTab, label: 'Habits', icon: LayoutDashboard },
               { id: 'analytics' as NavTab, label: 'Analytics', icon: Activity },
-              { id: 'insights' as NavTab, label: 'Insights', icon: Compass },
-              { id: 'goals' as NavTab, label: 'Goals', icon: Target },
-              { id: 'spaces' as NavTab, label: 'Spaces', icon: Compass },
             ].map((tabItem) => {
               const IconComponent = tabItem.icon;
               const isActive = activeTab === tabItem.id;
@@ -167,15 +165,48 @@ export default function Navbar({ user, activeTab, onTabChange, onOpenGuide, onOp
                 </button>
               );
             })}
+            
+            <div className="w-px h-4 bg-slate-300 mx-1 shrink-0"></div>
+            {userLevel < 3 && <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold px-1 shrink-0">Advanced</span>}
+            
+            {[
+              { id: 'insights' as NavTab, label: 'Insights', icon: Compass },
+              { id: 'goals' as NavTab, label: 'Goals', icon: Target },
+              { id: 'spaces' as NavTab, label: 'Spaces', icon: Compass },
+            ].map((tabItem) => {
+              const IconComponent = tabItem.icon;
+              const isActive = activeTab === tabItem.id;
+              return (
+                <button
+                  key={tabItem.id}
+                  onClick={() => handleNavClick(tabItem.id)}
+                  className={`relative flex items-center gap-1.5 px-2 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 ${isActive ? 'text-emerald-800 font-black' : 'text-slate-600 hover:text-slate-900'
+                    } ${userLevel < 3 ? 'opacity-70 scale-95 hover:opacity-100' : ''}`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTabBadge"
+                      className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-200/60"
+                      transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    <IconComponent size={13} className={isActive ? 'text-emerald-600' : 'text-slate-400'} />
+                    {tabItem.label}
+                  </span>
+                </button>
+              );
+            })}
+
             <div className="w-px h-4 bg-slate-300 mx-1 shrink-0"></div>
             <button
               onClick={() => handleNavClick('social')}
               className={`relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold rounded-lg transition-colors whitespace-nowrap shrink-0 ${activeTab === 'social' ? 'text-emerald-800 font-black' : 'text-slate-700 hover:text-slate-900'
-                }`}
+                } ${userLevel < 3 ? 'opacity-70 scale-95 hover:opacity-100' : ''}`}
             >
               {activeTab === 'social' && (
                 <motion.div
-                  layoutId="activeTabBadge"
+                  layoutId="activeTabBadgeSocial"
                   className="absolute inset-0 bg-emerald-50 rounded-lg shadow-sm border border-emerald-200"
                   transition={{ type: 'spring', stiffness: 450, damping: 30 }}
                 />

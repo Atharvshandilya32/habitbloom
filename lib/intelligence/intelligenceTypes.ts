@@ -41,11 +41,16 @@ export interface TrendObj {
   description: string;
   evidence: string;
   icon: string;
+  currentValue?: number;
+  previousValue?: number;
+  absoluteChange?: number;
+  percentageChange?: number;
+  window?: number;
 }
 
 // The base contract that the DeterministicEngine (and future AIEngine) must implement
 export interface IntelligenceEngineContract {
   generateInsights(habits: Habit[], logs: HabitLog, targetDate?: Date): InsightObj[];
   generateRecommendations(habits: Habit[], logs: HabitLog, targetDate?: Date): RecommendationObj[];
-  generateTrends(habits: Habit[], logs: HabitLog, targetDate?: Date): TrendObj[];
+  generateTrends(habits: Habit[], logs: HabitLog, targetDate?: Date, periods?: number[]): TrendObj[];
 }

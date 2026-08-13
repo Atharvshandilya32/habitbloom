@@ -3,15 +3,24 @@ import { TrendObj, TrendStatus } from './intelligenceTypes';
 import { subDays } from 'date-fns';
 import { makeLogKey } from '../habitUtils';
 
+interface TrendResult {
+  status: TrendStatus;
+  currentValue: number;
+  previousValue: number;
+  absoluteChange: number;
+  percentageChange: number;
+  window: number;
+}
+
 /**
- * Compares completion percentage of a specific habit over two consecutive periods (e.g., 7 days each)
+ * Compares completion percentage of a specific habit over two consecutive periods.
  */
 function getPeriodTrendForHabit(
   habit: Habit, 
   logs: HabitLog, 
   periodDays: number, 
   now: Date = new Date()
-): { status: TrendStatus, currentRate: number, previousRate: number } {
+): TrendResult {
   // Determine age of habit
   let firstLogDate: Date | null = null;
   Object.keys(logs).forEach(key => {
@@ -31,7 +40,7 @@ function getPeriodTrendForHabit(
     : 0;
 
   if (ageInDays < periodDays * 2) {
-    return { status: 'INSUFFICIENT_DATA', currentRate: 0, previousRate: 0 };
+    return { status: 'INSUFFICIENT_DATA', currentValue: 0, previousValue: 0, absoluteChange: 0, percentageChange: 0, window: periodDays };
   }
 
   // Calculate current period rate
@@ -55,47 +64,61 @@ function getPeriodTrendForHabit(
 
   const currentRate = Math.min(100, Math.round((currentCompleted / expected) * 100));
   const previousRate = Math.min(100, Math.round((previousCompleted / expected) * 100));
+  
+  const absoluteChange = currentRate - previousRate;
+  const percentageChange = previousRate > 0 ? Math.round((absoluteChange / previousRate) * 100) : 0;
 
   let status: TrendStatus = 'STABLE';
   // Consider 15% difference as significant change
-  if (currentRate > previousRate + 15) status = 'IMPROVING';
-  else if (currentRate < previousRate - 15) status = 'DECLINING';
+  if (absoluteChange > 15) status = 'IMPROVING';
+  else if (absoluteChange < -15) status = 'DECLINING';
 
-  return { status, currentRate, previousRate };
+  return { status, currentValue: currentRate, previousValue: previousRate, absoluteChange, percentageChange, window: periodDays };
 }
 
-export function generateTrends(habits: Habit[], logs: HabitLog, targetDate: Date = new Date()): TrendObj[] {
+export function generateTrends(
+  habits: Habit[], 
+  logs: HabitLog, 
+  targetDate: Date = new Date(),
+  periods: number[] = [14, 30, 60, 90]
+): TrendObj[] {
   const trends: TrendObj[] = [];
 
-  // Generate a trend for each habit over a 14-day vs previous 14-day window
   habits.forEach(habit => {
-    const { status, currentRate, previousRate } = getPeriodTrendForHabit(habit, logs, 14, targetDate);
+    periods.forEach(period => {
+      const result = getPeriodTrendForHabit(habit, logs, period, targetDate);
 
-    if (status !== 'INSUFFICIENT_DATA' && status !== 'STABLE') {
-      let description = '';
-      let evidence = '';
-      let icon = '';
+      if (result.status !== 'INSUFFICIENT_DATA' && result.status !== 'STABLE') {
+        let description = '';
+        let evidence = '';
+        let icon = '';
 
-      if (status === 'IMPROVING') {
-        description = `Your consistency for ${habit.name} is improving.`;
-        evidence = `Up to ${currentRate}% from ${previousRate}% over the previous 14 days.`;
-        icon = '📈';
-      } else if (status === 'DECLINING') {
-        description = `Your consistency for ${habit.name} has dipped recently.`;
-        evidence = `Down to ${currentRate}% from ${previousRate}% over the previous 14 days.`;
-        icon = '📉';
+        if (result.status === 'IMPROVING') {
+          description = `Your consistency for ${habit.name} is improving.`;
+          evidence = `${result.currentValue}% completion over the last ${period} days — up ${result.absoluteChange} percentage points from the previous ${period}-day period.`;
+          icon = '📈';
+        } else if (result.status === 'DECLINING') {
+          description = `Your consistency for ${habit.name} has dipped recently.`;
+          evidence = `${result.currentValue}% completion over the last ${period} days — down ${Math.abs(result.absoluteChange)} percentage points from the previous ${period}-day period.`;
+          icon = '📉';
+        }
+
+        trends.push({
+          id: `trend-${habit.id}-${period}-${targetDate.getTime()}`,
+          habitId: habit.id,
+          metric: 'CONSISTENCY',
+          status: result.status,
+          description,
+          evidence,
+          icon,
+          currentValue: result.currentValue,
+          previousValue: result.previousValue,
+          absoluteChange: result.absoluteChange,
+          percentageChange: result.percentageChange,
+          window: result.window
+        });
       }
-
-      trends.push({
-        id: `trend-${habit.id}-${targetDate.getTime()}`,
-        habitId: habit.id,
-        metric: 'CONSISTENCY',
-        status,
-        description,
-        evidence,
-        icon
-      });
-    }
+    });
   });
 
   return trends;

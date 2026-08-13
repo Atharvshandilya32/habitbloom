@@ -52,8 +52,8 @@ class DeterministicEngine implements IntelligenceEngineContract {
     return generateRecommendations(habits, logs, targetDate);
   }
 
-  generateTrends(habits: Habit[], logs: HabitLog, targetDate: Date = new Date()): TrendObj[] {
-    return generateTrends(habits, logs, targetDate);
+  generateTrends(habits: Habit[], logs: HabitLog, targetDate: Date = new Date(), periods?: number[]): TrendObj[] {
+    return generateTrends(habits, logs, targetDate, periods);
   }
 }
 

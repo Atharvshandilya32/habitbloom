@@ -4,8 +4,9 @@ import { IntelligenceEngine } from '../../../lib/intelligence/intelligenceEngine
 import { Sparkles, TrendingUp, Zap, Target } from 'lucide-react';
 import { NavTab } from './charts/TitleBanner';
 import { User } from 'firebase/auth';
-import { canAccessFeature, getUserPlan, UserPlan } from '../../../lib/featureAccess';
+import { canAccessFeature, getUserPlan, UserPlan, AccessState } from '../../../lib/featureAccess';
 import { PremiumInterestPreview } from './social/PremiumInterestPreview';
+import { PremiumInsightsDashboard } from './premium/PremiumInsightsDashboard';
 
 interface BloomInsightsViewProps {
   user: User | null | undefined;
@@ -161,15 +162,24 @@ export const BloomInsightsView: React.FC<BloomInsightsViewProps> = ({ user, habi
         </section>
       )}
 
-      {/* Phase 11: Premium Validation Wedge */}
+      {/* Phase 12: Premium Validation Wedge */}
       <section className="pt-8">
-        <PremiumInterestPreview 
-          user={user}
-          featureId="advanced_insights"
-          featureName="Advanced Growth Insights"
-          description="Go deeper into your habit history, patterns, and long-term progress with AI-powered personalized analysis."
-          accessState={canAccessFeature(userPlan, 'advanced_insights')}
-        />
+        {(canAccessFeature(userPlan, 'advanced_insights') === AccessState.EARLY_ACCESS || 
+          canAccessFeature(userPlan, 'advanced_insights') === AccessState.PREMIUM) ? (
+          <PremiumInsightsDashboard 
+            habits={habits}
+            logs={logs}
+            userId={user?.uid || ''}
+          />
+        ) : (
+          <PremiumInterestPreview 
+            user={user}
+            featureId="advanced_insights"
+            featureName="Advanced Growth Insights"
+            description="Go deeper into your habit history, patterns, and long-term progress with AI-powered personalized analysis."
+            accessState={canAccessFeature(userPlan, 'advanced_insights')}
+          />
+        )}
       </section>
 
     </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Clock } from 'lucide-react';
 import { JournalEntry, Habit, HabitLog } from '../../../lib/habitTypes';
 import { generateChronicleEvents } from '../../../lib/memoryEngine';
@@ -12,8 +12,8 @@ interface TimelineViewProps {
 
 export default function TimelineView({ journals, habits, logs, onEditJournal }: TimelineViewProps) {
   
-  // Construct timeline events from journals, milestones, and memories
-  const events = generateChronicleEvents(habits, logs, journals);
+  // Construct timeline events from journals, milestones, and memories (memoized)
+  const events = useMemo(() => generateChronicleEvents(habits, logs, journals), [habits, logs, journals]);
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-300">

@@ -3,7 +3,7 @@
     "activityFeed": {
       ".read": "auth != null",
       "$activityId": {
-        ".write": "auth != null",
+        ".write": "auth != null && (!data.exists() ? newData.child('authorUid').val() === auth.uid : data.child('authorUid').val() === auth.uid)",
         "reactions": {
           "$uid": {
             ".write": "$uid === auth.uid"
@@ -57,12 +57,12 @@
       ".read": "auth != null",
       "$challengeId": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null && (!data.exists() ? newData.child('createdBy').val() === auth.uid : (data.child('createdBy').val() === auth.uid || newData.child('participants').exists()))"
       }
     },
     "socialProfiles": {
       ".read": "auth != null",
-      ".indexOn": ["totalXP", "currentStreak", "completedHabitsCount", "hbId", "displayName"],
+      ".indexOn": ["totalXP", "currentStreak", "completedHabitsCount", "hbId", "displayName", "username"],
       "$uid": {
         ".read": "auth != null",
         ".write": "$uid === auth.uid"
@@ -79,7 +79,7 @@
         ".read": "auth != null && (root.child('spaces').child($spaceId).child('createdBy').val() === auth.uid || root.child('spaceMembers').child($spaceId + '_' + auth.uid).child('roleId').val() === 'admin')",
         "$logId": {
           ".read": "auth != null && (root.child('spaces').child($spaceId).child('createdBy').val() === auth.uid || root.child('spaceMembers').child($spaceId + '_' + auth.uid).child('roleId').val() === 'admin')",
-          ".write": "auth != null && !data.exists()"
+          ".write": "auth != null && !data.exists() && root.child('spaceMembers').child($spaceId + '_' + auth.uid).exists()"
         }
       }
     },
@@ -88,7 +88,7 @@
       ".indexOn": ["spaceId"],
       "$inviteCode": {
         ".read": "auth != null",
-        ".write": "auth != null && (!data.exists() || !newData.exists() || data.child('spaceId').val() === newData.child('spaceId').val())"
+        ".write": "auth != null && (root.child('spaces').child(newData.exists() ? newData.child('spaceId').val() : data.child('spaceId').val()).child('createdBy').val() === auth.uid || root.child('spaceMembers').child((newData.exists() ? newData.child('spaceId').val() : data.child('spaceId').val()) + '_' + auth.uid).child('roleId').val() === 'admin')"
       }
     },
     "spaceMembers": {
@@ -96,10 +96,11 @@
       ".indexOn": ["userId", "spaceId"],
       "$memberKey": {
         ".read": "auth != null && (data.child('userId').val() === auth.uid || root.child('spaceMembers').child(data.child('spaceId').val() + '_' + auth.uid).exists())",
-        ".write": "auth != null && (!data.exists() || newData.child('userId').val() === auth.uid || root.child('spaceMembers').child($memberKey).child('userId').val() === auth.uid || root.child('spaces').child(newData.child('spaceId').val()).child('createdBy').val() === auth.uid)"
+        ".write": "auth != null && (!data.exists() ? (newData.child('userId').val() === auth.uid && (newData.child('roleId').val() === 'member' || root.child('spaces').child(newData.child('spaceId').val()).child('createdBy').val() === auth.uid)) : (root.child('spaces').child(data.child('spaceId').val()).child('createdBy').val() === auth.uid || root.child('spaceMembers').child(data.child('spaceId').val() + '_' + auth.uid).child('roleId').val() === 'admin' || (data.child('userId').val() === auth.uid && !newData.exists())))"
       }
     },
     "spaceRoles": {
+      ".read": "auth != null",
       "$spaceId": {
         ".read": "auth != null",
         ".write": "auth != null && root.child('spaces').child($spaceId).child('createdBy').val() === auth.uid"

@@ -1,4 +1,4 @@
-import { ref, get, set } from 'firebase/database';
+import { ref, get, set, runTransaction } from 'firebase/database';
 import { database } from './firebase';
 
 /**
@@ -11,7 +11,7 @@ export function generateRaw10DigitId(): string {
 }
 
 /**
- * Generates a globally unique 10-digit HabitBloom ID and registers it in Firebase
+ * Generates a globally unique 10-digit HabitBloom ID and registers it in Firebase atomically
  */
 export async function generateUniqueHbId(userId: string): Promise<string> {
   if (!database) {
@@ -24,15 +24,18 @@ export async function generateUniqueHbId(userId: string): Promise<string> {
     const indexRef = ref(database, `hbIds/${candidateId}`);
     
     try {
-      const snap = await get(indexRef);
-      if (!snap.exists()) {
-        // ID is globally unique! Claim it in index map
-        await set(indexRef, userId);
+      const result = await runTransaction(indexRef, (currentData) => {
+        if (currentData === null) {
+          return userId; // Claim ID atomically
+        }
+        return undefined; // Abort transaction if already taken
+      });
+
+      if (result.committed) {
         return candidateId;
       }
     } catch {
-      // Return candidate if index check fails
-      return candidateId;
+      // If transaction errors, try next attempt or fallback
     }
     attempts++;
   }

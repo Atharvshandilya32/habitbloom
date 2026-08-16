@@ -122,12 +122,6 @@ export default function HabitGrid({
 
     onToggleCell(habitId, day);
 
-    if (!wasChecked) {
-      onUpdateHabit(habitId, {
-        lastCompletedTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      });
-    }
-
     setPulseCells(prev => {
       const next = new Set(prev);
       next.add(cellKey);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Habit, HabitLog } from './habitTypes';
 import { makeLogKey } from './habitUtils';
 import { messaging, firebaseConfig, database, auth } from './firebase';
@@ -25,6 +25,18 @@ const LAST_NOTIFIED_KEY = 'habitbloom_last_notified_date';
 export function useHabitReminders(habits: Habit[], logs: HabitLog) {
   const [config, setConfig] = useState<ReminderConfig>(DEFAULT_CONFIG);
   const [permission, setPermission] = useState<NotificationPermission>('default');
+
+  const habitsRef = useRef(habits);
+  const logsRef = useRef(logs);
+  const configRef = useRef(config);
+  const permissionRef = useRef(permission);
+
+  useEffect(() => {
+    habitsRef.current = habits;
+    logsRef.current = logs;
+    configRef.current = config;
+    permissionRef.current = permission;
+  }, [habits, logs, config, permission]);
 
   // Sync state from localStorage & browser permissions
   useEffect(() => {
@@ -77,7 +89,7 @@ export function useHabitReminders(habits: Habit[], logs: HabitLog) {
               }
             }
           } catch (fcmErr) {
-            console.error('FCM Token error:', fcmErr);
+            console.warn('FCM Token notice:', fcmErr);
           }
         }
 
@@ -88,7 +100,7 @@ export function useHabitReminders(habits: Habit[], logs: HabitLog) {
       }
       return false;
     } catch (err) {
-      console.error('Error requesting notification permission:', err);
+      console.warn('Notification permission notice:', err);
       return false;
     }
   };
@@ -103,7 +115,7 @@ export function useHabitReminders(habits: Habit[], logs: HabitLog) {
           ...options,
         });
 
-        if (config.soundEnabled) {
+        if (configRef.current.soundEnabled) {
           try {
             const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
             const osc = audioCtx.createOscillator();
@@ -126,14 +138,18 @@ export function useHabitReminders(habits: Habit[], logs: HabitLog) {
           notification.close();
         };
       } catch (err) {
-        console.error('Notification dispatch error:', err);
+        console.warn('Notification dispatch notice:', err);
       }
     }
-  }, [config.soundEnabled]);
+  }, []);
 
   // Check if today's habits need reminder
   const checkAndTriggerReminders = useCallback(() => {
-    if (!config.globalEnabled || permission !== 'granted') return;
+    const currentConfig = configRef.current;
+    if (!currentConfig.globalEnabled || permissionRef.current !== 'granted') return;
+
+    const currentHabits = habitsRef.current;
+    const currentLogs = logsRef.current;
 
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -146,16 +162,16 @@ export function useHabitReminders(habits: Habit[], logs: HabitLog) {
     const currentTimeStr = `${hours}:${minutes}`;
 
     // Get uncompleted habits for today
-    const uncompleted = habits.filter((habit) => {
+    const uncompleted = currentHabits.filter((habit) => {
       const key = makeLogKey(habit.id, currentYear, currentMonth, currentDay);
-      return !logs[key];
+      return !currentLogs[key];
     });
 
     if (uncompleted.length === 0) return;
 
-    // Global daily reminder trigger
+    // Global daily reminder trigger (fires if current time reached or passed the reminder time today)
     const lastNotified = localStorage.getItem(LAST_NOTIFIED_KEY);
-    if (currentTimeStr === config.globalTime && lastNotified !== dateStr) {
+    if (currentTimeStr >= currentConfig.globalTime && lastNotified !== dateStr) {
       localStorage.setItem(LAST_NOTIFIED_KEY, dateStr);
       sendNotification(`🌸 HabitBloom Daily Reminder`, {
         body: `You have ${uncompleted.length} habit${uncompleted.length > 1 ? 's' : ''} left to complete today: ${uncompleted.map(h => `${h.emoji} ${h.name}`).join(', ')}`,
@@ -164,11 +180,11 @@ export function useHabitReminders(habits: Habit[], logs: HabitLog) {
     }
 
     // Per-habit custom reminder trigger
-    habits.forEach((habit) => {
-      if (habit.reminderEnabled && habit.reminderTime === currentTimeStr) {
+    currentHabits.forEach((habit) => {
+      if (habit.reminderEnabled && habit.reminderTime && currentTimeStr >= habit.reminderTime) {
         const key = makeLogKey(habit.id, currentYear, currentMonth, currentDay);
         const habitLastNotifiedKey = `habitbloom_last_notified_${habit.id}`;
-        if (!logs[key] && localStorage.getItem(habitLastNotifiedKey) !== dateStr) {
+        if (!currentLogs[key] && localStorage.getItem(habitLastNotifiedKey) !== dateStr) {
           localStorage.setItem(habitLastNotifiedKey, dateStr);
           sendNotification(`${habit.emoji} Time for ${habit.name}!`, {
             body: `Don't break your streak! Mark ${habit.name} as complete.`,
@@ -176,9 +192,9 @@ export function useHabitReminders(habits: Habit[], logs: HabitLog) {
         }
       }
     });
-  }, [config, permission, habits, logs, sendNotification]);
+  }, [sendNotification]);
 
-  // Interval check every 30 seconds
+  // Interval check every 30 seconds with stable reference
   useEffect(() => {
     const timer = setInterval(() => {
       checkAndTriggerReminders();

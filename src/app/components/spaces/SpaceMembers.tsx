@@ -69,17 +69,15 @@ export default function SpaceMembers({ space, currentUserRole }: SpaceMembersPro
 
       // Try resolving user profiles from /socialProfiles
       const userProfilesMap: Record<string, { displayName?: string; photoURL?: string; hbId?: string; email?: string }> = {};
-      if (database) {
+      if (database && spaceMembers.length > 0) {
         try {
-          const profilesSnap = await get(child(ref(database), 'socialProfiles'));
-          if (profilesSnap.exists()) {
-            const profilesData = profilesSnap.val();
-            Object.keys(profilesData).forEach(uId => {
-              if (profilesData[uId]) {
-                userProfilesMap[uId] = profilesData[uId];
-              }
-            });
-          }
+          const promises = spaceMembers.map(async (m) => {
+            const pSnap = await get(ref(database, `socialProfiles/${m.userId}`));
+            if (pSnap.exists()) {
+              userProfilesMap[m.userId] = pSnap.val();
+            }
+          });
+          await Promise.all(promises);
         } catch {
           // Fallback gracefully if permission restricted
         }

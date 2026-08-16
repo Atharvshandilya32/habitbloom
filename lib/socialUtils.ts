@@ -5,9 +5,12 @@ import {
   remove,
   push,
   update,
-  query,
+  query as dbQuery,
   orderByChild,
   limitToLast,
+  startAt,
+  endAt,
+  limitToFirst,
 } from "firebase/database";
 import { database } from "./firebase";
 import {
@@ -201,7 +204,7 @@ export async function ensureSocialProfile(
       return updatedProfile;
     }
   } catch (err) {
-    console.error("Failed to ensure social profile:", err);
+    console.warn("Failed to ensure social profile:", err);
     return null;
   }
 }
@@ -217,47 +220,65 @@ export async function searchUsers(
 
   const rawQuery = query.trim().replace(/-/g, "").toLowerCase();
   const results: UserSocialProfile[] = [];
+  const seenUids = new Set<string>([currentUid]);
 
   try {
     // 1. Direct HB-ID lookup check
     const hbSnap = await get(ref(database, `hbIds/${rawQuery}`));
     if (hbSnap.exists()) {
       const matchedUid = hbSnap.val() as string;
-      if (matchedUid !== currentUid) {
+      if (!seenUids.has(matchedUid)) {
         const profSnap = await get(
           ref(database, `socialProfiles/${matchedUid}`),
         );
         if (profSnap.exists()) {
           results.push(profSnap.val() as UserSocialProfile);
+          seenUids.add(matchedUid);
         }
       }
     }
 
-    // 2. Scan socialProfiles node if no exact HB-ID match
-    const profilesSnap = await get(ref(database, "socialProfiles"));
-    if (profilesSnap.exists()) {
-      const profilesMap = profilesSnap.val() as Record<
-        string,
-        UserSocialProfile
-      >;
-      Object.values(profilesMap).forEach((prof) => {
-        if (prof.uid === currentUid) return;
-        if (results.some((r) => r.uid === prof.uid)) return; // Avoid duplicate
-
-        const nameMatch = prof.displayName.toLowerCase().includes(rawQuery);
-        const usernameMatch = prof.username.toLowerCase().includes(rawQuery);
-        const hbMatch = prof.hbId
-          .replace(/-/g, "")
-          .toLowerCase()
-          .includes(rawQuery);
-
-        if (nameMatch || usernameMatch || hbMatch) {
+    // 2. Query indexed username prefix
+    const usernameQuery = dbQuery(
+      ref(database, "socialProfiles"),
+      orderByChild("username"),
+      startAt(rawQuery),
+      endAt(rawQuery + "\uf8ff"),
+      limitToFirst(10),
+    );
+    const usernameSnap = await get(usernameQuery);
+    if (usernameSnap.exists()) {
+      const usersMap = usernameSnap.val() as Record<string, UserSocialProfile>;
+      Object.values(usersMap).forEach((prof) => {
+        if (!seenUids.has(prof.uid)) {
           results.push(prof);
+          seenUids.add(prof.uid);
         }
       });
     }
+
+    // 3. If still under limit, query indexed displayName
+    if (results.length < 10) {
+      const nameQuery = dbQuery(
+        ref(database, "socialProfiles"),
+        orderByChild("displayName"),
+        startAt(query.trim()),
+        endAt(query.trim() + "\uf8ff"),
+        limitToFirst(10),
+      );
+      const nameSnap = await get(nameQuery);
+      if (nameSnap.exists()) {
+        const nameMap = nameSnap.val() as Record<string, UserSocialProfile>;
+        Object.values(nameMap).forEach((prof) => {
+          if (!seenUids.has(prof.uid)) {
+            results.push(prof);
+            seenUids.add(prof.uid);
+          }
+        });
+      }
+    }
   } catch (err) {
-    console.error("User search error:", err);
+    console.warn("User search error:", err);
   }
 
   return results.slice(0, 15);
@@ -332,7 +353,7 @@ export async function sendFriendRequest(
       message: `Friend request sent to ${receiver.displayName}!`,
     };
   } catch (err) {
-    console.error("Send friend request error:", err);
+    console.warn("Send friend request error:", err);
     return { success: false, message: "Failed to send request." };
   }
 }
@@ -348,50 +369,34 @@ export async function acceptFriendRequest(
   try {
     const now = new Date().toISOString();
 
-    // 1. Update request status to accepted
+    // 1. Add friendship bidirectionally
+    await set(ref(database, `friends/${request.senderUid}/${request.receiverUid}`), {
+      since: now,
+      displayName: request.receiverName,
+      hbId: request.receiverHbId,
+    });
+    await set(ref(database, `friends/${request.receiverUid}/${request.senderUid}`), {
+      since: now,
+      displayName: request.senderName,
+      hbId: request.senderHbId,
+    });
+
+    // 2. Increment friend counts
+    const snapSender = await get(ref(database, `socialProfiles/${request.senderUid}/friendCount`));
+    const snapReceiver = await get(ref(database, `socialProfiles/${request.receiverUid}/friendCount`));
+    const countSender = (snapSender.val() || 0) + 1;
+    const countReceiver = (snapReceiver.val() || 0) + 1;
+
+    await update(ref(database, `socialProfiles/${request.senderUid}`), { friendCount: countSender });
+    await update(ref(database, `socialProfiles/${request.receiverUid}`), { friendCount: countReceiver });
+
+    // 3. Mark request accepted
     await update(ref(database, `friendRequests/${request.id}`), {
       status: "accepted",
       updatedAt: now,
     });
 
-    // 2. Add bilateral friendship entries
-    await set(
-      ref(database, `friends/${request.senderUid}/${request.receiverUid}`),
-      {
-        userA: request.senderUid,
-        userB: request.receiverUid,
-        since: now,
-      },
-    );
-
-    await set(
-      ref(database, `friends/${request.receiverUid}/${request.senderUid}`),
-      {
-        userA: request.receiverUid,
-        userB: request.senderUid,
-        since: now,
-      },
-    );
-
-    // 3. Increment friend counts
-    const senderCountSnap = await get(
-      ref(database, `socialProfiles/${request.senderUid}/friendCount`),
-    );
-    const receiverCountSnap = await get(
-      ref(database, `socialProfiles/${request.receiverUid}/friendCount`),
-    );
-
-    const sCount = (senderCountSnap.val() || 0) + 1;
-    const rCount = (receiverCountSnap.val() || 0) + 1;
-
-    await update(ref(database, `socialProfiles/${request.senderUid}`), {
-      friendCount: sCount,
-    });
-    await update(ref(database, `socialProfiles/${request.receiverUid}`), {
-      friendCount: rCount,
-    });
-
-    // 4. Notify request sender
+    // 4. Send acceptance notification
     await sendNotification({
       recipientUid: request.senderUid,
       senderUid: request.receiverUid,
@@ -399,7 +404,7 @@ export async function acceptFriendRequest(
       senderPhotoURL: request.receiverPhotoURL,
       type: "friend_accepted",
       title: "Friend Request Accepted 🎉",
-      message: `${request.receiverName} accepted your friend request! You can now view their progress & challenges.`,
+      message: `${request.receiverName} accepted your friend request!`,
       read: false,
       createdAt: now,
     });
@@ -409,7 +414,7 @@ export async function acceptFriendRequest(
       message: `You are now friends with ${request.senderName}!`,
     };
   } catch (err) {
-    console.error("Accept friend request error:", err);
+    console.warn("Accept friend request error:", err);
     return { success: false, message: "Failed to accept friend request." };
   }
 }
@@ -429,7 +434,7 @@ export async function updateFriendRequestStatus(
     });
     return true;
   } catch (err) {
-    console.error("Update friend request status error:", err);
+    console.warn("Update friend request status error:", err);
     return false;
   }
 }
@@ -460,7 +465,7 @@ export async function removeFriend(
     await update(ref(database, `socialProfiles/${uidB}`), { friendCount: cB });
     return true;
   } catch (err) {
-    console.error("Remove friend error:", err);
+    console.warn("Remove friend error:", err);
     return false;
   }
 }
@@ -484,7 +489,7 @@ export async function blockUser(
     await remove(ref(database, `friendRequests/${targetUid}_${currentUid}`));
     return true;
   } catch (err) {
-    console.error("Block user error:", err);
+    console.warn("Block user error:", err);
     return false;
   }
 }
@@ -501,7 +506,7 @@ export async function unblockUser(
     await remove(ref(database, `blocked/${currentUid}/${targetUid}`));
     return true;
   } catch (err) {
-    console.error("Unblock user error:", err);
+    console.warn("Unblock user error:", err);
     return false;
   }
 }
@@ -540,7 +545,7 @@ export async function publishActivityItem(
     await set(newItemRef, activity);
     return true;
   } catch (err) {
-    console.error("Publish activity error:", err);
+    console.warn("Publish activity error:", err);
     return false;
   }
 }
@@ -574,7 +579,7 @@ export async function toggleActivityReaction(
     }
     return true;
   } catch (err) {
-    console.error("Toggle activity reaction error:", err);
+    console.warn("Toggle activity reaction error:", err);
     return false;
   }
 }
@@ -597,7 +602,7 @@ export async function sendNotification(
     await set(notifRef, newNotif);
     return true;
   } catch (err) {
-    console.error("Send notification error:", err);
+    console.warn("Send notification error:", err);
     return false;
   }
 }
@@ -617,7 +622,7 @@ export async function markNotificationAsRead(
     );
     return true;
   } catch (err) {
-    console.error("Mark notification as read error:", err);
+    console.warn("Mark notification as read error:", err);
     return false;
   }
 }
@@ -643,7 +648,7 @@ export async function markAllNotificationsAsRead(
     }
     return true;
   } catch (err) {
-    console.error("Mark all notifications error:", err);
+    console.warn("Mark all notifications error:", err);
     return false;
   }
 }
@@ -661,7 +666,7 @@ export async function updateUserPrivacySettings(
     await update(ref(database, `socialProfiles/${uid}`), { privacy });
     return true;
   } catch (err) {
-    console.error("Update privacy settings error:", err);
+    console.warn("Update privacy settings error:", err);
     return false;
   }
 }
@@ -697,7 +702,7 @@ export async function fetchLeaderboardEntries(
       if (metric === "streak") queryField = "currentStreak";
       if (metric === "habits") queryField = "completedHabitsCount";
 
-      const q = query(
+      const q = dbQuery(
         ref(database, "socialProfiles"),
         orderByChild(queryField),
         limitToLast(100),
@@ -735,7 +740,7 @@ export async function fetchLeaderboardEntries(
       rank: idx + 1,
     }));
   } catch (err) {
-    console.error("Fetch leaderboards error:", err);
+    console.warn("Fetch leaderboards error:", err);
     return [];
   }
 }

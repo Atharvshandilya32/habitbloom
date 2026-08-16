@@ -70,12 +70,13 @@ export async function replayMutations() {
   isReplaying = true;
 
   try {
-    while (true) {
-      const queue = getQueue();
-      if (queue.length === 0) break;
+    let queue = getQueue();
+    if (queue.length === 0) return;
 
-      const mutation = queue[0];
+    let processedCount = 0;
 
+    for (let i = 0; i < queue.length; i++) {
+      const mutation = queue[i];
       try {
         const dbRef = ref(database, mutation.path);
         if (mutation.type === 'set') {
@@ -83,15 +84,17 @@ export async function replayMutations() {
         } else if (mutation.type === 'update') {
           await update(dbRef, mutation.data);
         }
-        
-        // Remove processed mutation securely from the LATEST queue
-        const currentQueue = getQueue();
-        saveQueue(currentQueue.filter(m => m.id !== mutation.id));
+        processedCount++;
       } catch (error) {
         console.warn(`Failed to replay mutation ${mutation.id}, halting queue.`, error);
-        // If one fails (e.g. network drops), halt processing the queue
         break;
       }
+    }
+
+    if (processedCount > 0) {
+      const latestQueue = getQueue();
+      const remainingQueue = latestQueue.slice(processedCount);
+      saveQueue(remainingQueue);
     }
   } finally {
     isReplaying = false;

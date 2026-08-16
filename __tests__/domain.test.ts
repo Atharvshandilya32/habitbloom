@@ -78,6 +78,15 @@ function runTests() {
   const streak = getCurrentStreak(mockHabit, mockLogs, 2026, 8, 31, true);
   assert(typeof streak === 'number' && streak >= 0, 'Streak engine computes valid numeric streak count');
 
+  // Cross-month streak test: Completed on July 30, July 31, and Aug 1. Evaluating on Aug 1 should yield 3.
+  const crossMonthLogs = {
+    'h1_2026_7_30': true,
+    'h1_2026_7_31': true,
+    'h1_2026_8_1': true,
+  };
+  const crossStreak = getCurrentStreak(mockHabit, crossMonthLogs, 2026, 8, 1, false);
+  assert(crossStreak === 3, 'Streak engine preserves cross-month streaks correctly (3-day streak spanning Jul-Aug)');
+
   // 7. XP Engine Tests
   assert(calculateTotalXp([], {}) === 0, 'XP engine handles empty habits and logs');
   assert(calculateTotalXp([], null as any) === 0, 'XP engine handles null logs gracefully');

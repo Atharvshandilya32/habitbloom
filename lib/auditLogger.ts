@@ -29,6 +29,6 @@ export async function logAuditEvent(
 
     await set(newLogRef, entry);
   } catch (error) {
-    console.error('Failed to write audit log:', error);
+    console.warn('Failed to write audit log:', error);
   }
 }

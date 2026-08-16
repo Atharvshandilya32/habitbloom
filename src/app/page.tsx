@@ -308,7 +308,7 @@ export default function Page() {
   }, []);
 
   // 2. Save to localStorage on change
-  useEffect(() => { if (habits.length > 0) localStorage.setItem('habitbloom_habits', JSON.stringify(habits)); }, [habits]);
+  useEffect(() => { localStorage.setItem('habitbloom_habits', JSON.stringify(habits)); }, [habits]);
   useEffect(() => { localStorage.setItem('habitbloom_logs', JSON.stringify(logs)); }, [logs]);
   useEffect(() => { localStorage.setItem('habitbloom_logs_array', JSON.stringify(habitLogsArray)); }, [habitLogsArray]);
   useEffect(() => { localStorage.setItem('habitbloom_goals', JSON.stringify(goals)); }, [goals]);
@@ -358,7 +358,7 @@ export default function Page() {
               uid: user.uid
             })
             .then(() => showToast('Referral applied!'))
-            .catch(e => console.error('Failed to apply referral:', e));
+            .catch(e => console.warn('Failed to apply referral:', e));
           }
           localStorage.removeItem('habitbloom_pending_referral');
         }
@@ -431,7 +431,7 @@ export default function Page() {
         setMigrationStatus('done');
         toast.success('Your local progress was successfully saved to the cloud!');
       } catch (error) {
-        console.error('Migration failed:', error);
+        console.warn('Migration deferred:', error);
         toast.error('Failed to migrate data. You can try again later.');
         setMigrationStatus('failed');
       }
@@ -469,13 +469,12 @@ export default function Page() {
           if (data.goals) setGoals(dedupeById(Array.isArray(data.goals) ? data.goals : Object.values(data.goals)));
           if (data.challenges) setChallenges(dedupeById(Array.isArray(data.challenges) ? data.challenges : Object.values(data.challenges)));
           if (data.journals) setJournals(dedupeById(Array.isArray(data.journals) ? data.journals : Object.values(data.journals)));
-          if (data.journals) setJournals(dedupeById(Array.isArray(data.journals) ? data.journals : Object.values(data.journals)));
         }
         setIsLoadingFirebase(false);
       },
       (error) => {
         clearTimeout(timeoutId);
-        console.error('Firebase sync error:', error);
+        console.warn('Firebase sync deferred:', error);
         toast.error('Unable to sync with server. Changes will be saved when you reconnect.', { id: 'firebase-sync-error' });
         setIsLoadingFirebase(false);
       }
@@ -534,28 +533,31 @@ export default function Page() {
           // Public spaces search is removed for privacy
           setPublicSpaces([]);
 
-          // Fetch roles for the spaces we belong to
-          get(rolesRef).then(rolesSnapshot => {
-            if (rolesSnapshot.exists()) {
-              const allSpaceRoles = rolesSnapshot.val();
-              const resolvedRoles: Record<string, import('../../lib/spaceTypes').CustomRole> = {};
+          // Fetch roles for the spaces we belong to individually
+          Promise.all(mySpaceIds.map(spaceId => get(child(rolesRef, spaceId)))).then(roleSnapshots => {
+            const resolvedRoles: Record<string, import('../../lib/spaceTypes').CustomRole> = {};
 
-              mySpaceIds.forEach(spaceId => {
+            roleSnapshots.forEach((snap, idx) => {
+              if (snap.exists()) {
+                const spaceId = mySpaceIds[idx];
                 const roleId = myRoleMappings[spaceId];
-                if (roleId && allSpaceRoles[spaceId] && allSpaceRoles[spaceId][roleId]) {
-                  resolvedRoles[spaceId] = allSpaceRoles[spaceId][roleId];
+                const spaceRolesObj = snap.val();
+                if (roleId && spaceRolesObj && spaceRolesObj[roleId]) {
+                  resolvedRoles[spaceId] = spaceRolesObj[roleId];
                 }
-              });
-              setUserRoles(resolvedRoles);
-            }
+              }
+            });
+            setUserRoles(resolvedRoles);
+          }).catch(err => {
+            console.warn('Could not load space roles:', err);
           });
         }).catch(err => {
-          console.error("Failed to load spaces", err);
+          console.warn("Failed to load spaces", err);
           setPublicSpaces([]);
         });
       },
       (error) => {
-        console.error('Firebase space sync error:', error);
+        console.warn('Firebase space sync deferred:', error);
         toast.error('Unable to sync spaces with server. Reconnecting...', { id: 'firebase-space-sync-error' });
       }
     );
@@ -602,7 +604,7 @@ export default function Page() {
             queueMutation('set', `users/${currentUser.uid}/logs/${key}`, isCurrentlyDone ? null : true);
           }
         } catch (error) {
-          console.error("Firebase write failed:", error);
+          console.warn("Firebase write failed:", error);
           showToast('Failed to save progress. Rolling back...');
           // Rollback
           setLogs(oldLogs);
@@ -611,19 +613,20 @@ export default function Page() {
       }
 
 
-    setHabitLogsArray(prevLogsArray => {
-      const logsArray = prevLogsArray[habitId] || [];
-      const index = logsArray.indexOf(dateTimestamp);
+      const currentLogsArray = habitLogsArray[habitId] || [];
+      const index = currentLogsArray.indexOf(dateTimestamp);
+      const nextHabitTimestamps = index === -1
+        ? [...currentLogsArray, dateTimestamp].sort((a, b) => a - b)
+        : currentLogsArray.filter((_, i) => i !== index);
+
       const updatedLogsArray = {
-        ...prevLogsArray,
-        [habitId]: index === -1
-          ? [...logsArray, dateTimestamp].sort()
-          : logsArray.filter((_, i) => i !== index),
+        ...habitLogsArray,
+        [habitId]: nextHabitTimestamps,
       };
-      syncToFirebase(`habitLogsArray/${habitId}`, updatedLogsArray[habitId]);
-      return updatedLogsArray;
-    });
-  }, [year, month, currentUser, logs, syncToFirebase]);
+
+      setHabitLogsArray(updatedLogsArray);
+      syncToFirebase(`habitLogsArray/${habitId}`, nextHabitTimestamps);
+    }, [year, month, currentUser, logs, habitLogsArray, syncToFirebase]);
 
   // ── Reset current month ────────────────────────────────────────────────
   const handleResetMonth = useCallback(() => {
@@ -1170,7 +1173,7 @@ export default function Page() {
                         setCreateSpaceOpen(false);
                         showToast(`Space '${name}' created successfully.`);
                       } catch (error) {
-                        console.error("Failed to create space:", error);
+                        console.warn("Failed to create space:", error);
                         showToast("Error creating space. Please try again.");
                       }
                     }

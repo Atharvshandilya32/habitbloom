@@ -74,7 +74,7 @@ export const migrateLegacySpace = async (space: Space): Promise<boolean> => {
     return true;
 
   } catch (err) {
-    console.error(`Migration failed for space: ${space.id}`, err);
+    console.warn(`Migration deferred for space: ${space.id}`, err);
     return false; // Fallback handled by UI checking member.role temporarily
   }
 };

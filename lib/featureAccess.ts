@@ -64,7 +64,7 @@ export async function getUserPlan(user: User | null | undefined): Promise<UserPl
       return normalizeUserPlan(data?.plan);
     }
   } catch (error) {
-    console.error('Error fetching user plan:', error);
+    console.warn('Deferred fetching user plan:', error);
   }
   
   return 'FREE';

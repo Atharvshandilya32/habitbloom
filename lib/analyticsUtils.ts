@@ -529,7 +529,7 @@ export async function logUsageEvent(uid: string, eventName: string, eventData: R
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Failed to log telemetry event', error);
+    console.warn('Failed to log telemetry event', error);
   }
 }
 

@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { ThemeProvider } from './components/ThemeProvider';
 import { FeatureFlagProvider } from '../../lib/FeatureFlagContext';
+import FirebaseErrorGuard from './components/FirebaseErrorGuard';
 import { Inter } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
@@ -24,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.className}>
       <body>
+        <FirebaseErrorGuard />
         <ThemeProvider>
           <FeatureFlagProvider>
             {/* JSON-LD Schema.org Data for AI Bots and SEO */}

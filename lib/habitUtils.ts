@@ -83,32 +83,34 @@ export function getCurrentStreak(
   allowFreeze: boolean = true,
 ): number {
   const today = new Date();
-  const endDay =
-    today.getFullYear() === year && today.getMonth() + 1 === month
-      ? Math.min(today.getDate(), daysInMonth)
-      : daysInMonth;
-      
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month;
+  const startDay = isCurrentMonth ? Math.min(today.getDate(), daysInMonth) : daysInMonth;
+
   let streak = 0;
   let currentGap = 0;
-  
+
   // Base gap allowance based on goal frequency.
-  // If goal is 30/31, allowed gap is 1. If goal is 4 (weekly), allowed gap is 7.
   let allowedGapSize = Math.max(1, Math.floor(daysInMonth / Math.max(1, habit.goal)));
-  
-  // Add 1-day bonus Streak Shield for daily habits if allowFreeze is true
   if (allowedGapSize === 1 && allowFreeze) {
-    allowedGapSize = 2; 
+    allowedGapSize = 2; // 1-day bonus Streak Shield for daily habits
   }
 
-  for (let day = endDay; day >= 1; day--) {
-    const key = makeLogKey(habit.id, year, month, day);
+  // Traverse up to 365 days backward across month boundaries
+  const startDate = new Date(year, month - 1, startDay, 12, 0, 0); // Use noon to avoid DST edge cases
+
+  for (let i = 0; i < 365; i++) {
+    const checkDate = new Date(startDate.getTime() - i * 24 * 60 * 60 * 1000);
+    const y = checkDate.getFullYear();
+    const m = checkDate.getMonth() + 1;
+    const d = checkDate.getDate();
+    const key = makeLogKey(habit.id, y, m, d);
+
     if (logs[key]) {
       streak += 1;
-      currentGap = 0; // Reset gap counter
+      currentGap = 0;
     } else {
-      // If we are evaluating days before today and the gap is too large, the streak breaks.
-      // We don't penalize missing 'today' yet until the gap actually exceeds allowance.
-      if (currentGap >= allowedGapSize && day < endDay) {
+      // If evaluating past days and gap exceeds allowance, break
+      if (currentGap >= allowedGapSize && i > 0) {
         break;
       }
       currentGap += 1;
@@ -117,6 +119,7 @@ export function getCurrentStreak(
 
   return streak;
 }
+
 
 // ─── Month-over-Month Trends ──────────────────────────────────────────────────
 export interface HabitTrend {

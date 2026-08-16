@@ -123,7 +123,7 @@ export async function uploadRosterToSpace(
 
     return true;
   } catch (error) {
-    console.error('Failed to upload roster to space:', error);
+    console.warn('Failed to upload roster to space:', error);
     return false;
   }
 }

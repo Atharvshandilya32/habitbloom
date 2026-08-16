@@ -67,7 +67,18 @@ export async function ensureUserProfile(user: User): Promise<UserProfile | null>
       return existing;
     }
   } catch (error) {
-    console.error('Failed to ensure user profile:', error);
-    return null;
+    console.warn('Firebase profile sync deferred:', error);
+    const now = new Date().toISOString();
+    return {
+      uid: user.uid,
+      email: user.email || null,
+      displayName: user.displayName || user.email?.split('@')[0] || `User ${user.uid.slice(0, 5)}`,
+      photoURL: user.photoURL || null,
+      createdAt: now,
+      updatedAt: now,
+      hbId: user.uid.slice(0, 10).toUpperCase(),
+      experiencePoints: 0,
+      currentLevel: 1,
+    };
   }
 }

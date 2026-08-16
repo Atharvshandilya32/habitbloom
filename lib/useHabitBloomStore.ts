@@ -27,11 +27,11 @@ export function useHabitBloomStore() {
 
   // Helper to safely persist to Firebase if user is logged in
   const syncToFirebase = useCallback((key: string, value: unknown) => {
-    if (database && currentUser) {
+    if (currentUser && database) {
       try {
         set(ref(database, `users/${currentUser.uid}/${key}`), value);
       } catch (err) {
-        console.error(`Firebase sync failed for key ${key}:`, err);
+        console.warn(`Firebase sync deferred for key ${key}:`, err);
       }
     }
   }, [currentUser]);
@@ -65,14 +65,21 @@ export function useHabitBloomStore() {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    let unsubscribeDb: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (unsubscribeDb) {
+        unsubscribeDb();
+        unsubscribeDb = null;
+      }
+
       setCurrentUser(user);
       setIsLoadingAuth(false);
 
       if (user && database) {
         // Sync user data from Firebase Realtime Database
         const userRef = ref(database, `users/${user.uid}`);
-        onValue(userRef, (snapshot) => {
+        unsubscribeDb = onValue(userRef, (snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.val();
             if (data.habits) {
@@ -104,14 +111,16 @@ export function useHabitBloomStore() {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribeDb) unsubscribeDb();
+      unsubscribeAuth();
+    };
   }, []);
 
   // Operations
   const toggleHabitDay = useCallback((habitId: string, day: number) => {
     const key = makeLogKey(habitId, year, month, day);
-    const monthPrefix = getMonthKeyPrefix(year, month);
-
+    const dateTimestamp = new Date(year, month - 1, day).getTime();
 
     setLogs((prevLogs) => {
       const isCurrentlyDone = !!prevLogs[key];
@@ -127,18 +136,18 @@ export function useHabitBloomStore() {
     });
 
     setHabitLogsArray((prevLogsArray) => {
-      const currentDays = prevLogsArray[monthPrefix] || [];
-      let updatedDays: number[];
+      const currentTimestamps = prevLogsArray[habitId] || [];
+      let updatedTimestamps: number[];
 
-      if (currentDays.includes(day)) {
-        updatedDays = currentDays.filter((d) => d !== day);
+      if (currentTimestamps.includes(dateTimestamp)) {
+        updatedTimestamps = currentTimestamps.filter((t) => t !== dateTimestamp);
       } else {
-        updatedDays = [...currentDays, day].sort((a, b) => a - b);
+        updatedTimestamps = [...currentTimestamps, dateTimestamp].sort((a, b) => a - b);
       }
 
-      const newLogsArray = { ...prevLogsArray, [monthPrefix]: updatedDays };
+      const newLogsArray = { ...prevLogsArray, [habitId]: updatedTimestamps };
       localStorage.setItem('habitbloom_logs_array', JSON.stringify(newLogsArray));
-      syncToFirebase('habitLogsArray', newLogsArray);
+      syncToFirebase(`habitLogsArray/${habitId}`, updatedTimestamps);
       return newLogsArray;
     });
   }, [year, month, syncToFirebase]);
@@ -158,6 +167,26 @@ export function useHabitBloomStore() {
       localStorage.setItem('habitbloom_habits', JSON.stringify(updated));
       syncToFirebase('habits', updated);
       return updated;
+    });
+
+    setLogs((prev) => {
+      const nextLogs = { ...prev };
+      Object.keys(nextLogs).forEach((key) => {
+        if (key.startsWith(`${habitId}_`)) delete nextLogs[key];
+      });
+      localStorage.setItem('habitbloom_logs', JSON.stringify(nextLogs));
+      syncToFirebase('logs', nextLogs);
+      return nextLogs;
+    });
+
+    setHabitLogsArray((prev) => {
+      const nextLogsArray = { ...prev };
+      if (nextLogsArray[habitId]) {
+        delete nextLogsArray[habitId];
+        localStorage.setItem('habitbloom_logs_array', JSON.stringify(nextLogsArray));
+        syncToFirebase('habitLogsArray', nextLogsArray);
+      }
+      return nextLogsArray;
     });
   }, [syncToFirebase]);
 

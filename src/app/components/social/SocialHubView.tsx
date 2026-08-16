@@ -36,9 +36,10 @@ import LeaderboardView from './LeaderboardView';
 import ChallengesHub from './ChallengesHub';
 import SmartCoachWidget from './SmartCoachWidget';
 import DirectMessagesView from './DirectMessagesView';
+import { calculateLongestStreakOverall } from '../../../../lib/analyticsUtils';
 import { Habit, HabitLog } from '../../../../lib/habitTypes';
 import { User } from 'firebase/auth';
-import { ref, onValue, set, push, query, orderByChild, equalTo, limitToLast } from 'firebase/database';
+import { ref, onValue, set, push, query, orderByChild, equalTo, limitToLast, get } from 'firebase/database';
 import { database } from '../../../../lib/firebase';
 
 interface SocialHubViewProps {
@@ -73,9 +74,8 @@ export default function SocialHubView({
   const [challenges, setChallenges] = useState<SocialChallenge[]>([]);
   const [aiRecs, setAiRecs] = useState<SmartChallengeRecommendation[]>([]);
 
-  // Calculate stats
-  const completedLogCount = Object.values(logs).filter(Boolean).length;
-  const currentStreak = Math.min(30, Math.floor(completedLogCount / Math.max(1, habits.length)));
+  // Calculate authentic stats
+  const currentStreak = React.useMemo(() => calculateLongestStreakOverall(habits, logs), [habits, logs]);
 
   // 1. Sync User Social Profile
   useEffect(() => {
@@ -95,11 +95,15 @@ export default function SocialHubView({
     ).then((prof) => {
       if (prof) {
         setMySocialProfile(prof);
-        const recs = generateSmartChallengeRecommendations(habits, logs, friends, currentStreak);
-        setAiRecs(recs);
       }
     });
-  }, [currentUser, logs, habits, currentStreak, friends]);
+  }, [currentUser, logs, habits.length, currentStreak]);
+
+  // AI recommendations effect
+  useEffect(() => {
+    const recs = generateSmartChallengeRecommendations(habits, logs, friends, currentStreak);
+    setAiRecs(recs);
+  }, [habits, logs, friends, currentStreak]);
 
   // 2. Real-time Firebase Listeners for Social System
   useEffect(() => {
@@ -110,21 +114,18 @@ export default function SocialHubView({
     const unsubFriends = onValue(friendsRef, async (snap) => {
       if (snap.exists()) {
         const friendKeys = Object.keys(snap.val());
-        const friendProfiles: UserSocialProfile[] = [];
-
-        for (const fUid of friendKeys) {
-          const pSnap = await ref(database, `socialProfiles/${fUid}`);
-          onValue(
-            pSnap,
-            (ps) => {
-              if (ps.exists()) {
-                friendProfiles.push(ps.val() as UserSocialProfile);
-              }
-            },
-            { onlyOnce: true }
+        try {
+          const promises = friendKeys.map(async (fUid) => {
+            const pSnap = await get(ref(database, `socialProfiles/${fUid}`));
+            return pSnap.exists() ? (pSnap.val() as UserSocialProfile) : null;
+          });
+          const friendProfiles = (await Promise.all(promises)).filter(
+            (p): p is UserSocialProfile => p !== null
           );
+          setFriends(friendProfiles);
+        } catch (err) {
+          console.warn("Failed to load friend profiles:", err);
         }
-        setFriends(friendProfiles);
       } else {
         setFriends([]);
       }
@@ -215,17 +216,15 @@ export default function SocialHubView({
 
   const handleOpenProfileModal = async (uid: string) => {
     if (!database) return;
-    const snap = await ref(database, `socialProfiles/${uid}`);
-    onValue(
-      snap,
-      (ps) => {
-        if (ps.exists()) {
-          setSelectedProfile(ps.val() as UserSocialProfile);
-          setProfileModalOpen(true);
-        }
-      },
-      { onlyOnce: true }
-    );
+    try {
+      const snap = await get(ref(database, `socialProfiles/${uid}`));
+      if (snap.exists()) {
+        setSelectedProfile(snap.val() as UserSocialProfile);
+        setProfileModalOpen(true);
+      }
+    } catch (err) {
+      console.warn("Failed to open profile modal:", err);
+    }
   };
 
   const handleCreateChallenge = async (challengeData: Omit<SocialChallenge, 'id' | 'createdAt'>) => {
@@ -253,7 +252,7 @@ export default function SocialHubView({
         );
       }
     } catch (error) {
-      console.error('Failed to create challenge:', error);
+      console.warn('Failed to create challenge:', error);
       onShowToast('Failed to publish challenge. Please try again.');
     }
   };
@@ -273,7 +272,7 @@ export default function SocialHubView({
       });
       onShowToast('Joined challenge successfully!');
     } catch (error) {
-      console.error('Failed to join challenge:', error);
+      console.warn('Failed to join challenge:', error);
       onShowToast('Failed to join challenge. Please try again.');
     }
   };

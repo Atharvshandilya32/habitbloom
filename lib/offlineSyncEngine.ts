@@ -70,7 +70,7 @@ export async function replayMutations() {
   isReplaying = true;
 
   try {
-    let queue = getQueue();
+    const queue = getQueue();
     if (queue.length === 0) return;
 
     let processedCount = 0;

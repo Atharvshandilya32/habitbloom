@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Space, SpaceMember, CustomRole } from '../../../../lib/spaceTypes';
 import { database } from '../../../../lib/firebase';
-import { ref, onValue, off, DataSnapshot, set, get, child } from 'firebase/database';
+import { ref, onValue, off, DataSnapshot, set, get } from 'firebase/database';
 import { Search, User, Filter, AlertCircle, Edit2, Copy, Check, Hash, X, Download, CheckCircle, XCircle } from 'lucide-react';
 import { Skeleton } from '../ui/Skeleton';
 import { hasPermission } from '../../../../lib/spacePermissions';

@@ -346,8 +346,11 @@ const DashboardView = React.memo(function DashboardView({
       />
 
       <ShareMilestoneModal 
-        isOpen={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
+        isOpen={shareModalOpen || !!activeMilestone}
+        onClose={() => {
+          setShareModalOpen(false);
+          handleMilestoneShared();
+        }}
         consistency={metrics.consistency}
         bestStreak={metrics.streak}
         bloomScore={metrics.bloom.totalBloomScore}

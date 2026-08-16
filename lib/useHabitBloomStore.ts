@@ -3,7 +3,7 @@ import { Habit, HabitLog, Goal as GoalType, Challenge, JournalEntry } from './ha
 import { ref, onValue, set } from 'firebase/database';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth, database } from './firebase';
-import { makeLogKey, getMonthKeyPrefix } from './habitUtils';
+import { makeLogKey } from './habitUtils';
 
 const DEFAULT_HABITS: Habit[] = [
   { id: 'habit-1', name: 'Drink water (8 glasses)', emoji: '💧', goal: 30, category: '🏃 Fitness' },

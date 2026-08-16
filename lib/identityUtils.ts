@@ -1,4 +1,4 @@
-import { ref, get, set, runTransaction } from 'firebase/database';
+import { ref, get, runTransaction } from 'firebase/database';
 import { database } from './firebase';
 
 /**

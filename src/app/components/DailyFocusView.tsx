@@ -349,93 +349,97 @@ const DailyFocusView = React.memo(function DailyFocusView({
             const streak = getCurrentStreak(habit, logs, year, month, daysInMonth);
             
             return (
-              <button 
+              <div 
                 key={`${habit.id}-${idx}`}
-                type="button"
-                className={`w-full text-left group flex items-center p-5 sm:p-6 rounded-2xl border transition-all duration-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
+                className={`w-full text-left group flex items-center p-5 sm:p-6 rounded-2xl border transition-all duration-300 ${
                   isCompleted 
                     ? 'bg-slate-50 border-slate-200/80 shadow-xs' 
                     : 'bg-white border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-300'
-                } ${isToggling[habit.id] ? 'opacity-80 pointer-events-none cursor-wait' : ''}`}
-                onClick={() => handleToggle(habit.id, day)}
-                disabled={isToggling[habit.id]}
+                } ${isToggling[habit.id] ? 'opacity-80' : ''}`}
               >
-                <div className={`w-12 h-12 flex items-center justify-center text-2xl rounded-2xl mr-4 group-hover:scale-105 transition-transform flex-shrink-0 relative ${
-                  isCompleted ? 'bg-slate-200/70' : 'bg-slate-100'
-                }`}>
-                  <motion.div animate={{ scale: isCompleted ? 0 : 1 }} transition={{ duration: 0.2 }}>
-                    {habit.emoji}
-                  </motion.div>
-                  {isCompleted && (
-                    <motion.div 
-                      initial={{ scale: 0 }} 
-                      animate={{ scale: 1 }} 
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      className="absolute inset-0 flex items-center justify-center text-emerald-500"
-                    >
-                      <Check size={26} strokeWidth={3.5} />
+                {/* Main toggle action area */}
+                <button
+                  type="button"
+                  onClick={() => handleToggle(habit.id, day)}
+                  disabled={isToggling[habit.id]}
+                  className="flex-1 flex items-center min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-xl cursor-pointer"
+                  aria-label={isCompleted ? `Mark ${habit.name} as incomplete` : `Complete ${habit.name}`}
+                >
+                  <div className={`w-12 h-12 flex items-center justify-center text-2xl rounded-2xl mr-4 group-hover:scale-105 transition-transform flex-shrink-0 relative ${
+                    isCompleted ? 'bg-slate-200/70' : 'bg-slate-100'
+                  }`}>
+                    <motion.div animate={{ scale: isCompleted ? 0 : 1 }} transition={{ duration: 0.2 }}>
+                      {habit.emoji}
                     </motion.div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0 relative">
-                  {completedAnim?.id === habit.id && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                      animate={{ opacity: 1, y: -25, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="absolute right-0 top-0 text-emerald-500 font-black text-sm pointer-events-none drop-shadow-sm"
-                    >
-                      +{completedAnim.xp} XP
-                    </motion.div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <h3 className={`font-extrabold text-base sm:text-lg truncate ${
-                      isCompleted ? 'text-slate-500 line-through decoration-emerald-500 decoration-2' : 'text-slate-900'
-                    }`}>
-                      {habit.name}
-                    </h3>
-                    {streak > 2 && (
-                      <span className="text-xs font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">
-                        {streak} 🔥
-                      </span>
+                    {isCompleted && (
+                      <motion.div 
+                        initial={{ scale: 0 }} 
+                        animate={{ scale: 1 }} 
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        className="absolute inset-0 flex items-center justify-center text-emerald-500"
+                      >
+                        <Check size={26} strokeWidth={3.5} />
+                      </motion.div>
                     )}
                   </div>
-                  {streak === 0 && !isCompleted && (
-                    <p className="text-xs text-slate-500 mt-1 font-medium">A new day is another opportunity 🌱</p>
-                  )}
-                  {habit.category && (
-                    <span className="text-xs font-bold text-slate-500 mt-0.5 block">{habit.category}</span>
-                  )}
-                </div>
+                  <div className="flex-1 min-w-0 relative">
+                    {completedAnim?.id === habit.id && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                        animate={{ opacity: 1, y: -25, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute right-0 top-0 text-emerald-500 font-black text-sm pointer-events-none drop-shadow-sm"
+                      >
+                        +{completedAnim.xp} XP
+                      </motion.div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <h3 className={`font-extrabold text-base sm:text-lg truncate ${
+                        isCompleted ? 'text-slate-500 line-through decoration-emerald-500 decoration-2' : 'text-slate-900'
+                      }`}>
+                        {habit.name}
+                      </h3>
+                      {streak > 2 && (
+                        <span className="text-xs font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">
+                          {streak} 🔥
+                        </span>
+                      )}
+                    </div>
+                    {streak === 0 && !isCompleted && (
+                      <p className="text-xs text-slate-500 mt-1 font-medium">A new day is another opportunity 🌱</p>
+                    )}
+                    {habit.category && (
+                      <span className="text-xs font-bold text-slate-500 mt-0.5 block">{habit.category}</span>
+                    )}
+                  </div>
+                </button>
                 
-                <div className="flex items-center gap-3">
+                {/* Actions: Reflection Button & Checkbox Toggle */}
+                <div className="flex items-center gap-3 ml-3 shrink-0">
                   {isCompleted && (
-                    <div 
-                      role="button"
-                      tabIndex={0}
-                      className="hidden sm:inline-flex items-center gap-1.5 text-xs text-slate-700 hover:text-emerald-700 font-extrabold px-3 py-1 rounded-xl bg-slate-200/80 hover:bg-emerald-100 transition-colors shadow-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                    <button 
+                      type="button"
+                      className="hidden sm:inline-flex items-center gap-1.5 text-xs text-slate-700 hover:text-emerald-700 font-extrabold px-3 py-1.5 rounded-xl bg-slate-200/80 hover:bg-emerald-100 transition-colors shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                      onClick={() => {
                         if (onOpenJournal) {
                           onOpenJournal(habit.id);
                         }
                       }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (onOpenJournal) onOpenJournal(habit.id);
-                        }
-                      }}
                     >
                       <span>Reflection</span> ✍️
-                    </div>
+                    </button>
                   )}
-                  <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-all duration-200 relative ${
-                    isCompleted 
-                      ? 'bg-emerald-500 text-white scale-100 shadow-sm' 
-                      : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 scale-95 group-hover:scale-100'
-                  }`}>
+                  <button
+                    type="button"
+                    onClick={() => handleToggle(habit.id, day)}
+                    disabled={isToggling[habit.id]}
+                    aria-label={isCompleted ? `Mark ${habit.name} as incomplete` : `Complete ${habit.name}`}
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-all duration-200 relative cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none ${
+                      isCompleted 
+                        ? 'bg-emerald-500 text-white scale-100 shadow-sm hover:bg-emerald-600' 
+                        : 'bg-slate-100 text-slate-400 hover:bg-emerald-100 hover:text-emerald-600 scale-95 hover:scale-100'
+                    }`}
+                  >
                     <Check strokeWidth={isCompleted ? 3 : 2} size={24} />
                     {totalCompletedHabits === 0 && idx === 0 && (
                       <motion.div 
@@ -447,9 +451,9 @@ const DailyFocusView = React.memo(function DailyFocusView({
                         <div className="absolute top-1/2 -right-1 -translate-y-1/2 border-y-4 border-y-transparent border-l-4 border-l-emerald-600"></div>
                       </motion.div>
                     )}
-                  </div>
+                  </button>
                 </div>
-              </button>
+              </div>
             );
           })
         )}

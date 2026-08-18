@@ -24,6 +24,15 @@ const THEME_COLORS = [
   'indigo-600', 'blue-600', 'emerald-600', 'rose-600', 'amber-500', 'slate-900'
 ];
 
+const THEME_COLOR_MAP: Record<string, string> = {
+  'indigo-600': 'bg-indigo-600',
+  'blue-600': 'bg-blue-600',
+  'emerald-600': 'bg-emerald-600',
+  'rose-600': 'bg-rose-600',
+  'amber-500': 'bg-amber-500',
+  'slate-900': 'bg-slate-900',
+};
+
 export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab = 'general', onSave, currentUserId = 'admin', currentUserName = 'Admin' }: SpaceSettingsModalProps) {
   const [name, setName] = useState(space.name);
   const [description, setDescription] = useState(space.description);
@@ -267,13 +276,14 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
                     {THEME_COLORS.map(color => (
                       <button
                         key={color}
+                        type="button"
                         onClick={() => setThemeColor(color)}
                         className={`w-10 h-10 rounded-full border-4 transition-all ${
                           themeColor === color ? 'border-white ring-2 ring-indigo-500 scale-110 shadow-sm' : 'border-transparent hover:scale-105'
                         }`}
-                        style={{ backgroundColor: `var(--color-${color.replace('-600', '')})` }} // Simplified for tailwind classes trick, assuming custom classes or pure tailwind
+                        title={color}
                       >
-                         <div className={`w-full h-full rounded-full bg-${color}`}></div>
+                         <div className={`w-full h-full rounded-full ${THEME_COLOR_MAP[color] || 'bg-indigo-600'}`}></div>
                       </button>
                     ))}
                   </div>

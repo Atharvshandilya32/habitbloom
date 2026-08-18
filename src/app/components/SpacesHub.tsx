@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Users, Plus, Compass, LogIn, Trophy } from 'lucide-react';
 import { Space, SpaceInvite } from '../../../lib/spaceTypes';
+import { fetchLeaderboardEntries } from '../../../lib/socialUtils';
+import { LeaderboardEntry } from '../../../lib/socialTypes';
 
 interface SpacesHubProps {
   userSpaces: Space[];
@@ -22,7 +24,22 @@ export default function SpacesHub({
   onJoinWithCode
 }: SpacesHubProps) {
   const [joinCode, setJoinCode] = useState('');
+  const [topBloomers, setTopBloomers] = useState<LeaderboardEntry[]>([]);
   const router = useRouter();
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchLeaderboardEntries('xp', 'global', '')
+      .then((entries) => {
+        if (isMounted) {
+          setTopBloomers(entries.slice(0, 3));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleJoin = () => {
     if (joinCode.trim()) {
@@ -100,28 +117,33 @@ export default function SpacesHub({
         </div>
       )}
 
-      {/* Global Leaderboard Snapshot */}
+      {/* Global Leaderboard Snapshot / Community Highlight */}
       <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-sm">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="flex items-center gap-3 border-b border-emerald-400/30 pb-4 mb-4">
           <Trophy className="text-yellow-400" size={24} />
-          <h3 className="text-lg font-bold">Global Top Bloomers</h3>
+          <h3 className="text-lg font-bold">{topBloomers.length > 0 ? 'Global Top Bloomers' : 'HabitBloom Community'}</h3>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { name: 'Sarah M.', score: 980, rank: 1, color: 'text-yellow-400' },
-            { name: 'David K.', score: 850, rank: 2, color: 'text-slate-300' },
-            { name: 'Alex T.', score: 810, rank: 3, color: 'text-orange-400' }
-          ].map(user => (
-            <div key={user.rank} className="bg-white/10 rounded-2xl p-4 flex items-center justify-between border border-white/5 backdrop-blur-sm">
-              <div className="flex items-center gap-3">
-                <span className={`font-black text-xl ${user.color}`}>#{user.rank}</span>
-                <span className="font-bold text-sm">{user.name}</span>
-              </div>
-              <span className="text-xs font-bold px-2 py-1 bg-white/20 rounded-lg">{user.score} XP</span>
-            </div>
-          ))}
-        </div>
+        {topBloomers.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {topBloomers.map((user, idx) => {
+              const rankColors = ['text-yellow-400', 'text-slate-300', 'text-orange-400'];
+              return (
+                <div key={user.uid || idx} className="bg-white/10 rounded-2xl p-4 flex items-center justify-between border border-white/5 backdrop-blur-sm">
+                  <div className="flex items-center gap-3">
+                    <span className={`font-black text-xl ${rankColors[idx] || 'text-white'}`}>#{user.rank || idx + 1}</span>
+                    <span className="font-bold text-sm truncate max-w-[130px]">{user.displayName || user.username || 'Bloomer'}</span>
+                  </div>
+                  <span className="text-xs font-bold px-2 py-1 bg-white/20 rounded-lg">{user.totalXP} XP</span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-emerald-50 text-sm font-medium leading-relaxed">
+            Collaborate with your school, company, gym, or friends to build habits together while keeping your personal reflection notes completely private.
+          </div>
+        )}
       </div>
 
       {/* My Spaces */}

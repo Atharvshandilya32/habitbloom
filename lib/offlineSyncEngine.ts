@@ -65,7 +65,7 @@ export async function queueMutation(type: 'set' | 'update', path: string, data: 
  * Replay all pending mutations in the queue.
  */
 export async function replayMutations() {
-  if (!navigator.onLine || !database || !auth.currentUser || isReplaying) return;
+  if (!navigator.onLine || !database || !auth?.currentUser || isReplaying) return;
 
   isReplaying = true;
 

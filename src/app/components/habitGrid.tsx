@@ -7,7 +7,6 @@ import { Habit, HabitLog, HABIT_CATEGORIES } from '../../../lib/habitTypes';
 import { makeLogKey, getCurrentStreak, getHabitStats } from '../../../lib/habitUtils';
 import { calculateHabitHealth } from '../../../lib/analyticsUtils';
 import { IntelligenceEngine } from '../../../lib/intelligence/intelligenceEngine';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -282,27 +281,21 @@ export default function HabitGrid({
                 </td>
               </tr>
             )}
-            <AnimatePresence>
             {filteredHabits.map((habit, rowIdx) => {
               const isEditing = editingId === habit.id;
-              const rowBg = rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30';
+              const rowBg = rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40';
               const currentStreak = getCurrentStreak(habit, logs, year, month, daysInMonth);
               const stats = getHabitStats(habit, logs, daysInMonth, year, month);
               const health = calculateHabitHealth(habit, logs);
               const habitTrend = trends.find(t => t.habitId === habit.id);
 
               return (
-                <motion.tr 
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
+                <tr 
                   key={`${habit.id}-${rowIdx}`} 
-                  className={`${rowBg} hover:bg-slate-50/80 transition-colors group`}
+                  className={`${rowBg} hover:bg-slate-50 transition-colors group`}
                 >
                   {/* Habit Name / Edit Cell */}
-                  <td className={`sticky left-0 z-10 border-r border-slate-200/80 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.06)] px-4 py-3 ${rowBg} group-hover:bg-slate-50`}>
+                  <td className={`sticky left-0 z-10 border-r border-slate-200 shadow-[4px_0_12px_rgba(0,0,0,0.06)] px-4 py-3 min-w-[210px] max-w-[210px] w-[210px] ${rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#fcfdfd]'} group-hover:bg-slate-100/90 transition-colors`}>
                     {isEditing ? (
                       <div className="space-y-2 py-1 min-w-[190px]">
                         <div className="flex gap-1.5">
@@ -488,7 +481,7 @@ export default function HabitGrid({
                   })}
 
                   {/* Actions Cell */}
-                  <td className={`sticky right-0 z-10 border-l border-slate-200/80 px-2 py-2 text-center ${rowBg} group-hover:bg-slate-50`}>
+                  <td className={`sticky right-0 z-10 border-l border-slate-200 px-2 py-2 text-center min-w-[60px] max-w-[60px] w-[60px] ${rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#fcfdfd]'} group-hover:bg-slate-100/90 transition-colors`}>
                     <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => startEdit(habit)}
@@ -506,10 +499,9 @@ export default function HabitGrid({
                       </button>
                     </div>
                   </td>
-                </motion.tr>
+                </tr>
               );
             })}
-            </AnimatePresence>
 
             {/* Empty State */}
             {filteredHabits.length === 0 && (

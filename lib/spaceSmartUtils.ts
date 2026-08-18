@@ -1,33 +1,27 @@
 import { SpaceType, SpaceChallengeType } from './spaceTypes';
 
 /**
- * MOCK AI UTILITIES
- * These functions simulate calls to Gemini. In a production environment,
- * these would be replaced with actual API calls to the Gemini backend,
- * sending a well-crafted prompt based on the provided parameters.
+ * Deterministic Space Utilities
+ * Generates tailored community challenge ideas, templates, and analytics insights based on space type.
  */
-
-// Simulate network delay for realistic UX
-const simulateDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function generateSmartSpaceWeeklyReport(
   spaceType: SpaceType,
   healthScore: number,
   recentIssues: string[]
 ): Promise<string> {
-  await simulateDelay(1500);
+  const issuesSummary = recentIssues && recentIssues.length > 0 ? recentIssues.join(', ') : 'no critical blockers detected';
 
   if (healthScore > 80) {
-    return `Your ${spaceType} community is thriving! Member participation is high. However, to maintain momentum, consider addressing the following: ${recentIssues.join(', ')}. A quick weekend challenge might boost engagement further.`;
+    return `Your ${spaceType} community is thriving! Member participation is high. Recent trends: ${issuesSummary}. A quick weekend challenge can help boost engagement further.`;
   } else if (healthScore > 50) {
-    return `Engagement in your ${spaceType} is stable but shows room for improvement. We noticed: ${recentIssues.join(', ')}. I recommend highlighting a top performer to motivate the group.`;
+    return `Engagement in your ${spaceType} is stable with room for growth. Monitored points: ${issuesSummary}. Highlighting top performers will help motivate the group.`;
   } else {
-    return `Attention needed: Your ${spaceType} engagement has dropped significantly. Key issues: ${recentIssues.join(', ')}. Action plan: Post a highly encouraging announcement and simplify the active challenges.`;
+    return `Attention recommended: Your ${spaceType} activity has slowed. Focus areas: ${issuesSummary}. Action plan: Post an encouraging announcement and suggest beginner-friendly habits.`;
   }
 }
 
 export async function generateSmartSpaceChallengeIdeas(spaceType: SpaceType) {
-  await simulateDelay(2000);
 
   const ideas = {
     gym: [
@@ -57,8 +51,6 @@ export async function generateSmartSpaceChallengeIdeas(spaceType: SpaceType) {
 }
 
 export async function generateSmartSpaceHabitTemplates(spaceType: SpaceType) {
-  await simulateDelay(2000);
-
   const packs = {
     gym: [
       { name: "Post-Workout Stretch", emoji: "🧘", category: "health", description: "10 minutes of static stretching after training." },

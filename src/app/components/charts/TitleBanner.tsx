@@ -23,6 +23,7 @@ import {
   Compass,
   Moon,
   Sun,
+  CheckCircle2,
 } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../../lib/firebase';
@@ -139,6 +140,7 @@ export default function Navbar({ user, userLevel = 1, activeTab, onTabChange, on
             className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto hide-scrollbar scroll-smooth w-full"
           >
             {[
+              { id: 'focus' as NavTab, label: 'Today', icon: CheckCircle2 },
               { id: 'dashboard' as NavTab, label: 'Habits', icon: LayoutDashboard },
               { id: 'analytics' as NavTab, label: 'Analytics', icon: Activity },
             ].map((tabItem) => {
@@ -337,12 +339,20 @@ export default function Navbar({ user, userLevel = 1, activeTab, onTabChange, on
       {mobileOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 space-y-1 shadow-lg max-h-[70vh] overflow-y-auto">
           <button
+            onClick={() => handleNavClick('focus')}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'focus' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+          >
+            <CheckCircle2 size={15} className="text-emerald-600" />
+            Today&apos;s Focus
+          </button>
+          <button
             onClick={() => handleNavClick('dashboard')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-primary/10 text-primary border border-primary/20' : 'text-slate-700 hover:bg-slate-50'
+            className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'text-slate-700 hover:bg-slate-50'
               }`}
           >
             <LayoutDashboard size={15} />
-            Dashboard
+            Habits (Grid)
           </button>
           <button
             onClick={() => handleNavClick('analytics')}

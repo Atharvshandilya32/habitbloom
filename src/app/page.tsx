@@ -69,8 +69,16 @@ const safeParse = <T,>(key: string, fallback: T): T => {
   }
 };
 
+const DEFAULT_HABITS: Habit[] = [
+  { id: 'habit-1', name: 'Drink water', emoji: '💧', goal: 10, category: '🏃 Fitness' },
+  { id: 'habit-2', name: 'Read books', emoji: '📚', goal: 5, category: '📚 Learning' },
+];
+
 export default function Page() {
-  const [habits, setHabits] = useState<Habit[]>(() => safeParse('habitbloom_habits', []));
+  const [habits, setHabits] = useState<Habit[]>(() => {
+    const loaded = safeParse<Habit[]>('habitbloom_habits', []);
+    return loaded && loaded.length > 0 ? loaded : DEFAULT_HABITS;
+  });
   const [logs, setLogs] = useState<HabitLog>(() => safeParse('habitbloom_logs', {}));
   const [habitLogsArray, setHabitLogsArray] = useState<Record<string, number[]>>(() => safeParse('habitbloom_logs_array', {}));
   const [year, setYear] = useState(() => new Date().getFullYear());
@@ -188,7 +196,7 @@ export default function Page() {
         logUsageEvent(currentUser.uid, 'feature_used', { feature: activeTab });
       });
     }
-  }, [activeTab, currentUser?.uid]);
+  }, [activeTab, currentUser]);
 
   useEffect(() => {
     const todayStr = new Date().toDateString();
@@ -202,7 +210,7 @@ export default function Page() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoadingFirebase(false);
-    }, 5000);
+    }, 1500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -267,47 +275,7 @@ export default function Page() {
     }
   }, [currentUser]);
 
-  // 1. Load from localStorage on mount (initial fallback)
-  useEffect(() => {
-    const savedHabits = localStorage.getItem('habitbloom_habits');
-    const savedLogs = localStorage.getItem('habitbloom_logs');
-    const savedLogsArray = localStorage.getItem('habitbloom_logs_array');
-    const savedGoals = localStorage.getItem('habitbloom_goals');
-    const savedChallenges = localStorage.getItem('habitbloom_challenges');
-    const savedJournals = localStorage.getItem('habitbloom_journals');
-
-    const dedupeById = <T extends { id: string }>(arr: T[]): T[] => Array.from(new Map(arr.filter(Boolean).map(item => [item.id, item])).values());
-
-    if (savedHabits) {
-      try { 
-        const parsed = JSON.parse(savedHabits);
-        setHabits(dedupeById(Array.isArray(parsed) ? parsed : [])); 
-      } catch { setHabits([]); }
-    } else {
-      setHabits([
-        { id: 'habit-1', name: 'Drink water', emoji: '💧', goal: 10, category: '🏃 Fitness' },
-        { id: 'habit-2', name: 'Read books', emoji: '📚', goal: 5, category: '📚 Learning' },
-      ]);
-    }
-
-    if (savedLogs) {
-      try { setLogs(JSON.parse(savedLogs)); } catch { setLogs({}); }
-    }
-    if (savedLogsArray) {
-      try { setHabitLogsArray(JSON.parse(savedLogsArray)); } catch { setHabitLogsArray({}); }
-    }
-    if (savedGoals) {
-      try { setGoals(JSON.parse(savedGoals)); } catch { setGoals([]); }
-    }
-    if (savedChallenges) {
-      try { setChallenges(JSON.parse(savedChallenges)); } catch { setChallenges([]); }
-    }
-    if (savedJournals) {
-      try { setJournals(JSON.parse(savedJournals)); } catch { setJournals([]); }
-    }
-  }, []);
-
-  // 2. Save to localStorage on change
+  // 1. Save to localStorage on change
   useEffect(() => { localStorage.setItem('habitbloom_habits', JSON.stringify(habits)); }, [habits]);
   useEffect(() => { localStorage.setItem('habitbloom_logs', JSON.stringify(logs)); }, [logs]);
   useEffect(() => { localStorage.setItem('habitbloom_logs_array', JSON.stringify(habitLogsArray)); }, [habitLogsArray]);
@@ -438,7 +406,7 @@ export default function Page() {
     };
 
     performMigration();
-  }, [currentUser, database, migrationStatus]);
+  }, [currentUser, migrationStatus]);
 
   // 5. Real-time Firebase Sync
   useEffect(() => {
@@ -604,11 +572,8 @@ export default function Page() {
             queueMutation('set', `users/${currentUser.uid}/logs/${key}`, isCurrentlyDone ? null : true);
           }
         } catch (error) {
-          console.warn("Firebase write failed:", error);
-          showToast('Failed to save progress. Rolling back...');
-          // Rollback
-          setLogs(oldLogs);
-          return; // Stop execution
+          console.warn("Firebase direct write deferred, queueing offline mutation:", error);
+          queueMutation('set', `users/${currentUser.uid}/logs/${key}`, isCurrentlyDone ? null : true);
         }
       }
 
@@ -689,7 +654,7 @@ export default function Page() {
       return updated;
     });
     showToast('Habit created successfully.');
-  }, [syncToFirebase]);
+  }, [syncToFirebase, currentUser]);
 
   const handleDeleteHabit = useCallback((habitId: string) => {
     setHabits(prev => {
@@ -774,14 +739,6 @@ export default function Page() {
     });
     showToast('Journal entry deleted.');
   }, [syncToFirebase]);
-
-  // Safety fallback: Unblock loading screen after 1.2s max if Firebase is slow
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoadingFirebase(false);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Memoize heavy welcome screen computations
   const welcomeStats = useMemo(() => {
@@ -951,7 +908,12 @@ export default function Page() {
                 logs={logs}
                 year={year}
                 month={month}
-                day={new Date().getDate()} // Focus today
+                day={(() => {
+                  const now = new Date();
+                  const isCurrentMonth = now.getFullYear() === year && now.getMonth() + 1 === month;
+                  const daysInSelectedMonth = new Date(year, month, 0).getDate();
+                  return isCurrentMonth ? now.getDate() : Math.min(now.getDate(), daysInSelectedMonth);
+                })()}
                 onToggleCell={(habitId, day) => {
                   handleToggleCell(habitId, day);
                 }}

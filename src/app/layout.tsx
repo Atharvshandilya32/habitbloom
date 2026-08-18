@@ -50,7 +50,7 @@ export default function RootLayout({
                     "email": "support@habitbloom.in",
                     "contactType": "customer support"
                   }
-                })
+                }).replace(/</g, '\\u003c')
               }}
             />
             {children}

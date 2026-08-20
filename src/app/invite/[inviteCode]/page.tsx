@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { ref, get, child, set } from 'firebase/database';
+import { ref, get, child, set, query, orderByChild, equalTo } from 'firebase/database';
 import { auth, database } from '../../../../lib/firebase';
 import { CheckCircle2, Users, AlertTriangle } from 'lucide-react';
 import { Space, SpaceInvite } from '../../../../lib/spaceTypes';
@@ -43,17 +43,13 @@ export default function InvitePage() {
       // Validate Invite Code against Firebase
       try {
         const dbRef = ref(database);
-        const invitesSnapshot = await get(child(dbRef, 'spaceInvites'));
+        const inviteQuery = query(ref(database, 'spaceInvites'), orderByChild('code'), equalTo(inviteCode));
+        const inviteSnapshot = await get(inviteQuery);
         
         let foundInvite: SpaceInvite | null = null;
-        if (invitesSnapshot.exists()) {
-          const invites = invitesSnapshot.val();
-          for (const key in invites) {
-            if (invites[key].code === inviteCode) {
-              foundInvite = invites[key];
-              break;
-            }
-          }
+        if (inviteSnapshot.exists()) {
+          const invites = inviteSnapshot.val();
+          foundInvite = Object.values(invites)[0] as SpaceInvite;
         }
 
         if (!foundInvite) {
@@ -144,14 +140,7 @@ export default function InvitePage() {
         joinedAt: now,
       };
       
-      // Update invite uses
-      const updatedInvite = {
-        ...inviteData,
-        uses: (inviteData.uses || 0) + 1
-      };
-
       await set(ref(database, `spaceMembers/${space.id}_${user.uid}`), newMember);
-      await set(ref(database, `spaceInvites/${inviteData.id}`), updatedInvite);
 
       await logAuditEvent(
         space.id,

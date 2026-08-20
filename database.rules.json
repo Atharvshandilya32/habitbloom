@@ -76,10 +76,11 @@
       }
     },
     "spaceInvites": {
-      ".read": "auth != null",
-      "$inviteCode": {
+      ".read": "auth != null && ((query.orderByChild == 'spaceId' && root.child('spaces').child(query.equalTo).child('createdBy').val() === auth.uid) || (query.orderByChild == 'code' && query.equalTo != null))",
+      ".indexOn": ["spaceId", "code"],
+      "$inviteId": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null && ((!data.exists() && root.child('spaces').child(newData.child('spaceId').val()).child('createdBy').val() === auth.uid) || (data.exists() && root.child('spaces').child(data.child('spaceId').val()).child('createdBy').val() === auth.uid))"
       }
     },
     "spaceMembers": {

@@ -6,7 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Space, SpaceBranding, SpaceInvite, CustomRole, SpacePermissions } from '../../../../lib/spaceTypes';
 import { createPermissions } from '../../../../lib/spaceTemplates';
 import { database } from '../../../../lib/firebase';
-import { ref, set, get, child, onValue, off } from 'firebase/database';
+import { ref, set, get, onValue, off, query, orderByChild, equalTo } from 'firebase/database';
 import { generateSpaceInvite } from '../../../../lib/spaceUtils';
 import { toast } from 'sonner';
 
@@ -55,10 +55,10 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
 
   useEffect(() => {
     if (activeTab === 'invites' && database && !inviteCode) {
-      get(child(ref(database), 'spaceInvites')).then(snap => {
+      get(query(ref(database, 'spaceInvites'), orderByChild('spaceId'), equalTo(space.id))).then(snap => {
         if (snap.exists()) {
           const invites = snap.val();
-          const existing = Object.values(invites).find((inv: unknown) => (inv as SpaceInvite).spaceId === space.id);
+          const existing = Object.values(invites)[0];
           if (existing) setInviteCode((existing as SpaceInvite).code);
         }
       });
@@ -94,7 +94,7 @@ export default function SpaceSettingsModal({ isOpen, onClose, space, initialTab 
   const handleGenerateInvite = () => {
     const invite = generateSpaceInvite(space.id, space.createdBy);
     if (database) {
-      set(ref(database, `spaceInvites/${invite.code}`), invite);
+      set(ref(database, `spaceInvites/${invite.id}`), invite);
       setInviteCode(invite.code);
     }
   };

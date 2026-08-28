@@ -136,9 +136,11 @@ export default function LoginPage() {
             {/* Logo & Headline */}
             <div>
               <Link href="/" className="inline-flex items-center gap-2 group mb-3">
-                <span className="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-md">
-                  Habit<span className="text-emerald-400">Bloom</span>
-                </span>
+                <img
+                  src="/assets/logo.png"
+                  alt="HabitBloom"
+                  className="h-28 w-auto drop-shadow-xl group-hover:scale-105 transition-transform duration-300 brightness-[1.08]"
+                />
               </Link>
 
               <p className="text-sm sm:text-base font-medium text-slate-200/90 leading-snug max-w-sm drop-shadow">

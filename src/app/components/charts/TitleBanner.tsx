@@ -113,13 +113,12 @@ export default function Navbar({ user, userLevel = 1, activeTab, onTabChange, on
           onClick={() => handleNavClick('focus')}
           className="flex items-center gap-2 flex-shrink-0 group text-left"
         >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-            <span className="text-base leading-none">🌱</span>
-          </div>
-          <span className="text-base font-extrabold text-slate-900 tracking-tight">
-            Habit<span className="text-emerald-600">Bloom</span>
-            <span className="ml-1.5 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">Beta</span>
-          </span>
+          <img
+            src="/assets/logo.png"
+            alt="HabitBloom"
+            className="h-9 w-auto group-hover:scale-105 transition-transform drop-shadow-sm"
+          />
+          <span className="ml-1.5 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">Beta</span>
         </button>
 
         {/* Center Nav Links (Desktop) */}

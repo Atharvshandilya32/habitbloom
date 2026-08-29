@@ -1145,6 +1145,24 @@ export default function Page() {
             )}
             </ErrorBoundary>
           </div>
+
+          {/* Product Hunt Featured Badge – social proof */}
+          <div className="flex justify-center py-6">
+            <a
+              href="https://www.producthunt.com/products/habitbloom-2?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-habitbloom-2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block max-w-full"
+            >
+              <img
+                alt="HabitBloom - Build the habits that build you. 🌱 | Product Hunt"
+                width="250"
+                height="54"
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1235061&theme=light&t=1787978256952"
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+            </a>
+          </div>
         </main>
 
         {/* Habit Wrapped Retrospective Modal */}

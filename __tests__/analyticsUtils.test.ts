@@ -81,6 +81,30 @@ assert(withLogRecords.highestMonthlyXp === 30, 'highestMonthlyXp is correct for 
 assert(withLogRecords.highestBloomScore === 30, 'highestBloomScore is correct for habits with logs');
 assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calculated correctly for habits with logs');
 
+// 4. Test multi-year historical logs to ensure highest XP logic holds
+global.Date = MockDate as any;
+const multiYearHabits: Habit[] = [
+  { id: 'h3', name: 'Code', emoji: '💻', goal: 30, category: '💻 Work' },
+];
+
+const multiYearLogs: HabitLog = {};
+// Add logs spanning an entire old month (e.g., January 2023)
+for (let day = 1; day <= 31; day++) {
+  multiYearLogs[makeLogKey('h3', 2023, 1, day)] = true;
+}
+
+// Add logs for just 3 days in current month (May 2023)
+multiYearLogs[makeLogKey('h3', 2023, 5, 1)] = true;
+multiYearLogs[makeLogKey('h3', 2023, 5, 2)] = true;
+multiYearLogs[makeLogKey('h3', 2023, 5, 3)] = true;
+
+const multiYearRecords = calculatePersonalRecords(multiYearHabits, multiYearLogs);
+assert(multiYearRecords.mostHabitsCompleted === 34, 'mostHabitsCompleted includes all historical logs');
+assert(multiYearRecords.longestSuccessfulPeriod === 31, 'longestSuccessfulPeriod finds longest contiguous streak in history');
+assert(multiYearRecords.highestMonthlyXp === 310, 'highestMonthlyXp finds the month with highest XP (Jan: 310 vs May: 30)');
+assert(multiYearRecords.highestBloomScore === 310, 'highestBloomScore follows highest month logic');
+assert(multiYearRecords.highestWeeklyXp === 70, 'highestWeeklyXp finds full 7-day week in history (7 * 10 XP)');
+
 // Restore original Date
 global.Date = originalDate;
 

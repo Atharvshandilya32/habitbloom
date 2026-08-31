@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, calculateWeeklyReview } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -83,6 +83,58 @@ assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calcula
 
 // Restore original Date
 global.Date = originalDate;
+
+// --- Tests for calculateWeeklyReview ---
+const refDate = new Date('2023-05-17T12:00:00Z'); // Wednesday
+
+// 1. Test empty state for Weekly Review
+const emptyWeeklyReview = calculateWeeklyReview([], {}, refDate);
+assert(emptyWeeklyReview.totalCompleted === 0, 'weeklyReview totalCompleted is 0 for empty state');
+assert(emptyWeeklyReview.totalPossible === 0, 'weeklyReview totalPossible is 0 for empty state');
+assert(emptyWeeklyReview.completionRate === 0, 'weeklyReview completionRate is 0 for empty state');
+assert(emptyWeeklyReview.prevWeekCompletionRate === 0, 'weeklyReview prevWeekCompletionRate is 0 for empty state');
+assert(emptyWeeklyReview.improvementDelta === 0, 'weeklyReview improvementDelta is 0 for empty state');
+assert(emptyWeeklyReview.bestHabit === null, 'weeklyReview bestHabit is null for empty state');
+assert(emptyWeeklyReview.weakestHabit === null, 'weeklyReview weakestHabit is null for empty state');
+
+// 2. Test weekly review with data
+const weekHabits: Habit[] = [
+  { id: 'wh1', name: 'Meditate', emoji: '🧘', goal: 7, category: '🧠 Mental Health' },
+  { id: 'wh2', name: 'Code', emoji: '💻', goal: 5, category: '💼 Career' },
+];
+
+const weekLogs: HabitLog = {};
+// Current Week (starts Monday May 15)
+// May 15 (Mon): wh1, wh2
+weekLogs[makeLogKey('wh1', 2023, 5, 15)] = true;
+weekLogs[makeLogKey('wh2', 2023, 5, 15)] = true;
+// May 16 (Tue): wh1
+weekLogs[makeLogKey('wh1', 2023, 5, 16)] = true;
+
+// Previous Week (Starts Monday May 8)
+// May 8 (Mon): wh1
+weekLogs[makeLogKey('wh1', 2023, 5, 8)] = true;
+// May 10 (Wed): wh1, wh2
+weekLogs[makeLogKey('wh1', 2023, 5, 10)] = true;
+weekLogs[makeLogKey('wh2', 2023, 5, 10)] = true;
+// May 11 (Thu): wh2
+weekLogs[makeLogKey('wh2', 2023, 5, 11)] = true;
+
+const weeklyReview = calculateWeeklyReview(weekHabits, weekLogs, refDate);
+
+assert(weeklyReview.totalPossible === 14, 'weeklyReview totalPossible is correct (7 days * 2 habits = 14)');
+assert(weeklyReview.totalCompleted === 3, 'weeklyReview totalCompleted is correct (2 on Mon, 1 on Tue)');
+assert(weeklyReview.completionRate === Math.round((3 / 14) * 100), 'weeklyReview completionRate is correct');
+
+const expectedPrevTotalCompleted = 4; // 1 on Mon, 2 on Wed, 1 on Thu
+const expectedPrevCompletionRate = Math.round((expectedPrevTotalCompleted / 14) * 100);
+assert(weeklyReview.prevWeekCompletionRate === expectedPrevCompletionRate, 'weeklyReview prevWeekCompletionRate is correct');
+assert(weeklyReview.improvementDelta === (weeklyReview.completionRate - expectedPrevCompletionRate), 'weeklyReview improvementDelta is correct');
+
+assert(weeklyReview.bestHabit !== null && weeklyReview.bestHabit.name === 'Meditate', 'weeklyReview bestHabit is Meditate (2 completions vs 1)');
+assert(weeklyReview.weakestHabit !== null && weeklyReview.weakestHabit.name === 'Code', 'weeklyReview weakestHabit is Code (1 completion vs 2)');
+assert(weeklyReview.mostProductiveDay === 'Monday', 'weeklyReview mostProductiveDay is Monday (2 completions)');
+assert(weeklyReview.leastProductiveDay === 'Wednesday' || weeklyReview.leastProductiveDay === 'Thursday' || weeklyReview.leastProductiveDay === 'Friday' || weeklyReview.leastProductiveDay === 'Saturday' || weeklyReview.leastProductiveDay === 'Sunday', 'weeklyReview leastProductiveDay is a day with 0 completions');
 
 console.log(`\n📊 Analytics Utils Test Results: ${passed} passed, ${failed} failed.`);
 if (failed > 0) process.exit(1);

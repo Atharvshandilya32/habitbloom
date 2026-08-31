@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, calculateTrend30Days } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -26,6 +26,11 @@ assert(emptyRecords.highestMonthlyXp === 0, 'highestMonthlyXp is 0 for empty hab
 assert(emptyRecords.highestBloomScore === 0, 'highestBloomScore is 0 for empty habits/logs');
 assert(emptyRecords.bestHabitConsistency === 0, 'bestHabitConsistency is 0 for empty habits/logs');
 
+// 1b. Test calculateTrend30Days with empty habits and logs
+const emptyTrend30 = calculateTrend30Days([], {});
+assert(emptyTrend30.length === 30, 'calculateTrend30Days returns 30 days for empty input');
+assert(emptyTrend30.every(d => d.completed === 0 && d.possible === 0 && d.rate === 0), 'calculateTrend30Days correctly returns 0 for completed, possible, and rate with empty input');
+
 // 2. Test habits with no logs
 const sampleHabits: Habit[] = [
   { id: 'h1', name: 'Morning Run', emoji: '🏃', goal: 20, category: '🏃 Fitness' },
@@ -39,6 +44,11 @@ assert(noLogRecords.highestWeeklyXp === 0, 'highestWeeklyXp is 0 for habits with
 assert(noLogRecords.highestMonthlyXp === 0, 'highestMonthlyXp is 0 for habits with no logs');
 assert(noLogRecords.highestBloomScore === 0, 'highestBloomScore is 0 for habits with no logs');
 assert(noLogRecords.bestHabitConsistency === 0, 'bestHabitConsistency is 0 for habits with no logs');
+
+// 2b. Test calculateTrend30Days with habits but no logs
+const noLogTrend30 = calculateTrend30Days(sampleHabits, {});
+assert(noLogTrend30.length === 30, 'calculateTrend30Days returns 30 days for habits with no logs');
+assert(noLogTrend30.every(d => d.completed === 0 && d.possible === sampleHabits.length && d.rate === 0), 'calculateTrend30Days correctly returns 0 for completed/rate and correct possible count with no logs');
 
 // 3. Test habits with logs (using deterministic mocked date)
 const originalDate = global.Date;
@@ -80,6 +90,28 @@ assert(withLogRecords.highestWeeklyXp === 20, 'highestWeeklyXp is correct for ha
 assert(withLogRecords.highestMonthlyXp === 30, 'highestMonthlyXp is correct for habits with logs');
 assert(withLogRecords.highestBloomScore === 30, 'highestBloomScore is correct for habits with logs');
 assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calculated correctly for habits with logs');
+
+// 3b. Test calculateTrend30Days with valid logs
+const trend30WithLogs = calculateTrend30Days(sampleHabits, sampleLogs);
+assert(trend30WithLogs.length === 30, 'calculateTrend30Days returns 30 days for habits with logs');
+
+// Check the last item (today, index 29)
+const todayData = trend30WithLogs[29];
+assert(todayData.completed === 2, 'calculateTrend30Days correctly calculates completed for today');
+assert(todayData.possible === 2, 'calculateTrend30Days correctly calculates possible for today');
+assert(todayData.rate === 100, 'calculateTrend30Days correctly calculates rate for today');
+
+// Check the second to last item (yesterday, index 28)
+const yesterdayData = trend30WithLogs[28];
+assert(yesterdayData.completed === 1, 'calculateTrend30Days correctly calculates completed for yesterday');
+assert(yesterdayData.possible === 2, 'calculateTrend30Days correctly calculates possible for yesterday');
+assert(yesterdayData.rate === 50, 'calculateTrend30Days correctly calculates rate for yesterday');
+
+// Check an earlier day (e.g., index 0)
+const olderData = trend30WithLogs[0];
+assert(olderData.completed === 0, 'calculateTrend30Days correctly calculates completed for older days');
+assert(olderData.possible === 2, 'calculateTrend30Days correctly calculates possible for older days');
+assert(olderData.rate === 0, 'calculateTrend30Days correctly calculates rate for older days');
 
 // Restore original Date
 global.Date = originalDate;

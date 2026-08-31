@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, calculateTrend7Days } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -80,6 +80,37 @@ assert(withLogRecords.highestWeeklyXp === 20, 'highestWeeklyXp is correct for ha
 assert(withLogRecords.highestMonthlyXp === 30, 'highestMonthlyXp is correct for habits with logs');
 assert(withLogRecords.highestBloomScore === 30, 'highestBloomScore is correct for habits with logs');
 assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calculated correctly for habits with logs');
+
+// 4. Test calculateTrend7Days with empty habits and logs
+const emptyTrend = calculateTrend7Days([], {});
+assert(emptyTrend.length === 7, 'calculateTrend7Days returns 7 days for empty habits/logs');
+assert(emptyTrend.every(day => day.completed === 0 && day.possible === 0 && day.rate === 0), 'calculateTrend7Days calculates 0s for empty habits/logs');
+
+// 5. Test calculateTrend7Days with habits but no logs
+const noLogTrend = calculateTrend7Days(sampleHabits, {});
+assert(noLogTrend.length === 7, 'calculateTrend7Days returns 7 days for habits with no logs');
+assert(noLogTrend.every(day => day.completed === 0 && day.possible === 2 && day.rate === 0), 'calculateTrend7Days calculates 0 completed/rate and correct possible for habits with no logs');
+
+// 6. Test calculateTrend7Days with habits and logs
+const withLogTrend = calculateTrend7Days(sampleHabits, sampleLogs);
+assert(withLogTrend.length === 7, 'calculateTrend7Days returns 7 days for habits with logs');
+// The last item in the array is "today"
+const trendToday = withLogTrend[6];
+assert(trendToday.completed === 2, 'calculateTrend7Days calculates correct completed for today');
+assert(trendToday.possible === 2, 'calculateTrend7Days calculates correct possible for today');
+assert(trendToday.rate === 100, 'calculateTrend7Days calculates correct rate for today');
+
+// The second to last item is "yesterday"
+const trendYesterday = withLogTrend[5];
+assert(trendYesterday.completed === 1, 'calculateTrend7Days calculates correct completed for yesterday');
+assert(trendYesterday.possible === 2, 'calculateTrend7Days calculates correct possible for yesterday');
+assert(trendYesterday.rate === 50, 'calculateTrend7Days calculates correct rate for yesterday');
+
+// The rest of the days should have 0 completed
+const trendTwoDaysAgo = withLogTrend[4];
+assert(trendTwoDaysAgo.completed === 0, 'calculateTrend7Days calculates correct completed for two days ago');
+assert(trendTwoDaysAgo.possible === 2, 'calculateTrend7Days calculates correct possible for two days ago');
+assert(trendTwoDaysAgo.rate === 0, 'calculateTrend7Days calculates correct rate for two days ago');
 
 // Restore original Date
 global.Date = originalDate;

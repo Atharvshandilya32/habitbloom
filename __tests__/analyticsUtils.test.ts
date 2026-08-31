@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, calculateTotalHabitsCompleted } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -83,6 +83,19 @@ assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calcula
 
 // Restore original Date
 global.Date = originalDate;
+
+// 4. Test calculateTotalHabitsCompleted
+const emptyLogsForTotal = {};
+assert(calculateTotalHabitsCompleted(emptyLogsForTotal) === 0, 'calculateTotalHabitsCompleted returns 0 for empty logs');
+
+const falsyLogs = { 'h1_2023_5_15': false, 'h2_2023_5_15': false };
+assert(calculateTotalHabitsCompleted(falsyLogs) === 0, 'calculateTotalHabitsCompleted returns 0 for falsy logs');
+
+const mixedLogs = { 'h1_2023_5_15': true, 'h2_2023_5_15': false, 'h3_2023_5_15': true };
+assert(calculateTotalHabitsCompleted(mixedLogs) === 2, 'calculateTotalHabitsCompleted returns 2 for mixed logs');
+
+const allTrueLogs = { 'h1_2023_5_15': true, 'h2_2023_5_15': true };
+assert(calculateTotalHabitsCompleted(allTrueLogs) === 2, 'calculateTotalHabitsCompleted returns 2 for all true logs');
 
 console.log(`\n📊 Analytics Utils Test Results: ${passed} passed, ${failed} failed.`);
 if (failed > 0) process.exit(1);

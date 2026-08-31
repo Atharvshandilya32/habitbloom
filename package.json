@@ -11,7 +11,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
     "serve": "next start",
     "type-check": "tsc --noEmit",
-    "test": "npx tsx __tests__/domain.test.ts && npx tsx __tests__/analyticsUtils.test.ts && npx vitest run __tests__/login.test.tsx"
+    "test": "npx tsx __tests__/domain.test.ts && npx tsx __tests__/analyticsUtils.test.ts && npx vitest run __tests__/login.test.tsx && npx tsx __tests__/spaceUtils.test.ts"
   },
   "dependencies": {
     "@dhiwise/component-tagger": "^1.0.15",

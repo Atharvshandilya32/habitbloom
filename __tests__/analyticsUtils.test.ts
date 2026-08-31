@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, calculateActiveDaysCount } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -83,6 +83,52 @@ assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calcula
 
 // Restore original Date
 global.Date = originalDate;
+
+
+
+// 4. Test calculateActiveDaysCount
+
+console.log('\n🧪 Testing calculateActiveDaysCount...');
+
+// Test 4.1: Empty logs should return 0
+const activeDaysEmpty = calculateActiveDaysCount({});
+assert(activeDaysEmpty === 0, 'calculateActiveDaysCount returns 0 for empty logs');
+
+// Test 4.2: Logs with multiple habits on the same day should return 1
+const sameDayLogs: HabitLog = {
+  'h1_2023_5_15': true,
+  'h2_2023_5_15': true,
+};
+const activeDaysSameDay = calculateActiveDaysCount(sameDayLogs);
+assert(activeDaysSameDay === 1, 'calculateActiveDaysCount returns 1 for multiple habits on the same day');
+
+// Test 4.3: Logs with one habit on multiple days should return the number of unique days
+const multipleDaysLogs: HabitLog = {
+  'h1_2023_5_15': true,
+  'h1_2023_5_16': true,
+  'h1_2023_5_17': true,
+};
+const activeDaysMultipleDays = calculateActiveDaysCount(multipleDaysLogs);
+assert(activeDaysMultipleDays === 3, 'calculateActiveDaysCount returns correct count for multiple days');
+
+// Test 4.4: Logs with false values (not completed) should not be counted
+const falseLogs: HabitLog = {
+  'h1_2023_5_15': true,
+  'h1_2023_5_16': false,
+  'h2_2023_5_16': false,
+};
+const activeDaysFalseLogs = calculateActiveDaysCount(falseLogs);
+assert(activeDaysFalseLogs === 1, 'calculateActiveDaysCount ignores false logs');
+
+// Test 4.5: Invalid key formats should be handled gracefully
+const invalidKeyLogs: HabitLog = {
+  'h1_2023_5_15': true,
+  'invalid_key': true, // missing parts
+  'h2_2023': true, // missing month/day
+};
+const activeDaysInvalidKey = calculateActiveDaysCount(invalidKeyLogs);
+assert(activeDaysInvalidKey === 1, 'calculateActiveDaysCount ignores invalid key formats');
+
 
 console.log(`\n📊 Analytics Utils Test Results: ${passed} passed, ${failed} failed.`);
 if (failed > 0) process.exit(1);

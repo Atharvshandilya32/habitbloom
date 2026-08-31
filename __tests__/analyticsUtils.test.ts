@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, getHabitLongestStreak } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -81,7 +81,53 @@ assert(withLogRecords.highestMonthlyXp === 30, 'highestMonthlyXp is correct for 
 assert(withLogRecords.highestBloomScore === 30, 'highestBloomScore is correct for habits with logs');
 assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calculated correctly for habits with logs');
 
+
+
+// 4. Test getHabitLongestStreak
+const streakHabit: Habit = { id: 'streak1', name: 'Streak Test', emoji: '🔥', goal: 30, category: 'Test' };
+
+// Test 4.1: Empty logs
+assert(getHabitLongestStreak(streakHabit, {}) === 0, 'longest streak is 0 for empty logs');
+
+// Test 4.2: Single logged day
+const singleLog: HabitLog = {};
+singleLog[makeLogKey('streak1', today.getFullYear(), today.getMonth() + 1, today.getDate())] = true;
+assert(getHabitLongestStreak(streakHabit, singleLog) === 1, 'longest streak is 1 for single log');
+
+// Test 4.3: Multiple consecutive days logged
+const multiLog: HabitLog = {};
+for (let i = 0; i < 5; i++) {
+  const testD1 = new Date(today);
+  testD1.setDate(today.getDate() - i);
+  multiLog[makeLogKey('streak1', testD1.getFullYear(), testD1.getMonth() + 1, testD1.getDate())] = true;
+}
+assert(getHabitLongestStreak(streakHabit, multiLog) === 5, 'longest streak is calculated correctly for multiple consecutive days');
+
+// Test 4.4: Broken streak
+const brokenLog: HabitLog = {};
+// Add 2 consecutive days
+let testD2 = new Date(today);
+brokenLog[makeLogKey('streak1', testD2.getFullYear(), testD2.getMonth() + 1, testD2.getDate())] = true;
+testD2.setDate(today.getDate() - 1);
+brokenLog[makeLogKey('streak1', testD2.getFullYear(), testD2.getMonth() + 1, testD2.getDate())] = true;
+
+// Skip 2 days, add 4 consecutive days
+testD2.setDate(today.getDate() - 3); // so this is today - 4
+for (let i = 0; i < 4; i++) {
+  const cd = new Date(testD2);
+  cd.setDate(testD2.getDate() - i);
+  brokenLog[makeLogKey('streak1', cd.getFullYear(), cd.getMonth() + 1, cd.getDate())] = true;
+}
+
+// Skip 1 day, add 1 day
+testD2.setDate(testD2.getDate() - 5);
+brokenLog[makeLogKey('streak1', testD2.getFullYear(), testD2.getMonth() + 1, testD2.getDate())] = true;
+
+assert(getHabitLongestStreak(streakHabit, brokenLog) === 4, 'longest streak is correct when there are broken intervals');
+
+
 // Restore original Date
+
 global.Date = originalDate;
 
 console.log(`\n📊 Analytics Utils Test Results: ${passed} passed, ${failed} failed.`);

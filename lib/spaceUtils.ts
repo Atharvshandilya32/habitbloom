@@ -1,11 +1,19 @@
-import { Space, SpaceInvite, SpaceMember, SpaceType } from './spaceTypes';
+import { Space, SpaceInvite, SpaceMember, SpaceType } from "./spaceTypes";
 
 export function generateInviteCode(): string {
-  // Generates a random alphanumeric code of length 8
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  // Generates a random alphanumeric code of length 8 using a CSPRNG
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  const randomValues = new Uint8Array(1);
+
+  while (result.length < 8) {
+    crypto.getRandomValues(randomValues);
+    const val = randomValues[0];
+    // 252 is the largest multiple of 36 (chars.length) less than 256.
+    // This avoids modulo bias.
+    if (val < 252) {
+      result += chars[val % chars.length];
+    }
   }
   return result;
 }
@@ -14,9 +22,9 @@ export function createNewSpace(
   name: string,
   description: string,
   type: SpaceType,
-  userId: string
+  userId: string,
 ): { space: Space; member: SpaceMember } {
-  const spaceId = `space-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const spaceId = `space-${Date.now()}-${crypto.randomUUID()}`;
   const now = new Date().toISOString();
 
   const space: Space = {
@@ -31,15 +39,18 @@ export function createNewSpace(
   const member: SpaceMember = {
     spaceId,
     userId,
-    roleId: '', // Will be assigned during migration or backend trigger
-    role: 'admin',
+    roleId: "", // Will be assigned during migration or backend trigger
+    role: "admin",
     joinedAt: now,
   };
 
   return { space, member };
 }
 
-export function generateSpaceInvite(spaceId: string, userId: string): SpaceInvite {
+export function generateSpaceInvite(
+  spaceId: string,
+  userId: string,
+): SpaceInvite {
   const code = generateInviteCode();
   return {
     id: `invite-${Date.now()}`,

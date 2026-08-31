@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, calculateHabitConsistency } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -80,6 +80,50 @@ assert(withLogRecords.highestWeeklyXp === 20, 'highestWeeklyXp is correct for ha
 assert(withLogRecords.highestMonthlyXp === 30, 'highestMonthlyXp is correct for habits with logs');
 assert(withLogRecords.highestBloomScore === 30, 'highestBloomScore is correct for habits with logs');
 assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calculated correctly for habits with logs');
+
+// 4. Test calculateHabitConsistency
+const testHabitDaily: Habit = { id: 'h_daily', name: 'Daily Habit', emoji: '🌞', goal: 31, category: 'General' };
+const testHabitMonthly: Habit = { id: 'h_monthly', name: 'Monthly Habit', emoji: '📅', goal: 15, category: 'General' };
+
+// 4.1 Empty logs
+assert(calculateHabitConsistency(testHabitDaily, {}) === 0, 'calculateHabitConsistency is 0 when no logs exist');
+
+// 4.2 Partial completion (50%)
+const partialLogs: HabitLog = {};
+for (let i = 0; i < 7; i++) {
+  const d = new Date(today);
+  d.setDate(today.getDate() - i);
+  partialLogs[makeLogKey('h_daily', d.getFullYear(), d.getMonth() + 1, d.getDate())] = true;
+}
+assert(calculateHabitConsistency(testHabitDaily, partialLogs, 14) === 50, 'calculateHabitConsistency is 50 when half the days are completed');
+
+// 4.3 Full completion (100%)
+const fullLogs: HabitLog = {};
+for (let i = 0; i < 14; i++) {
+  const d = new Date(today);
+  d.setDate(today.getDate() - i);
+  fullLogs[makeLogKey('h_daily', d.getFullYear(), d.getMonth() + 1, d.getDate())] = true;
+}
+assert(calculateHabitConsistency(testHabitDaily, fullLogs, 14) === 100, 'calculateHabitConsistency is 100 when all days are completed');
+
+// 4.4 Habit with goal < 31 (scaling)
+// goal = 15, days = 14. expectedOpportunities = Math.round(14 * (15/31)) = Math.round(6.77) = 7
+const monthlyLogs: HabitLog = {};
+for (let i = 0; i < 7; i++) {
+  const d = new Date(today);
+  d.setDate(today.getDate() - i);
+  monthlyLogs[makeLogKey('h_monthly', d.getFullYear(), d.getMonth() + 1, d.getDate())] = true;
+}
+assert(calculateHabitConsistency(testHabitMonthly, monthlyLogs, 14) === 100, 'calculateHabitConsistency handles habit.goal scaling correctly (achieves 100%)');
+
+const monthlyPartialLogs: HabitLog = {};
+for (let i = 0; i < 4; i++) {
+  const d = new Date(today);
+  d.setDate(today.getDate() - i);
+  monthlyPartialLogs[makeLogKey('h_monthly', d.getFullYear(), d.getMonth() + 1, d.getDate())] = true;
+}
+// 4 logs / 7 expected = 57%
+assert(calculateHabitConsistency(testHabitMonthly, monthlyPartialLogs, 14) === 57, 'calculateHabitConsistency scales correctly for partial completion with habit.goal');
 
 // Restore original Date
 global.Date = originalDate;

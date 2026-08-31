@@ -1,13 +1,34 @@
-import { ref, get, runTransaction } from 'firebase/database';
-import { database } from './firebase';
+import { ref, get, runTransaction } from "firebase/database";
+import { database } from "./firebase";
 
 /**
  * Generates a random 10-digit number formatted as a string (1000000000 to 9999999999)
+ * Uses crypto.getRandomValues for secure randomness.
  */
 export function generateRaw10DigitId(): string {
-  const min = 1000000000;
-  const max = 9999999999;
-  return Math.floor(min + Math.random() * (max - min + 1)).toString();
+  let result = "";
+  const randomBytes = new Uint8Array(16);
+
+  while (result.length < 10) {
+    globalThis.crypto.getRandomValues(randomBytes);
+    for (let i = 0; i < randomBytes.length; i++) {
+      const byte = randomBytes[i];
+      // Only use bytes < 250 to ensure uniform distribution (250 % 10 == 0)
+      if (byte < 250) {
+        const digit = byte % 10;
+        // The first digit cannot be 0
+        if (result.length === 0 && digit === 0) {
+          continue;
+        }
+        result += digit.toString();
+        if (result.length === 10) {
+          break;
+        }
+      }
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -22,7 +43,7 @@ export async function generateUniqueHbId(userId: string): Promise<string> {
   while (attempts < 10) {
     const candidateId = generateRaw10DigitId();
     const indexRef = ref(database, `hbIds/${candidateId}`);
-    
+
     try {
       const result = await runTransaction(indexRef, (currentData) => {
         if (currentData === null) {
@@ -48,7 +69,7 @@ export async function generateUniqueHbId(userId: string): Promise<string> {
  * Formats a 10-digit HabitBloom ID for display (e.g. 1048-3927-56)
  */
 export function formatHbId(hbId?: string | null): string {
-  if (!hbId || hbId.length !== 10) return hbId || 'HB-PENDING';
+  if (!hbId || hbId.length !== 10) return hbId || "HB-PENDING";
   return `${hbId.slice(0, 4)}-${hbId.slice(4, 8)}-${hbId.slice(8)}`;
 }
 
@@ -57,7 +78,7 @@ export function formatHbId(hbId?: string | null): string {
  */
 export async function lookupUserByHbId(hbId: string): Promise<string | null> {
   if (!database || !hbId) return null;
-  const rawId = hbId.replace(/-/g, '').trim();
+  const rawId = hbId.replace(/-/g, "").trim();
   try {
     const snap = await get(ref(database, `hbIds/${rawId}`));
     if (snap.exists()) {

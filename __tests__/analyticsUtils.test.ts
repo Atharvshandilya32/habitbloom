@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, calculateOverallConsistencyScore } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -80,6 +80,50 @@ assert(withLogRecords.highestWeeklyXp === 20, 'highestWeeklyXp is correct for ha
 assert(withLogRecords.highestMonthlyXp === 30, 'highestMonthlyXp is correct for habits with logs');
 assert(withLogRecords.highestBloomScore === 30, 'highestBloomScore is correct for habits with logs');
 assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calculated correctly for habits with logs');
+
+// Restore original Date
+global.Date = originalDate;
+
+
+// 4. Test calculateOverallConsistencyScore
+assert(calculateOverallConsistencyScore([], {}) === 0, 'Overall consistency score is 0 for empty habits');
+assert(calculateOverallConsistencyScore(sampleHabits, {}) === 0, 'Overall consistency score is 0 for habits with no logs');
+
+const consistencyLogs: HabitLog = {};
+global.Date = MockDate as any;
+const todayDate = new Date();
+
+// Create 15 days of logs for h1 (50% completion)
+for (let i = 0; i < 15; i++) {
+  const d = new Date(todayDate);
+  d.setDate(todayDate.getDate() - i);
+  consistencyLogs[makeLogKey('h1', d.getFullYear(), d.getMonth() + 1, d.getDate())] = true;
+}
+
+// 15 completions out of 60 possible (2 habits * 30 days) -> 25%
+let score = calculateOverallConsistencyScore(sampleHabits, consistencyLogs);
+assert(score === 25, `Overall consistency score correctly calculates partial completion (expected 25, got ${score})`);
+
+// Create full 30 days of logs for both habits (100% completion)
+const fullConsistencyLogs: HabitLog = {};
+for (let i = 0; i < 30; i++) {
+  const d = new Date(todayDate);
+  d.setDate(todayDate.getDate() - i);
+  fullConsistencyLogs[makeLogKey('h1', d.getFullYear(), d.getMonth() + 1, d.getDate())] = true;
+  fullConsistencyLogs[makeLogKey('h2', d.getFullYear(), d.getMonth() + 1, d.getDate())] = true;
+}
+
+score = calculateOverallConsistencyScore(sampleHabits, fullConsistencyLogs);
+assert(score === 100, `Overall consistency score is 100 for full completion (got ${score})`);
+
+// Create logs outside the 30-day window to ensure they are ignored
+const outsideWindowLogs: HabitLog = {};
+const oldDate = new Date(todayDate);
+oldDate.setDate(todayDate.getDate() - 35);
+outsideWindowLogs[makeLogKey('h1', oldDate.getFullYear(), oldDate.getMonth() + 1, oldDate.getDate())] = true;
+
+score = calculateOverallConsistencyScore(sampleHabits, outsideWindowLogs);
+assert(score === 0, `Overall consistency score ignores logs outside 30-day window (got ${score})`);
 
 // Restore original Date
 global.Date = originalDate;

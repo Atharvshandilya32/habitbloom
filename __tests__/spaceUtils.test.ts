@@ -28,7 +28,7 @@ function runTests() {
   });
 
   runTest("createNewSpace generates correct format ID", () => {
-    const { space, member } = createNewSpace("Test", "Desc", "personal", "user123");
+    const { space, member } = createNewSpace("Test", "Desc", "other", "user123");
     assert.match(space.id, /^space-\d+-[a-f0-9\-]{36}$/);
     assert.strictEqual(member.spaceId, space.id);
   });

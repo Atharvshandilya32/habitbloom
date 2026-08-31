@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, calculateHabitHealth } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -80,6 +80,60 @@ assert(withLogRecords.highestWeeklyXp === 20, 'highestWeeklyXp is correct for ha
 assert(withLogRecords.highestMonthlyXp === 30, 'highestMonthlyXp is correct for habits with logs');
 assert(withLogRecords.highestBloomScore === 30, 'highestBloomScore is correct for habits with logs');
 assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calculated correctly for habits with logs');
+
+// 4. Test calculateHabitHealth
+console.log('\n🧪 Testing calculateHabitHealth...');
+
+// 4.1 Test NEW status
+// Important: habit IDs cannot have underscores because of how split('_') works in calculateHabitHealth
+const hNew: Habit = { id: 'hnew', name: 'New Habit', emoji: '🌱', goal: 31, category: '🎯 Personal Growth' };
+const logsNew: HabitLog = {};
+logsNew[makeLogKey('hnew', y, m, d)] = true;
+const newHealth = calculateHabitHealth(hNew, logsNew);
+assert(newHealth.status === '🌱 NEW', 'status is NEW for habit < 7 days old with < 7 completions');
+assert(newHealth.rate === 0, 'rate is 0 for NEW habit');
+
+// 4.2 Test THRIVING status
+const hThrive: Habit = { id: 'hthrive', name: 'Thriving Habit', emoji: '🚀', goal: 31, category: '🏃 Fitness' };
+const logsThrive: HabitLog = {};
+logsThrive[makeLogKey('hthrive', 2023, 5, 1)] = true; // age >= 14 days
+for (let i = 0; i < 14; i++) {
+  const dVal = new Date(today);
+  dVal.setDate(dVal.getDate() - i);
+  logsThrive[makeLogKey('hthrive', dVal.getFullYear(), dVal.getMonth() + 1, dVal.getDate())] = true;
+}
+const thriveHealth = calculateHabitHealth(hThrive, logsThrive);
+assert(thriveHealth.status === '🌱 THRIVING', 'status is THRIVING for rate >= 80');
+assert(thriveHealth.rate === 100, 'rate is 100 for perfect 14 days');
+assert(thriveHealth.description.includes('Completed 14 of 14'), 'description mentions 14 of 14 sessions');
+
+// 4.3 Test STABLE status
+const hStable: Habit = { id: 'hstable', name: 'Stable Habit', emoji: '🌿', goal: 31, category: '📚 Learning' };
+const logsStable: HabitLog = {};
+logsStable[makeLogKey('hstable', 2023, 5, 1)] = true; // age >= 14 days
+for (let i = 0; i < 9; i++) {
+  const dVal = new Date(today);
+  dVal.setDate(dVal.getDate() - i);
+  logsStable[makeLogKey('hstable', dVal.getFullYear(), dVal.getMonth() + 1, dVal.getDate())] = true;
+}
+const stableHealth = calculateHabitHealth(hStable, logsStable);
+assert(stableHealth.status === '🌿 STABLE', 'status is STABLE for rate >= 50 and < 80');
+assert(stableHealth.rate === Math.round((9 / 14) * 100), 'rate is calculated correctly for 9 completions');
+assert(stableHealth.description.includes('Completed 9 of 14'), 'description mentions 9 of 14 sessions');
+
+// 4.4 Test NEEDS ATTENTION status
+const hNeedsAttn: Habit = { id: 'hattn', name: 'Needs Attention Habit', emoji: '🍂', goal: 31, category: '💰 Finance' };
+const logsAttn: HabitLog = {};
+logsAttn[makeLogKey('hattn', 2023, 5, 1)] = true; // age >= 14 days
+for (let i = 0; i < 4; i++) {
+  const dVal = new Date(today);
+  dVal.setDate(dVal.getDate() - i);
+  logsAttn[makeLogKey('hattn', dVal.getFullYear(), dVal.getMonth() + 1, dVal.getDate())] = true;
+}
+const attnHealth = calculateHabitHealth(hNeedsAttn, logsAttn);
+assert(attnHealth.status === '🍂 NEEDS ATTENTION', 'status is NEEDS ATTENTION for rate < 50');
+assert(attnHealth.rate === Math.round((4 / 14) * 100), 'rate is calculated correctly for 4 completions');
+assert(attnHealth.description.includes('Completed 4 of 14'), 'description mentions 4 of 14 sessions');
 
 // Restore original Date
 global.Date = originalDate;

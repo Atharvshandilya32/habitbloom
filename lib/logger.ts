@@ -35,9 +35,4 @@ function _log(level: LogLevel, messageOrError: Error | string, context?: LogCont
     }
   }
 
-  // In production, this would send to an external service
-  // Example: 
-  // if (process.env.NODE_ENV === 'production') {
-  //   Sentry.captureException(messageOrError, { extra: context });
-  // }
 }

@@ -51,11 +51,8 @@ export default function UniversePortalModal({
   const nextTier = currentTierIndex < UNIVERSE_TIERS.length - 1 ? UNIVERSE_TIERS[currentTierIndex + 1] : null;
 
   const getXpRequiredForLevel = (level: number) => {
-    let xp = 0;
-    for (let i = 1; i < level; i++) {
-      xp += i * (i + 1) * 50;
-    }
-    return xp;
+    if (level <= 1) return 0;
+    return (50 * (level - 1) * level * (level + 1)) / 3;
   };
 
   const nextTierXp = nextTier ? getXpRequiredForLevel(nextTier.level) : currentXp;

@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, calculateContributionHeatmap } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -82,6 +82,68 @@ assert(withLogRecords.highestBloomScore === 30, 'highestBloomScore is correct fo
 assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calculated correctly for habits with logs');
 
 // Restore original Date
+global.Date = originalDate;
+
+// 4. Test calculateContributionHeatmap
+const emptyHeatmap = calculateContributionHeatmap([], {});
+assert(emptyHeatmap.length === 365, 'calculateContributionHeatmap returns 365 days by default');
+assert(emptyHeatmap.every(c => c.count === 0 && c.level === 0), 'empty heatmap has 0 count and level 0 for all cells');
+
+const customDaysHeatmap = calculateContributionHeatmap([], {}, 7);
+assert(customDaysHeatmap.length === 7, 'calculateContributionHeatmap respects custom days parameter');
+
+global.Date = MockDate as any;
+const heatmapHabits: Habit[] = [
+  { id: 'h1', name: 'H1', emoji: '1', goal: 30, category: 'A' },
+  { id: 'h2', name: 'H2', emoji: '2', goal: 30, category: 'A' },
+  { id: 'h3', name: 'H3', emoji: '3', goal: 30, category: 'A' },
+  { id: 'h4', name: 'H4', emoji: '4', goal: 30, category: 'A' },
+  { id: 'h5', name: 'H5', emoji: '5', goal: 30, category: 'A' },
+];
+
+const heatmapLogs: HabitLog = {};
+// Today: 5 completions (ratio 1.0, count 5) -> level 4
+heatmapLogs[makeLogKey('h1', y, m, d)] = true;
+heatmapLogs[makeLogKey('h2', y, m, d)] = true;
+heatmapLogs[makeLogKey('h3', y, m, d)] = true;
+heatmapLogs[makeLogKey('h4', y, m, d)] = true;
+heatmapLogs[makeLogKey('h5', y, m, d)] = true;
+
+// Yesterday: 3 completions (ratio 0.6) -> level 3
+heatmapLogs[makeLogKey('h1', yesterday.getFullYear(), yesterday.getMonth() + 1, yesterday.getDate())] = true;
+heatmapLogs[makeLogKey('h2', yesterday.getFullYear(), yesterday.getMonth() + 1, yesterday.getDate())] = true;
+heatmapLogs[makeLogKey('h3', yesterday.getFullYear(), yesterday.getMonth() + 1, yesterday.getDate())] = true;
+
+// 2 days ago: 2 completions (ratio 0.4) -> level 2
+const twoDaysAgo = new Date(today);
+twoDaysAgo.setDate(today.getDate() - 2);
+heatmapLogs[makeLogKey('h1', twoDaysAgo.getFullYear(), twoDaysAgo.getMonth() + 1, twoDaysAgo.getDate())] = true;
+heatmapLogs[makeLogKey('h2', twoDaysAgo.getFullYear(), twoDaysAgo.getMonth() + 1, twoDaysAgo.getDate())] = true;
+
+// 3 days ago: 1 completion (ratio 0.2) -> level 1
+const threeDaysAgo = new Date(today);
+threeDaysAgo.setDate(today.getDate() - 3);
+heatmapLogs[makeLogKey('h1', threeDaysAgo.getFullYear(), threeDaysAgo.getMonth() + 1, threeDaysAgo.getDate())] = true;
+
+const testHeatmap = calculateContributionHeatmap(heatmapHabits, heatmapLogs, 7);
+assert(testHeatmap.length === 7, 'calculateContributionHeatmap with logs returns correct number of days');
+
+// The array is filled from oldest to newest, so today is the last element
+const todayCell = testHeatmap[6];
+assert(todayCell.count === 5 && todayCell.level === 4, 'Level 4 calculated correctly (5 completions)');
+
+const yesterdayCell = testHeatmap[5];
+assert(yesterdayCell.count === 3 && yesterdayCell.level === 3, 'Level 3 calculated correctly (3 completions)');
+
+const twoDaysAgoCell = testHeatmap[4];
+assert(twoDaysAgoCell.count === 2 && twoDaysAgoCell.level === 2, 'Level 2 calculated correctly (2 completions)');
+
+const threeDaysAgoCell = testHeatmap[3];
+assert(threeDaysAgoCell.count === 1 && threeDaysAgoCell.level === 1, 'Level 1 calculated correctly (1 completion)');
+
+const fourDaysAgoCell = testHeatmap[2];
+assert(fourDaysAgoCell.count === 0 && fourDaysAgoCell.level === 0, 'Level 0 calculated correctly (0 completions)');
+
 global.Date = originalDate;
 
 console.log(`\n📊 Analytics Utils Test Results: ${passed} passed, ${failed} failed.`);

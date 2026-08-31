@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, calculateLongestStreakOverall } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -83,6 +83,57 @@ assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calcula
 
 // Restore original Date
 global.Date = originalDate;
+
+// --- Tests for calculateLongestStreakOverall ---
+console.log('\n🧪 Testing calculateLongestStreakOverall...');
+
+assert(calculateLongestStreakOverall([], {}) === 0, 'Returns 0 for empty habits array');
+assert(calculateLongestStreakOverall(sampleHabits, {}) === 0, 'Returns 0 for habits with no logs');
+
+// Mock date again for streak testing
+global.Date = MockDate as any;
+const streakHabits: Habit[] = [
+  { id: 'sh1', name: 'Habit 1', emoji: '1️⃣', goal: 30, category: 'General' },
+  { id: 'sh2', name: 'Habit 2', emoji: '2️⃣', goal: 30, category: 'General' },
+  { id: 'sh3', name: 'Habit 3', emoji: '3️⃣', goal: 30, category: 'General' },
+];
+
+const streakLogs: HabitLog = {};
+// sh1 has a 1-day streak (today)
+streakLogs[makeLogKey('sh1', y, m, d)] = true;
+
+// sh2 has a 3-day streak (today, yesterday, 2 days ago)
+streakLogs[makeLogKey('sh2', y, m, d)] = true;
+const dMinus1 = new Date(today);
+dMinus1.setDate(today.getDate() - 1);
+streakLogs[makeLogKey('sh2', dMinus1.getFullYear(), dMinus1.getMonth() + 1, dMinus1.getDate())] = true;
+
+const dMinus2 = new Date(today);
+dMinus2.setDate(today.getDate() - 2);
+streakLogs[makeLogKey('sh2', dMinus2.getFullYear(), dMinus2.getMonth() + 1, dMinus2.getDate())] = true;
+
+// sh3 has a 2-day streak (yesterday, 2 days ago) - missing today so streak is 0?
+// Wait, `getHabitLongestStreak` finds the *maximum* streak over the past 365 days.
+// Oh, getHabitLongestStreak checks the max streak over 365 days, it doesn't need to be current.
+// Let's create a 4-day streak for sh3 somewhere in the past.
+const dPast1 = new Date(today);
+dPast1.setDate(today.getDate() - 10);
+const dPast2 = new Date(today);
+dPast2.setDate(today.getDate() - 11);
+const dPast3 = new Date(today);
+dPast3.setDate(today.getDate() - 12);
+const dPast4 = new Date(today);
+dPast4.setDate(today.getDate() - 13);
+streakLogs[makeLogKey('sh3', dPast1.getFullYear(), dPast1.getMonth() + 1, dPast1.getDate())] = true;
+streakLogs[makeLogKey('sh3', dPast2.getFullYear(), dPast2.getMonth() + 1, dPast2.getDate())] = true;
+streakLogs[makeLogKey('sh3', dPast3.getFullYear(), dPast3.getMonth() + 1, dPast3.getDate())] = true;
+streakLogs[makeLogKey('sh3', dPast4.getFullYear(), dPast4.getMonth() + 1, dPast4.getDate())] = true;
+
+const maxStreak = calculateLongestStreakOverall(streakHabits, streakLogs);
+assert(maxStreak === 4, 'Returns the highest maximum streak among all habits');
+
+global.Date = originalDate;
+
 
 console.log(`\n📊 Analytics Utils Test Results: ${passed} passed, ${failed} failed.`);
 if (failed > 0) process.exit(1);

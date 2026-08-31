@@ -1,4 +1,4 @@
-import { calculatePersonalRecords } from '../lib/analyticsUtils';
+import { calculatePersonalRecords, getCategoryCompletionStats } from '../lib/analyticsUtils';
 import { Habit, HabitLog } from '../lib/habitTypes';
 import { makeLogKey } from '../lib/habitUtils';
 
@@ -83,6 +83,68 @@ assert(withLogRecords.bestHabitConsistency > 0, 'bestHabitConsistency is calcula
 
 // Restore original Date
 global.Date = originalDate;
+
+
+// 4. Test getCategoryCompletionStats with empty habits and logs
+const emptyCategoryStats = getCategoryCompletionStats([], {});
+assert(emptyCategoryStats.every(cat => cat.count === 0 && cat.completed === 0 && cat.possible === 0 && cat.rate === 0), 'getCategoryCompletionStats returns zeros for empty habits/logs');
+
+// 5. Test getCategoryCompletionStats with habits and logs
+const categoryTestHabits = [
+  { id: 'h3', name: 'Morning Run', emoji: '🏃', goal: 20, category: '🏃 Fitness' }, // matches id
+  { id: 'h4', name: 'Read Book', emoji: '📚', goal: 15, category: 'Learning' }, // matches label
+];
+
+// Reusing MockDate
+const originalDate4 = global.Date;
+const FIXED_SYSTEM_TIME4 = '2023-05-15T12:00:00Z'; // May has 31 days
+class MockDate4 extends originalDate4 {
+  constructor(...args) {
+    if (args.length === 0) {
+      super(FIXED_SYSTEM_TIME4);
+    } else {
+      super(...args as []);
+    }
+  }
+  static now() {
+    return new originalDate4(FIXED_SYSTEM_TIME4).getTime();
+  }
+}
+global.Date = MockDate4 as any;
+
+const categoryTestLogs = {};
+const y4 = 2023;
+const m4 = 5;
+// Add logs for h3 for days 1, 2, 3
+categoryTestLogs[makeLogKey('h3', y4, m4, 1)] = true;
+categoryTestLogs[makeLogKey('h3', y4, m4, 2)] = true;
+categoryTestLogs[makeLogKey('h3', y4, m4, 3)] = true;
+
+// Add logs for h4 for days 1, 2
+categoryTestLogs[makeLogKey('h4', y4, m4, 1)] = true;
+categoryTestLogs[makeLogKey('h4', y4, m4, 2)] = true;
+
+const categoryStats = getCategoryCompletionStats(categoryTestHabits, categoryTestLogs);
+// May has 31 days
+const fitnessCat = categoryStats.find(c => c.id === '🏃 Fitness');
+assert(fitnessCat !== undefined && fitnessCat.count === 1, 'Fitness category count is correct');
+assert(fitnessCat !== undefined && fitnessCat.possible === 31, 'Fitness category possible is correct');
+assert(fitnessCat !== undefined && fitnessCat.completed === 3, 'Fitness category completed is correct');
+assert(fitnessCat !== undefined && fitnessCat.rate === Math.round((3/31)*100), 'Fitness category rate is correct');
+
+const learningCat = categoryStats.find(c => c.id === '📚 Learning');
+assert(learningCat !== undefined && learningCat.count === 1, 'Learning category count is correct (matched by label)');
+assert(learningCat !== undefined && learningCat.possible === 31, 'Learning category possible is correct');
+assert(learningCat !== undefined && learningCat.completed === 2, 'Learning category completed is correct');
+assert(learningCat !== undefined && learningCat.rate === Math.round((2/31)*100), 'Learning category rate is correct');
+
+const financeCat = categoryStats.find(c => c.id === '💰 Finance');
+assert(financeCat !== undefined && financeCat.count === 0, 'Finance category count is correct (0)');
+assert(financeCat !== undefined && financeCat.possible === 0, 'Finance category possible is correct (0)');
+assert(financeCat !== undefined && financeCat.completed === 0, 'Finance category completed is correct (0)');
+assert(financeCat !== undefined && financeCat.rate === 0, 'Finance category rate is correct (0)');
+
+global.Date = originalDate4;
 
 console.log(`\n📊 Analytics Utils Test Results: ${passed} passed, ${failed} failed.`);
 if (failed > 0) process.exit(1);
